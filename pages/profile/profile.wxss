@@ -1,0 +1,481 @@
+/* pages/profile/profile.wxss */
+.container {
+  min-height: 100vh;
+  background-color: #F9FAFB;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 顶部导航 */
+.fixed-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  background-color: #FFFFFF;
+  z-index: 10;
+  border-bottom: 1px solid #F3F4F6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fixed-nav .left-half {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.content-with-fixed-nav {
+  padding-top: 44px;
+}
+
+/* 头像样式 */
+.avatar-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+  position: relative;
+}
+
+/* 按钮样式 */
+.btn-brand-purple {
+  background-color: #8B5CF6;
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-brand-purple:active {
+  background-color: #7C3AED;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+  transform: translateY(1px);
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.profile-modal .modal-body {
+  padding: 20px;
+}
+
+.contact-modal .modal-body {
+  padding: 20px;
+}
+
+.social-modal .modal-body {
+  padding: 20px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+/* Flex 工具类 */
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.mr-auto {
+  margin-right: auto;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+.gap-1 {
+  gap: 4px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+.space-x-2 .space-item {
+  margin-right: 8px;
+}
+
+.space-x-2 .space-item:last-child {
+  margin-right: 0;
+}
+
+.space-x-3 .space-item {
+  margin-right: 12px;
+}
+
+.space-x-3 .space-item:last-child {
+  margin-right: 0;
+}
+
+.space-x-4 .space-item {
+  margin-right: 16px;
+}
+
+.space-x-4 .space-item:last-child {
+  margin-right: 0;
+}
+
+.space-y-1 .space-item {
+  margin-bottom: 4px;
+}
+
+.space-y-1 .space-item:last-child {
+  margin-bottom: 0;
+}
+
+.space-y-3 .space-item {
+  margin-bottom: 12px;
+}
+
+.space-y-3 .space-item:last-child {
+  margin-bottom: 0;
+}
+
+.space-y-4 .space-item {
+  margin-bottom: 16px;
+}
+
+.space-y-4 .space-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 间距类 */
+.mt-3 {
+  margin-top: 12px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.pt-2 {
+  padding-top: 8px;
+}
+
+.pt-3 {
+  padding-top: 12px;
+}
+
+.pt-4 {
+  padding-top: 16px;
+}
+
+.pb-1 {
+  padding-bottom: 4px;
+}
+
+.pb-2 {
+  padding-bottom: 8px;
+}
+
+.pb-3 {
+  padding-bottom: 12px;
+}
+
+.px-3 {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.px-4 {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.py-1 {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.py-15 {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.py-2 {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.py-3 {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.p-2 {
+  padding: 8px;
+}
+
+.p-3 {
+  padding: 12px;
+}
+
+.p-4 {
+  padding: 16px;
+}
+
+/* 颜色类 */
+.text-white {
+  color: #FFFFFF;
+}
+
+.text-black {
+  color: #000000;
+}
+
+.text-gray-400 {
+  color: #9CA3AF;
+}
+
+.text-gray-500 {
+  color: #6B7280;
+}
+
+.text-gray-600 {
+  color: #4B5563;
+}
+
+.text-gray-700 {
+  color: #374151;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+.text-purple-600 {
+  color: #8B5CF6;
+}
+
+.text-red-500 {
+  color: #EF4444;
+}
+
+.text-red-600 {
+  color: #DC2626;
+}
+
+.text-blue-600 {
+  color: #3B82F6;
+}
+
+.text-green-600 {
+  color: #10B981;
+}
+
+.bg-white {
+  background-color: #FFFFFF;
+}
+
+.bg-gray-50 {
+  background-color: #F9FAFB;
+}
+
+.bg-gray-100 {
+  background-color: #F3F4F6;
+}
+
+.bg-purple-100 {
+  background-color: #F3E8FF;
+}
+
+.bg-red-100 {
+  background-color: #FEE2E2;
+}
+
+.bg-purple-600 {
+  background-color: #8B5CF6;
+}
+
+/* 边框类 */
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+
+.border-gray-100 {
+  border-color: #F3F4F6;
+}
+
+.border-gray-300 {
+  border-color: #D1D5DB;
+}
+
+.border-b {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+
+/* 圆角类 */
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.rounded-lg {
+  border-radius: 8px;
+}
+
+.rounded-xl {
+  border-radius: 12px;
+}
+
+/* 文本类 */
+.text-xs {
+  font-size: 12px;
+}
+
+.text-sm {
+  font-size: 14px;
+}
+
+.text-base {
+  font-size: 16px;
+}
+
+.text-lg {
+  font-size: 18px;
+}
+
+.text-xl {
+  font-size: 20px;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* 阴影类 */
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* 绝对定位 */
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+/* 动画和过渡 */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* 其他 */
+.hover-bg-gray-50:active {
+  background-color: #F9FAFB;
+}
+
+.hover-opacity-100:active {
+  opacity: 1;
+}
+
+.hover-text-gray-700:active {
+  color: #374151;
+}
+
+.hover-bg-gray-100:active {
+  background-color: #F3F4F6;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* 隐藏 */
+.hidden {
+  display: none;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F1F1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

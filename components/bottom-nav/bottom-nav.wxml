@@ -1,0 +1,18 @@
+<!-- components/bottom-nav/bottom-nav.wxml -->
+<view class="bottom-nav">
+  <view class="nav-container">
+    <view class="nav-item" bindtap="navigateToChat">
+      <text class="fa fa-comments"></text>
+      <text>聊天</text>
+      <view class="nav-badge" wx:if="{{unreadCount > 0}}">{{unreadCount > 99 ? '99+' : unreadCount}}</view>
+    </view>
+    <view class="nav-item" bindtap="navigateToAvatar">
+      <text class="fa fa-robot"></text>
+      <text>AI分身</text>
+    </view>
+    <view class="nav-item" bindtap="navigateToProfile">
+      <text class="fa fa-address-card"></text>
+      <text>名片</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,10 @@
+{
+  "component": true,
+  "properties": {
+    "unreadCount": {
+      "type": "Number",
+      "value": 0
+    }
+  },
+  "usingComponents": {}
+}

@@ -1,0 +1,175 @@
+<!-- pages/avatar/avatar.wxml -->
+<view class="container">
+  <!-- 顶部导航 -->
+  <view class="fixed-nav flex items-center py-3 px-6 text-black relative">
+    <view class="flex items-center gap-3">
+      <view class="w-8 h-8 flex items-center justify-center cursor-pointer" bindtap="goBack">
+        <i class="fas fa-chevron-left text-black text-lg"></i>
+      </view>
+    </view>
+    <view class="absolute left-half transform">
+      <text class="text-xl font-bold text-gray-900">我的AI分身</text>
+    </view>
+    <view class="flex items-center space-x-3 ml-auto">
+      <view class="w-8 h-8 flex items-center justify-center cursor-pointer relative" bindtap="toggleModelMenu">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <!-- 椭圆1 -->
+          <ellipse cx="16" cy="16" rx="10" ry="5" stroke="#000000" stroke-width="2" fill="none"/>
+          <!-- 椭圆2 -->
+          <ellipse cx="16" cy="16" rx="10" ry="5" stroke="#000000" stroke-width="2" fill="none" transform="rotate(60 16 16)"/>
+          <!-- 椭圆3 -->
+          <ellipse cx="16" cy="16" rx="10" ry="5" stroke="#000000" stroke-width="2" fill="none" transform="rotate(120 16 16)"/>
+        </svg>
+      </view>
+      <view class="w-8 h-8 flex items-center justify-center cursor-pointer relative" bindtap="openAIReport">
+        <i class="fas fa-chart-line text-gray-600 text-lg"></i>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 聊天容器 -->
+  <view class="content-with-fixed-nav flex-1 p-6 space-y-6" style="padding-bottom: 80px;">
+    <view class="chat-container" id="chatContainer">
+      <!-- 初始AI消息 -->
+      <view class="flex items-start gap-3">
+        <view class="avatar-circle">
+          <i class="fas fa-robot text-white text-sm"></i>
+        </view>
+        <view class="message ai-message">
+          你好，我是小瓦，你的AI分身！我会根据你对我的要求、个人信息、行为记录等，为你创造专属的AI分身，代表你对外介绍、沟通。多跟我说一些话吧，我可以更好的代表你！
+        </view>
+      </view>
+      
+      <!-- 用户消息示例 -->
+      <view class="flex items-start gap-3 justify-end">
+        <view class="message user-message">
+          你好小瓦！我想创建一个设计师形象。
+        </view>
+        <view class="avatar-circle user-avatar">
+          <image src="/images/ai.png" mode="aspectFill"></image>
+        </view>
+      </view>
+      
+      <!-- AI回复 -->
+      <view class="flex items-start gap-3">
+        <view class="avatar-circle">
+          <i class="fas fa-robot text-white text-sm"></i>
+        </view>
+        <view class="message ai-message">
+          好的！能告诉我你的设计专长和常用工具吗？
+        </view>
+      </view>
+      
+      <!-- 用户消息示例 -->
+      <view class="flex items-start gap-3 justify-end">
+        <view class="message user-message">
+          我主要用Figma做UI设计，希望AI分身能在商务场合代表我。
+        </view>
+        <view class="avatar-circle cursor-pointer" bindtap="goToProfile">
+          <image src="/images/ai.png" mode="aspectFill"></image>
+        </view>
+      </view>
+      
+      <!-- AI回复 -->
+      <view class="flex items-start gap-3">
+        <view class="avatar-circle">
+          <i class="fas fa-robot text-white text-sm"></i>
+        </view>
+        <view class="message ai-message">
+          明白了！我会根据你的专业背景来塑造AI分身形象。
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 输入区域 -->
+  <view class="input-area">
+    <view class="input-container">
+      <view class="plus-btn" bindtap="showPlusMenu">
+        <i class="fas fa-plus"></i>
+      </view>
+      <input type="text" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." />
+      <view class="hold-to-talk-btn" wx:if="{{isVoiceMode}}" bindtouchstart="startRecording" bindtouchend="stopRecording">
+        <i class="fas fa-microphone"></i>
+        <text>按住说话</text>
+      </view>
+      <view class="send-btn" wx:else bindtap="sendMessage">
+        <i class="fas fa-paper-plane"></i>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 功能菜单 -->
+  <view class="function-menu {{showFunctionMenu ? 'show' : ''}}">
+    <view class="function-grid">
+      <view class="function-item" bindtap="selectFunction" data-type="image">
+        <view class="function-icon image">
+          <i class="fas fa-image"></i>
+        </view>
+        <view class="function-label">图片</view>
+      </view>
+      <view class="function-item" bindtap="selectFunction" data-type="file">
+        <view class="function-icon file">
+          <i class="fas fa-file-alt"></i>
+        </view>
+        <view class="function-label">文件</view>
+      </view>
+      <view class="function-item" bindtap="selectFunction" data-type="location">
+        <view class="function-icon location">
+          <i class="fas fa-map-marker-alt"></i>
+        </view>
+        <view class="function-label">位置</view>
+      </view>
+      <view class="function-item" bindtap="selectFunction" data-type="emoji">
+        <view class="function-icon emoji">
+          <i class="far fa-smile"></i>
+        </view>
+        <view class="function-label">表情</view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- AI分身悬浮按钮 -->
+  <view class="ai-avatar-button {{aiOnline ? '' : 'offline'}}" bindtap="toggleAiMenu">
+    <view class="ai-avatar-ripple"></view>
+    <view class="ai-avatar-icon">
+      <i class="fas fa-robot"></i>
+    </view>
+  </view>
+  
+  <!-- AI分身开关菜单 -->
+  <view class="ai-menu {{showAiMenu ? 'show' : ''}}" data-menu="ai-menu">
+    <view class="ai-toggle-container">
+      <view class="ai-label">AI分身在线</view>
+      <view class="ai-toggle-switch">
+        <input type="checkbox" class="ai-toggle-input" checked="{{aiOnline}}" bindchange="toggleAiOnline" />
+        <view class="ai-toggle-slider"></view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- AI模型选择菜单 -->
+  <view class="model-menu {{showModelMenu ? 'show' : ''}}" data-menu="model-menu">
+    <view class="model-header">
+      <view class="model-title">选择AI模型</view>
+    </view>
+    <view class="model-item {{selectedModel === 'gpt4' ? 'active' : ''}}" bindtap="selectModel" data-model="gpt4">
+      <view class="model-info">
+        <view class="model-name">GPT-4</view>
+      </view>
+      <view class="model-status"></view>
+    </view>
+    <view class="model-item {{selectedModel === 'gpt3' ? 'active' : ''}}" bindtap="selectModel" data-model="gpt3">
+      <view class="model-info">
+        <view class="model-name">GPT-3.5</view>
+      </view>
+      <view class="model-status"></view>
+    </view>
+    <view class="model-item {{selectedModel === 'claude' ? 'active' : ''}}" bindtap="selectModel" data-model="claude">
+      <view class="model-info">
+        <view class="model-name">Claude 3</view>
+      </view>
+      <view class="model-status"></view>
+    </view>
+  </view>
+</view>

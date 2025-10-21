@@ -1,0 +1,241 @@
+<!--pages/profile/profile.wxml-->
+<view class="container">
+  <!-- 顶部导航 -->
+  <view class="fixed-nav">
+    <view class="flex items-center gap-3">
+      <view class="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer" bindtap="navigateToAbout">
+        <text class="text-white font-bold text-sm">P</text>
+      </view>
+    </view>
+    <view class="absolute left-half transform">
+      <text class="text-xl font-bold text-gray-900">我的名片</text>
+    </view>
+    <view class="flex items-center space-x-4 ml-auto">
+      <view class="text-xl text-black cursor-pointer" bindtap="openPreview">
+        <text class="iconfont icon-eye"></text>
+      </view>
+      <view class="text-xl text-black cursor-pointer" bindtap="openShare">
+        <text class="iconfont icon-share"></text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 主内容 -->
+  <view class="content-with-fixed-nav">
+    <!-- 头像和基本信息 -->
+    <view class="flex justify-center pt-4 pb-2">
+      <view class="w-16 h-16 rounded-full overflow-hidden shadow-md relative cursor-pointer" style="box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);">
+        <image src="/images/ai.png" mode="aspectFill" class="w-full h-full"></image>
+        <!-- 编辑提示图标 -->
+        <view class="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 hover-opacity-100 transition-all">
+          <text class="iconfont icon-camera text-white text-lg"></text>
+        </view>
+      </view>
+    </view>
+
+    <view class="text-center mb-3">
+      <view class="flex items-center justify-center gap-2">
+        <text class="text-lg font-semibold text-gray-900">{{userInfo.name}}</text>
+        <view class="flex items-center gap-1">
+          <text class="text-sm text-gray-500">·</text>
+          <text class="text-sm text-gray-500">{{userInfo.aiStatus}}</text>
+          <view class="w-2 h-2 rounded-full" style="background-color: {{userInfo.statusColor}}"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 个人资料 -->
+    <view class="bg-white p-4 border-b border-gray-100">
+      <view class="flex items-center justify-between mb-3">
+        <text class="text-sm font-semibold text-gray-700">
+          个人资料
+          <text class="text-purple-600 ml-1">*</text>
+        </text>
+        <view class="flex items-center space-x-2">
+          <button class="text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="showProfileEditModal">
+            <text class="iconfont icon-edit mr-1.5"></text>
+            编辑
+          </button>
+        </view>
+      </view>
+      <text class="text-sm text-gray-700" style="line-height: 1.6;">{{userInfo.description}}</text>
+    </view>
+
+    <!-- 联系信息 -->
+    <view class="bg-white p-4 border-b border-gray-100">
+      <view class="flex items-center justify-between">
+        <text class="text-sm font-semibold text-gray-700 flex items-center">
+          联系信息
+          <text class="text-purple-600 ml-1">*</text>
+        </text>
+        <view class="flex items-center space-x-2">
+          <button class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showContactEditModal">
+            <text class="iconfont icon-edit mr-1.5"></text>
+            编辑
+          </button>
+        </view>
+      </view>
+      <view class="mt-3">
+        <view class="space-y-3 text-sm text-gray-600">
+          <view class="flex items-center space-item">
+            <text class="iconfont icon-phone text-blue-600 mr-3"></text>
+            <text>{{contactInfo.phone}}</text>
+          </view>
+          <view class="flex items-center space-item">
+            <text class="iconfont icon-wechat text-green-600 mr-3"></text>
+            <text>{{contactInfo.wechat}}</text>
+          </view>
+          <view class="flex items-center">
+            <text class="iconfont icon-location text-blue-600 mr-3"></text>
+            <text>{{contactInfo.address}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 社交媒体 -->
+    <view class="bg-white p-4 border-b border-gray-100" style="margin-bottom: 80px;">
+      <view class="flex items-center justify-between">
+        <text class="text-sm font-semibold text-gray-700 flex items-center">
+          对外媒体
+        </text>
+        <view class="flex items-center space-x-2">
+          <button class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showSocialMediaEditModal">
+            <text class="iconfont icon-plus mr-1.5"></text>
+            添加
+          </button>
+        </view>
+      </view>
+      <view class="mt-3">
+        <view class="space-y-1 text-sm text-gray-600" wx:if="{{socialMediaList.length > 0}}">
+          <view class="flex items-center justify-between p-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
+            <view class="flex items-center">
+              <text class="iconfont {{item.icon}} {{item.iconColor}} mr-3"></text>
+              <text>{{item.username}}</text>
+            </view>
+            <view class="flex items-center">
+              <text class="iconfont icon-edit text-gray-400 cursor-pointer mr-4" bindtap="editSocialMedia" data-id="{{item.id}}"></text>
+              <text class="iconfont icon-delete text-gray-400 cursor-pointer" bindtap="deleteSocialMedia" data-id="{{item.id}}"></text>
+            </view>
+          </view>
+        </view>
+        <view class="text-center text-gray-400 py-4" wx:else>
+          暂无媒体信息，点击添加
+        </view>
+      </view>
+    </view>
+
+    <!-- 悬浮分享按钮 -->
+    <view class="fixed bottom-20 left-0 right-0 z-30 px-4 pb-2">
+      <view class="max-w-md mx-auto">
+        <view class="flex">
+          <button class="w-full btn-brand-purple py-3 rounded-xl text-base font-bold shadow-lg flex items-center justify-center" bindtap="openShare">
+            <text class="iconfont icon-share mr-2"></text>
+            分享名片
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 个人资料编辑模态框 -->
+  <view class="modal-overlay" wx:if="{{showProfileModal}}" bindtap="closeProfileEditModal">
+    <view class="modal-content profile-modal" bindtap="preventBubbling">
+      <view class="modal-header">
+        <text class="text-lg font-semibold text-gray-900">编辑个人资料</text>
+        <view class="w-8 h-8 flex items-center justify-center text-gray-500 hover-text-gray-700 hover-bg-gray-100 rounded-full" bindtap="closeProfileEditModal">
+          <text class="iconfont icon-times"></text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view>
+          <text class="block text-sm font-medium text-gray-700 mb-2">个人简介</text>
+          <textarea value="{{editProfileDescription}}" placeholder="请输入您的个人简介..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y min-h-[200px] max-h-[400px]"></textarea>
+        </view>
+        <view class="flex pt-4">
+          <button class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg" bindtap="saveProfileEdit">
+            保存
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 联系信息编辑模态框 -->
+  <view class="modal-overlay" wx:if="{{showContactModal}}" bindtap="closeContactEditModal">
+    <view class="modal-content contact-modal" bindtap="preventBubbling">
+      <view class="modal-header">
+        <text class="text-lg font-semibold text-gray-900">编辑联系信息</text>
+        <view class="w-8 h-8 flex items-center justify-center text-gray-500 hover-text-gray-700 hover-bg-gray-100 rounded-full" bindtap="closeContactEditModal">
+          <text class="iconfont icon-times"></text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="space-y-4">
+          <view class="space-item">
+            <text class="block text-sm font-medium text-gray-700 mb-2">手机号码 <text class="text-red-500">*</text></text>
+            <input type="number" value="{{editContactPhone}}" placeholder="请输入手机号码" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></input>
+          </view>
+          <view class="space-item">
+            <text class="block text-sm font-medium text-gray-700 mb-2">微信号 <text class="text-red-500">*</text></text>
+            <input value="{{editContactWechat}}" placeholder="请输入微信号" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></input>
+          </view>
+          <view class="space-item">
+            <text class="block text-sm font-medium text-gray-700 mb-2">地址</text>
+            <input value="{{editContactAddress}}" placeholder="请输入地址" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></input>
+          </view>
+          <view class="flex pt-2">
+            <button class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg" bindtap="saveContactEdit">
+              保存
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 社交媒体编辑模态框 -->
+  <view class="modal-overlay" wx:if="{{showSocialMediaModal}}" bindtap="closeSocialMediaEditModal">
+    <view class="modal-content social-modal" bindtap="preventBubbling">
+      <view class="modal-header">
+        <text class="text-lg font-semibold text-gray-900">{{isEditingSocial ? '编辑对外媒体' : '添加对外媒体'}}</text>
+        <view class="w-8 h-8 flex items-center justify-center text-gray-500 hover-text-gray-700 hover-bg-gray-100 rounded-full" bindtap="closeSocialMediaEditModal">
+          <text class="iconfont icon-times"></text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="space-y-4">
+          <view class="space-item">
+            <text class="block text-sm font-medium text-gray-700 mb-2">名称 <text class="text-red-500">*</text></text>
+            <picker bindchange="onPlatformChange" value="{{editSocialPlatformIndex}}" range="{{platforms}}" range-key="name">
+              <view class="w-full px-3 py-2 border border-gray-300 rounded-lg flex items-center justify-between">
+                <text>{{editSocialPlatform ? editSocialPlatform.name : '请选择平台'}}</text>
+                <text class="iconfont icon-arrow-down text-gray-400"></text>
+              </view>
+            </picker>
+          </view>
+          <view wx:if="{{editSocialPlatform && editSocialPlatform.name === '自定义'}}">
+            <text class="block text-sm font-medium text-gray-700 mb-2">自定义名称 <text class="text-red-500">*</text></text>
+            <input value="{{editCustomPlatformName}}" placeholder="请输入平台名称" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></input>
+          </view>
+          <view class="space-item">
+            <text class="block text-sm font-medium text-gray-700 mb-2">用户名 <text class="text-red-500">*</text></text>
+            <input value="{{editSocialUsername}}" placeholder="请输入用户名" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></input>
+          </view>
+          <view class="space-item">
+            <text class="block text-sm font-medium text-gray-700 mb-2">主页链接 <text class="text-red-500">*</text></text>
+            <input value="{{editSocialUrl}}" placeholder="请输入主页链接" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></input>
+          </view>
+          <view class="flex pt-2">
+            <button wx:if="{{isEditingSocial}}" class="flex-1 px-4 py-2 text-red-600 bg-red-100 rounded-lg mr-3" bindtap="deleteSocialMediaFromModal">
+              删除
+            </button>
+            <button class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg" bindtap="saveSocialMediaEdit">
+              保存
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

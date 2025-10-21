@@ -1,0 +1,13 @@
+{
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "navigationBarTitleText": "AI助手",
+  "navigationStyle": "default",
+  "backgroundColor": "#f9fafb",
+  "enablePullDownRefresh": true,
+  "disableScroll": false,
+  "usingComponents": {
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
+  },
+  "pageOrientation": "portrait"
+}

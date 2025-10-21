@@ -1,0 +1,37 @@
+<!-- pages/login/login.wxml -->
+<view class="page-container">
+  <view class="login-container">
+    <!-- 渐变背景头部 -->
+    <view class="header-bg">
+      <view class="text-center">
+        <text class="text-2xl font-bold block mb-2">小瓦AI分身</text>
+        <text class="text-sm opacity-90 block">用AI分身帮你高效社交</text>
+      </view>
+    </view>
+    
+    <!-- 内容区域 -->
+    <view class="content-area">
+      
+      <!-- 登录按钮组 -->
+      <view class="space-y-3 mb-6">
+        <!-- 微信登录按钮 -->
+        <button class="action-button" bindtap="wxLogin" loading="{{loading}}" disabled="{{loading || !agreeTerms}}">
+          <text class="btn-icon"><text class="fa fa-weixin"></text></text>
+          微信一键登录
+        </button>
+      </view>
+      
+      <!-- 隐私政策 -->
+      <view class="privacy-policy">
+        <checkbox value="agree" checked="{{agreeTerms}}" bindtap="toggleAgreeTerms"></checkbox>
+        <text>勾选即表示同意</text>
+        <text class="text-purple-600" bindtap="openUserTerms">用户协议</text>
+        <text>和</text>
+        <text class="text-purple-700" bindtap="openPrivacyPolicy">隐私政策</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 底部导航栏组件 -->
+  <bottom-nav unread-count="{{unreadCount}}" />
+</view>

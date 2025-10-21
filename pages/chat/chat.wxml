@@ -1,0 +1,127 @@
+<!-- pages/chat/chat.wxml -->
+
+<view class="page-container">
+  <!-- 顶部导航 -->
+  <view class="fixed-nav py-3 px-6">
+    <view class="flex-container">
+      <view class="flex-1">
+        <view class="w-16 h-16" bindtap="navigateToAbout">
+          <image src="/images/ai.png" class="w-full h-full rounded-lg" mode="aspectFill"></image>
+        </view>
+      </view>
+      <view class="flex-1 text-c">
+        <text class="font-bold text-gray-900">聊天</text>
+      </view>
+      <view class="flex-1 text-r">
+        <view bindtap="openSearch">
+          <text class="fa fa-search text-black text-lg"></text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 主内容区域 -->
+  <scroll-view class="content-with-fixed-nav" scroll-y="true">
+      <view class="py-2">
+        <!-- 分组标题行 -->
+        <view class="flex bg-gray-50 rounded-lg shadow-sm mb-3">
+          <view class="flex-1 chat-section-title {{activeSection === 'contacts' ? 'active' : ''}}" bindtap="toggleSection" data-section="contacts">
+            <text>联系人</text>
+          </view>
+          <view class="flex-1 chat-section-title border-l border-gray-200 {{activeSection === 'pending' ? 'active' : ''}}" bindtap="toggleSection" data-section="pending">
+            <text>待联系</text>
+          </view>
+        </view>
+
+        <!-- 联系人内容 -->
+        <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'contacts'}}">
+          <!-- 联系人列表 -->
+          <block wx:for="{{contactsList}}" wx:key="id">
+            <view class="chat-card" bindtap="navigateToConversation" data-user="{{item}}">
+              <view class="flex items-center justify-between">
+                <view class="flex items-center flex-1">
+                  <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
+                    <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
+                  </view>
+                  <view class="flex-1">
+                    <view class="flex items-center justify-between mb-2">
+                      <text class="text-base font-semibold text-gray-900">{{item.name}}</text>
+                      <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
+                    </view>
+                    <text class="last-message multi-line">{{item.lastMessage}}</text>
+                  </view>
+                  <view class="ml-4" wx:if="{{item.unread > 0}}">
+                    <view class="unread-badge">{{item.unread}}</view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+
+        <!-- 待联系内容 -->
+        <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'pending'}}">
+          <!-- 待联系列表 -->
+          <block wx:for="{{pendingList}}" wx:key="id">
+            <view class="chat-card">
+              <view class="flex items-center justify-between">
+                <view class="flex items-center">
+                  <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
+                    <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
+                  </view>
+                  <view class="flex-1">
+                    <view class="flex items-center justify-between mb-2">
+                      <text class="text-base font-semibold text-gray-900">{{item.name}}</text>
+                    </view>
+                    <text class="last-message multi-line">{{item.message}}</text>
+                  </view>
+                </view>
+                <view class="flex flex-col items-end ml-4">
+                  <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
+                  <view class="mt-2">
+                    <button class="accept-btn" bindtap="acceptMatch" data-name="{{item.name}}" size="mini">同意</button>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+
+        <!-- 底部空白占位符 -->
+        <view class="h-40"></view>
+      </view>
+    </scroll-view>
+
+  <!-- 搜索框覆盖层 -->
+  <view class="search-overlay" wx:if="{{showSearch}}">
+    <view class="search-container">
+      <view class="search-input-container">
+        <input type="text" class="search-input" placeholder="搜索联系人、聊天记录" value="{{searchText}}" bindinput="onSearchInput" confirm-type="search" bindconfirm="performSearch" focus="true" />
+        <view class="search-actions">
+          <button class="search-btn" bindtap="performSearch" size="mini" plain="false">
+            <text class="fa fa-search"></text> 搜索
+          </button>
+          <button class="cancel-btn" bindtap="closeSearch" size="mini" plain="true">
+            <text class="fa fa-times"></text> 取消
+          </button>
+        </view>
+      </view>
+      <view class="search-results" wx:if="{{showSearchResults}}">
+        <!-- 搜索结果 -->
+        <block wx:for="{{searchResults}}" wx:key="id">
+          <view class="search-result-item" bindtap="navigateToConversation" data-user="{{item}}">
+            <view class="flex items-center">
+              <view class="w-20 h-20 rounded-full overflow-hidden mr-4">
+                <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
+              </view>
+              <view class="flex-1">
+                <view class="search-result-name">{{item.name}}</view>
+                <view class="search-result-message">{{item.lastMessage}}</view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+</view>

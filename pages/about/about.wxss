@@ -1,0 +1,255 @@
+/* pages/about/about.wxss */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f9fafb;
+}
+
+/* 顶部导航 */
+.fixed-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.left-placeholder,
+.right-placeholder {
+  width: 40px;
+}
+
+.nav-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+/* 主要内容区域 */
+.content-with-fixed-nav {
+  flex: 1;
+  padding-top: 56px;
+  padding-bottom: 80px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.bg-white {
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 区块样式 */
+.section-card {
+  background: white;
+  margin-bottom: 0;
+  padding: 16px;
+  border-radius: 0;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+
+.section-card:last-child {
+  border-bottom: none;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 6px;
+  padding: 4px 0;
+}
+
+.section-title {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+  color: #6b7280;
+}
+
+.toggle-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.section-content {
+  color: #6b7280;
+  line-height: 1.5;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.space-y-2 {
+  margin-top: 8px;
+}
+
+.space-y-4 {
+  margin-top: 16px;
+}
+
+/* 联系信息样式 */
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.contact-item:last-child {
+  border-bottom: none;
+}
+
+.contact-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.service-icon {
+  background-color: transparent;
+  color: #8b5cf6;
+}
+
+.phone-icon {
+  background-color: transparent;
+  color: #3b82f6;
+}
+
+.wechat-icon {
+  background-color: transparent;
+  color: #10b981;
+}
+
+.icon-font {
+  font-size: 20px;
+}
+
+.contact-info {
+  flex: 1;
+}
+
+.contact-label {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.contact-value {
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* 政策内容样式 */
+.policy-content {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.policy-p {
+  margin-bottom: 16px;
+}
+
+/* 版权信息 */
+.copyright-text {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 16px 0;
+}
+
+/* 底部导航栏样式 */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  z-index: 40;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #9ca3af;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 8px;
+  position: relative;
+}
+
+.nav-item.active {
+  color: #8b5cf6;
+}
+
+.nav-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.nav-item.active .nav-icon {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+.nav-text {
+  font-weight: 500;
+}
+
+/* 导航栏未读消息红点样式 */
+.nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 8px;
+  background: #ef4444;
+  color: white;
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  min-width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  z-index: 10;
+}

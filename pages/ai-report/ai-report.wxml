@@ -1,0 +1,95 @@
+<!-- pages/ai-report/ai-report.wxml -->
+<view class="page-container">
+  <!-- 顶部导航 -->
+  <view class="fixed-nav flex items-center justify-between py-3 px-6 text-black">
+    <view class="flex items-center gap-3">
+      <view class="cursor-pointer" bindtap="goBack">
+        <i class="fas fa-chevron-left text-black"></i>
+      </view>
+    </view>
+    <view class="text-xl font-bold text-gray-900">我的AI报告</view>
+    <view class="w-8 h-8"></view>
+  </view>
+  
+  <!-- 主内容 -->
+  <view class="content-with-fixed-nav flex-1 content-card rounded-t-3xl px-4 py-3 space-y-3">
+    <view class="bg-white rounded-lg overflow-hidden shadow-sm">
+    <!-- 头像和昵称 -->
+    <view class="text-center py-3">
+      <view class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+        <image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" mode="aspectFill" class="w-full h-full"></image>
+      </view>
+      <view class="text-base font-medium text-gray-900">李小雅</view>
+    </view>
+    
+    <!-- AI分身分析 -->
+    <view class="bg-white p-4 fade-in-up">
+      
+      <!-- AI分身说明 -->
+      <view class="mb-6">
+        <view class="text-sm font-medium text-gray-700 mb-3">AI分身说明</view>
+        <view class="text-xs text-gray-700">
+          <view class="mb-2">基于多维度数据综合分析，您的人格画像展现出高度开放性思维和创新设计能力，善于用设计思维解决复杂问题。</view>
+          <view class="mb-2">在社交互动中，您表现出良好的连接动因和深度交流偏好，倾向于建立有意义的专业关系。</view>
+          <view class="mb-2">您具备强烈的成长导向，持续追求自我提升和技能发展，在团队协作中展现出优秀的领导潜质。</view>
+          <view class="mb-0">情绪管理能力突出，在压力环境下保持冷静理性，这使您成为团队中值得信赖的核心成员。</view>
+        </view>
+      </view>
+      
+      <!-- 人格画像 -->
+      <view class="mb-6">
+        <view class="text-sm font-medium text-gray-700 mb-3">人格画像</view>
+        <view class="radar-container">
+          <canvas canvas-id="personalityRadar" class="w-full" style="height: 280px;"></canvas>
+        </view>
+      </view>
+      
+      <!-- 画像解读 -->
+      <view class="mb-0">
+        <view class="text-sm font-medium text-gray-700 mb-3">画像解读</view>
+        
+        <view class="mb-0">
+          <view class="text-xs text-gray-700 mb-2">开放性: 89分 - 思维开放、富有创造力</view>
+          <view class="text-xs text-gray-700 mb-2">尽责性: 92分 - 做事认真负责、有组织性</view>
+          <view class="text-xs text-gray-700 mb-2">外向性: 85分 - 社交活跃、善于表达</view>
+          <view class="text-xs text-gray-700 mb-2">宜人性: 88分 - 友善合作、信任他人</view>
+          <view class="text-xs text-gray-700 mb-2">情绪稳定: 91分 - 情绪控制良好、抗压能力强</view>
+          <view class="text-xs text-gray-700 mb-2">连接动因: 83分 - 重视人际关系，善于建立网络</view>
+          <view class="text-xs text-gray-700 mb-2">表达风格: 87分 - 沟通表达清晰，善于传递想法</view>
+          <view class="text-xs text-gray-700 mb-2">互动偏好: 79分 - 偏好深度交流，注重质量</view>
+          <view class="text-xs text-gray-700 mb-0">成长导向: 86分 - 持续学习成长，追求自我提升</view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 分析来源 -->
+    <view class="bg-white p-4 fade-in-up">
+      <view class="text-sm font-medium text-gray-700 mb-3">
+        分析来源
+      </view>
+      <view class="text-xs text-gray-700 mb-0">
+        <view class="mb-2">1. 通过分析您与AI分身的深度对话内容，识别您的思维模式、表达习惯和情感倾向</view>
+        <view class="mb-2">2. 结合您填写的个人资料，分析您的自我认知和对外形象</view>
+        <view class="mb-2">3. 分析您与其他用户的交流模式，了解您的社交风格和互动偏好</view>
+        <view class="mb-0">4. 基于您已连接的人的信息和关系网络，评估您的社交圈层和影响力范围</view>
+      </view>
+    </view>
+    
+    <!-- 报告说明 -->
+    <view class="bg-white p-4 fade-in-up text-center">
+      <view class="text-xs text-gray-700 mb-2">
+        将作为AI分身对外聊天时的主要依据
+      </view>
+      <view class="text-xs text-gray-700 mb-0">生成时间：<text>{{reportTime}}</text></view>
+    </view>
+    
+    <!-- 底部版权信息 -->
+    <view class="text-center text-gray-400 text-xs py-4 mb-20">
+      小瓦AI分身 © 2025
+    </view>
+  </view>
+  </view>
+  
+  <!-- 底部导航栏组件 -->
+  <bottom-nav unread-count="{{unreadCount}}" />
+</view>

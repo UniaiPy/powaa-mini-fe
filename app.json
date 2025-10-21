@@ -1,0 +1,52 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/chat/chat",
+    "pages/conversation/conversation",
+    "pages/avatar/avatar",
+    "pages/profile/profile",
+    "pages/share/share",
+    "pages/preview/preview",
+    "pages/about/about",
+    "pages/ai-report/ai-report"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "小瓦AI分身",
+    "navigationBarTextStyle": "black",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#9ca3af",
+    "selectedColor": "#8b5cf6",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/chat/chat",
+        "text": "聊天",
+        "iconPath": "assets/icons/chat.png",
+        "selectedIconPath": "assets/icons/chat-active.png"
+      },
+      {
+        "pagePath": "pages/avatar/avatar",
+        "text": "AI分身",
+        "iconPath": "assets/icons/robot.png",
+        "selectedIconPath": "assets/icons/robot-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "名片",
+        "iconPath": "assets/icons/card.png",
+        "selectedIconPath": "assets/icons/card-active.png"
+      }
+    ]
+  },
+  "usingComponents": {},
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于提供位置信息"
+    }
+  },
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,14 @@
+{
+  "navigationBarTitleText": "我的AI分身",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "navigationStyle": "default",
+  "backgroundColor": "#f9fafb",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": false,
+  "disableScroll": false,
+  "usingComponents": {
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
+  },
+  "pageOrientation": "portrait"
+}
