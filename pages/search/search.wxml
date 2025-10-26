@@ -1,0 +1,43 @@
+<!-- pages/search/search.wxml -->
+<!-- pages/search/search.wxml -->
+<view class="page-container">
+    <!-- 搜索框覆盖层 -->
+    <view class="search-overlay">
+        <!-- <view class="search-overlay" bindtap="closeSearch"></view> -->
+        <view class="search-container">
+            <view class="search-input-container">
+                <input type="text" class="search-input" placeholder="搜索联系人、聊天记录" value="{{searchText}}" bindinput="onSearchInput" confirm-type="search" bindconfirm="performSearch" focus="true" />
+                <view class="search-actions">
+                    <button class="search-btn" bindtap="performSearch" size="mini" plain="false">
+                        <text class="fa fa-search"></text>
+                    </button>
+                    <button class="cancel-btn" bindtap="closeSearch" size="mini" plain="true">
+                        <text class="fa fa-times"></text>
+                    </button>
+                </view>
+            </view>
+            <view class="search-results" wx:if="{{showSearchResults}}">
+                <!-- 搜索结果为空时的提示 -->
+                <view class="no-results" wx:if="{{searchResults.length === 0}}">
+                    <text class="no-results-text">未找到相关聊天记录</text>
+                </view>
+                <!-- 搜索结果列表 -->
+                <block wx:elif="{{searchResults.length > 0}}">
+                    <block wx:for="{{searchResults}}" wx:key="id">
+                        <view class="search-result-item" bindtap="navigateToConversation" data-user="{{item}}">
+                            <view class="flex items-center">
+                                <view class="w-20 h-20 rounded-full overflow-hidden mr-4">
+                                    <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
+                                </view>
+                                <view class="flex-1">
+                                    <view class="search-result-name">{{item.name}}</view>
+                                    <view class="search-result-message">{{item.lastMessage}}</view>
+                                </view>
+                            </view>
+                        </view>
+                    </block>
+                </block>
+            </view>
+        </view>
+    </view>
+</view>

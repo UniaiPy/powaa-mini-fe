@@ -1,6 +1,3 @@
 {
-  "navigationBarTitleText": "登录/注册",
-  "usingComponents": {
-    "bottom-nav": "/components/bottom-nav/bottom-nav"
-  }
+  "navigationBarTitleText": "登录/注册"
 }

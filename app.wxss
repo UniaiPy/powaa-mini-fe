@@ -19,9 +19,14 @@ navigator {
   padding: 0;
   box-sizing: border-box;
 }
-
+.gap-2{
+  display: grid;
+  gap: 0.5rem;
+}
 /* 颜色常量 - 直接在样式中使用具体颜色值 */
 
+.fixed{position: fixed;}
+.absolute{position: absolute;}
 /* 通用间距 */
 .mt-1 { margin-top: 4rpx; }
 .mt-2 { margin-top: 8rpx; }
@@ -43,6 +48,7 @@ navigator {
 .ml-4 { margin-left: 16rpx; }
 .ml-5 { margin-left: 20rpx; }
 .ml-6 { margin-left: 24rpx; }
+.ml-7 { margin-left: 30rpx; }
 
 .mr-1 { margin-right: 4rpx; }
 .mr-2 { margin-right: 8rpx; }
@@ -65,23 +71,30 @@ navigator {
 .text-base { font-size: 32rpx; }
 .text-lg { font-size: 36rpx; }
 .text-xl { font-size: 40rpx; }
-
 .text-primary { color: #1f2937; }
 .text-secondary { color: #6b7280; }
 .text-tertiary { color: #9ca3af; }
-
+.text-purple-500 { color: #8b5cf6; }
+.text-green-600 { color: #16a34a; }
+.text-red-500 { color: #ef4444; }
+.text-blue-500 { color: #3b82f6; }
+.text-gray-500 { color: #6b7280; }
 /* 常用背景样式 */
 .bg-primary { background-color: #ffffff; }
 .bg-secondary { background-color: #f9fafb; }
 .bg-tertiary { background-color: #f3f4f6; }
-
+.bg-gray-400 { background-color: #6b7280; }
+.bg-green-600 { background-color: #16a34a; }
+.bg-purple-100 {
+  background-color: #F3E8FF;
+}
 /* 常用边框样式 */
 .border { border: 1rpx solid #e5e7eb; }
 .border-t { border-top: 1rpx solid #e5e7eb; }
 .border-b { border-bottom: 1rpx solid #e5e7eb; }
 .border-l { border-left: 1rpx solid #e5e7eb; }
 .border-r { border-right: 1rpx solid #e5e7eb; }
-
+.border-purple-500 { border-color: #8b5cf6; }
 /* 圆角样式 */
 .rounded { border-radius: 8rpx; }
 .rounded-lg { border-radius: 16rpx; }
@@ -104,7 +117,25 @@ navigator {
 .justify-around { justify-content: space-around; }
 .flex-1 { flex: 1; }
 .flex-shrink-0 { flex-shrink: 0; }
-
+.overflow-hidden{overflow: hidden;}
+.w-full{
+  width: 100%;
+}
+.h-full{
+  height: 100%;
+}
+.w-8{
+  width: 64rpx;
+}
+.h-8{
+  height: 64rpx;
+}
+.w-16{
+  width: 4rem;
+}
+.h-16{
+  height: 4rem;
+}
 /* 按钮通用样式 */
 .btn {
   padding: 24rpx 32rpx;

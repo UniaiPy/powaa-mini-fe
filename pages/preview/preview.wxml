@@ -1,183 +1,167 @@
 <!-- pages/preview/preview.wxml -->
 <view class="page-container">
   <!-- 顶部导航 -->
-  <view class="fixed-nav flex items-center justify-between py-3 px-6 text-black">
-    <view class="flex items-center gap-3">
-      <view class="cursor-pointer" bindtap="navigateToProfile">
-        <text class="iconfont icon-chevron-left text-black text-lg"></text>
+  <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
+    <view class="fixed-nav flex items-center justify-center gap-2 w-full">
+      <view class="text-base font-bold text-gray-900">预览</view>
+      <view class="cursor-pointer share-btn" bindtap="openShare">
+        <text class="fa fa-share text-black text-xl"></text>
       </view>
     </view>
-    <view class="text-xl font-bold text-gray-900">预览</view>
-    <view class="cursor-pointer" bindtap="openShare">
-      <text class="iconfont icon-share-alt text-black text-lg"></text>
-    </view>
-  </view>
-  
+  </custom-navigation-bar>
   <!-- 主内容 -->
   <view class="content-with-fixed-nav flex-1 content-card rounded-t-3xl px-4 py-3 space-y-4 relative">
     <view class="bg-white rounded-lg overflow-hidden shadow-sm">
       <!-- 悬浮按钮 -->
-      <view class="fixed bottom-20 left-0 right-0 z-30 px-4 pb-2 floating-button">
+      <view class="bottom-btns bottom-20 left-0 right-0 z-30 px-4 pb-2 floating-button">
         <view class="max-w-md mx-auto">
           <!-- 一排两个按钮：匹配度说明 + 与ta聊天 -->
           <view class="flex space-x-2">
-            <button class="flex-1 bg-blue-50 text-blue-600 py-3 rounded-xl text-base font-bold hover:bg-blue-100 transition-all duration-300 transform hover:scale-105 flex items-center justify-center shadow-lg hover:shadow-xl border border-blue-200" bindtap="showMatchDegree">
-              <text class="iconfont icon-chart-line mr-2"></text>
+            <view class="flex-1 py-3 text-purple-500 rounded-xl text-base font-bold flex items-center justify-center shadow-lg bg-purple-100" bindtap="showMatchDegree">
+              <text class="fa fa-book mr-2"></text>
               匹配度说明
-            </button>
-            <button class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl text-base font-bold hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center shadow-lg hover:shadow-xl" bindtap="startChat">
-              <text class="iconfont icon-comments mr-2"></text>
+            </view>
+            <view class="flex-1 py-3 rounded-xl text-base font-bold flex items-center justify-center shadow-lg btn-primary" bindtap="startChat">
+              <text class="fa fa-comments mr-2"></text>
               与ta聊天
-            </button>
+            </view>
           </view>
         </view>
       </view>
-
       <!-- 头像和基本信息 -->
       <view class="flex justify-center pt-4 pb-2 bg-white">
         <view class="w-16 h-16 rounded-full overflow-hidden">
-          <image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="李小雅" class="w-full h-full object-cover"></image>
+          <image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="李小雅" class="w-full h-full object-cover rounded-full"></image>
         </view>
       </view>
-      
       <view class="text-center mb-3 bg-white">
         <view class="flex items-center justify-center gap-2">
           <view class="text-lg font-semibold text-gray-900 user-name">李小雅</view>
           <view class="flex items-center gap-1">
             <text class="text-sm text-gray-500">·</text>
             <text class="text-sm text-gray-500">AI分身</text>
-            <view class="w-2 h-2 rounded-full bg-gray-400" id="aiStatusDot"></view>
+            <view class="w-8 h-8 rounded-full {{aiStatus === 'active' ? 'bg-green-600' : 'bg-gray-400'}}" id="aiStatusDot">
+              <!-- <text class="fa fa-check text-xs {{aiStatus === 'active' ? 'text-green-600' : 'text-gray-400'}}"></text> -->
+            </view>
           </view>
         </view>
       </view>
-      
       <!-- 个人资料 -->
       <view class="bg-white p-4 border-b border-gray-100">
         <view class="flex items-center justify-between mb-3">
-          <view class="text-sm font-semibold text-gray-700">
-            个人资料
-          </view>
+          <view class="text-sm font-semibold text-gray-700">个人资料</view>
         </view>
-        <text class="text-sm text-gray-700 leading-relaxed" style="line-height: 1.6;">
+        <view class="text-sm text-gray-700 leading-relaxed">
           资深产品设计师，专注于用户体验设计与创新产品开发。拥有5年设计经验，曾参与多个知名产品的设计工作。热爱设计创新，致力于用设计思维改善人们的生活体验。
-        </text>
+        </view>
       </view>
-      
       <!-- 联系信息 -->
       <view class="bg-white p-4 border-b border-gray-100">
         <view class="flex items-center justify-between mb-3">
-          <view class="text-sm font-semibold text-gray-700">
-            联系信息
-          </view>
+          <view class="text-sm font-semibold text-gray-700">联系信息</view>
         </view>
-        <view class="space-y-3 text-sm text-gray-600">
+        <view class="text-sm text-gray-600 gap-2">
           <view class="flex items-center">
-            <text class="iconfont icon-phone text-blue-600 mr-3"></text>
-            <text>138****8888</text>
+            <text class="fa fa-phone text-blue-600 mr-3 w-9 h-9 flex items-center justify-center"></text>
+            <text class="ml-3">138****8888</text>
           </view>
           <view class="flex items-center">
-            <text class="iconfont icon-weixin text-green-600 mr-3"></text>
-            <text>xiaoya_design</text>
+            <text class="fa fa-weixin text-green-600 mr-3 w-9 h-9 flex items-center justify-center"></text>
+            <text class="ml-3">xiaoya_design</text>
           </view>
           <view class="flex items-center">
-            <text class="iconfont icon-map-marker-alt text-blue-600 mr-3"></text>
-            <text>上海市浦东新区陆家嘴金融中心</text>
+            <text class="fa fa-map-marker text-blue-600 mr-3 w-9 h-9 flex items-center justify-center"></text>
+            <text class="ml-3">上海市浦东新区陆家嘴金融中心</text>
           </view>
         </view>
       </view>
-      
       <!-- 对外媒体 -->
       <view class="bg-white p-4 border-b border-gray-100 media-section">
         <view class="flex items-center justify-between mb-3">
-          <view class="text-sm font-semibold text-gray-700">
-            对外媒体
-          </view>
+          <view class="text-sm font-semibold text-gray-700">对外媒体</view>
         </view>
         <view id="socialMediaContent">
           <view id="socialMediaList" class="space-y-1 text-sm text-gray-600">
             <!-- 社交媒体列表 -->
+            <view class="space-y-1 text-sm text-gray-600" wx:if="{{socialMediaList.length > 0}}">
+              <view class="flex items-center justify-between p-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
+                <view class="flex items-center">
+                  <!-- <text class="fa fa-{{item.icon}} {{item.iconColor}} mr-3"></text> -->
+                  <text class="mr-5">{{item.name}}</text>
+                  <text class="text-gray-500">{{item.username}}</text>
+                </view>
+                <view class="flex items-center">
+                  <view class="mr-3 text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="copySocialMedia" data-url="{{item.url}}">
+                    <!-- <text class="fa fa-plus mr-1.5"></text> -->
+                    复制链接
+                  </view>
+                </view>
+              </view>
+            </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
-</view>
-
-<!-- 底部导航栏 -->
-<view class="bottom-nav">
-  <view class="nav-container">
-    <view class="nav-item" bindtap="navigateToChat">
-      <text class="iconfont icon-comments"></text>
-      <text>聊天</text>
-      <text class="nav-badge" wx:if="{{chatUnreadCount > 0}}">{{chatUnreadCount > 99 ? '99+' : chatUnreadCount}}</text>
-    </view>
-    <view class="nav-item" bindtap="navigateToAvatar">
-      <text class="iconfont icon-robot"></text>
-      <text>AI分身</text>
-    </view>
-    <view class="nav-item active" bindtap="navigateToProfile">
-      <text class="iconfont icon-address-card"></text>
-      <text>名片</text>
-    </view>
-  </view>
-</view>
-
-<!-- 匹配度说明弹窗 -->
-<view id="matchDegreeModal" class="fixed inset-0 bg-black bg-opacity-50 z-9999" wx:if="{{showMatchDegreeModal}}">
-  <view class="bg-white w-full h-full">
-    <!-- 弹窗头部 -->
-    <view class="flex items-center justify-between p-4 border-b border-gray-100">
-      <view class="text-lg font-semibold text-gray-900">匹配度说明</view>
-      <view class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors" bindtap="closeMatchDegree">
-        <text class="iconfont icon-times"></text>
+    <!-- 匹配度说明弹窗 -->
+    <view id="matchDegreeModal" class="matchDegreeModal absolute inset-0 bg-primary bg-opacity-0 z-9999" wx:if="{{showMatchDegreeModal}}">
+      <view class="bg-white w-full h-full">
+        <!-- 弹窗头部 -->
+        <view class="flex items-center justify-between p-4 border-b border-gray-100">
+          <view class="text-base font-semibold text-gray-900">匹配度说明</view>
+          <view class="w-8 h-8 flex items-center justify-center text-gray-400" bindtap="closeMatchDegree">
+            <text class="fa fa-times"></text>
+          </view>
+        </view>
+        <!-- 弹窗内容 -->
+        <view class="p-4">
+          <view class="space-y-4">
+            <view class="text-gray-800 text-sm leading-relaxed mb-4">
+              你们之间的匹配度为
+              <text class="text-purple-600 font-bold">95%</text>
+              ，这是一个
+              <text class="text-purple-600 font-bold">非常高的匹配度</text>
+              ！这表明你们在多个方面都有很好的契合度。
+            </view>
+            <view class="text-gray-800 text-sm leading-relaxed mb-4">
+              基于你们的个人资料分析，你们在
+              <text class="text-purple-600 font-bold">兴趣爱好、价值观和沟通风格</text>
+              等方面都有很多相似之处。这种高度的匹配意味着你们更容易找到共同话题，建立深入的交流。
+            </view>
+            <view class="text-gray-800 text-sm leading-relaxed mb-4">
+              不过，匹配度只是参考，真正的连接还需要通过实际的交流来建立。建议你们可以从
+              <text class="text-purple-600 font-bold">共同感兴趣的话题</text>
+              开始聊天，相信会有很好的交流体验。
+            </view>
+          </view>
+        </view>
       </view>
     </view>
-    
-    <!-- 弹窗内容 -->
-    <view class="p-4">
-      <view class="space-y-4">
-        <text class="text-gray-800 text-sm leading-relaxed">
-          你们之间的匹配度为 <text class="text-purple-600 font-bold">95%</text>，这是一个<text class="text-purple-600 font-bold">非常高的匹配度</text>！这表明你们在多个方面都有很好的契合度。
-        </text>
-        
-        <text class="text-gray-800 text-sm leading-relaxed">
-          基于你们的个人资料分析，你们在<text class="text-purple-600 font-bold">兴趣爱好、价值观和沟通风格</text>等方面都有很多相似之处。这种高度的匹配意味着你们更容易找到共同话题，建立深入的交流。
-        </text>
-        
-        <text class="text-gray-800 text-sm leading-relaxed">
-          不过，匹配度只是参考，真正的连接还需要通过实际的交流来建立。建议你们可以从<text class="text-purple-600 font-bold">共同感兴趣的话题</text>开始聊天，相信会有很好的交流体验。
-        </text>
+    <!-- 聊天弹窗 -->
+    <view id="chatModal" class="fixed inset-0 bg-black-50 z-9999 flex items-center justify-center" wx:if="{{showChatModal}}">
+      <view class="bg-primary w-11-12 max-w-md rounded-xl shadow-lg">
+        <!-- 弹窗头部 -->
+        <view class="flex items-center justify-between p-4 border-b border-gray-100">
+          <view class="text-lg font-semibold text-gray-900">打个招呼</view>
+          <view class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors" bindtap="closeChatModal">
+            <text class="fa fa-times"></text>
+          </view>
+        </view>
+        <!-- 弹窗内容 -->
+        <view class="p-4">
+          <view class="mb-4">
+            <textarea id="greetingMessage" class="p-3 w-full border border-gray-200 rounded-lg p-3 text-gray-700 resize-none" rows="4" placeholder="输入你想说的话..." value="你好，李小雅！很高兴认识你，我对你的设计工作很感兴趣，想和你聊聊。"></textarea>
+          </view>
+          <button class="w-full py-2 btn-primary text-white rounded-lg text-base font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center" bindtap="sendGreeting">
+            <text class="fa fa-paper-plane mr-2"></text>
+            发送
+          </button>
+        </view>
       </view>
+    </view>
+    <!-- 成功提示 -->
+    <view class="success-toast {{showToast ? 'show' : ''}}">
+      <text class="iconfont icon-check-circle mr-2"></text>
+      {{toastMessage}}
     </view>
   </view>
-</view>
-
-<!-- 聊天弹窗 -->
-<view id="chatModal" class="fixed inset-0 bg-black bg-opacity-50 z-9999 flex items-center justify-center" wx:if="{{showChatModal}}">
-  <view class="bg-white w-11-12 max-w-md rounded-xl shadow-lg">
-    <!-- 弹窗头部 -->
-    <view class="flex items-center justify-between p-4 border-b border-gray-100">
-      <view class="text-lg font-semibold text-gray-900">打个招呼</view>
-      <view class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors" bindtap="closeChatModal">
-        <text class="iconfont icon-times"></text>
-      </view>
-    </view>
-    
-    <!-- 弹窗内容 -->
-    <view class="p-4">
-      <view class="mb-4">
-        <textarea id="greetingMessage" class="w-full border border-gray-200 rounded-lg p-3 text-gray-700 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 resize-none" rows="4" placeholder="输入你想说的话..." value="你好，李小雅！很高兴认识你，我对你的设计工作很感兴趣，想和你聊聊。"></textarea>
-      </view>
-      <button class="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center" bindtap="sendGreeting">
-        <text class="iconfont icon-paper-plane mr-2"></text>
-        发送
-      </button>
-    </view>
-  </view>
-</view>
-
-<!-- 成功提示 -->
-<view class="success-toast {{showToast ? 'show' : ''}}">
-  <text class="iconfont icon-check-circle mr-2"></text>
-  {{toastMessage}}
 </view>

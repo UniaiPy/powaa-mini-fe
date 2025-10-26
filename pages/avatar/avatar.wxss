@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
 }
-
+.back{display: none !important;}
 /* 顶部导航样式 */
 .fixed-nav {
   position: sticky;
@@ -14,12 +14,12 @@
   background: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  padding: 12px 24px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
+.atom-btn image,.chart-btn image{width: 40rpx !important;height: 40rpx !important;filter: brightness(0);}
 .fixed-nav .text-xl {
   font-size: 20px;
 }
@@ -42,7 +42,7 @@
 .chat-container {
   min-height: 400px;
   overflow-y: auto;
-  padding: 0;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -320,6 +320,11 @@
   z-index: 2;
   position: relative;
 }
+.ai-avatar-icon image{
+  width: 30px;
+  height: 30px;
+  filter: brightness(100);
+}
 
 .ai-avatar-ripple {
   position: absolute;
@@ -330,7 +335,7 @@
   background: rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  /* animation: ripple 2s infinite; */
+  animation: ripple 2.5s infinite;
 }
 
 @keyframes ripple {
@@ -340,8 +345,8 @@
     opacity: 1;
   }
   100% {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     opacity: 0;
   }
 }
@@ -388,9 +393,9 @@
 }
 
 .ai-toggle-input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+  /* opacity: 0; */
+  /* width: 0;
+  height: 0; */
 }
 
 .ai-toggle-slider {
@@ -428,7 +433,7 @@
 /* AI模型选择菜单样式 */
 .model-menu {
   position: fixed;
-  top: 60px;
+  top: 90px;
   right: 20px;
   background: white;
   border-radius: 16px;

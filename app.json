@@ -8,7 +8,9 @@
     "pages/share/share",
     "pages/preview/preview",
     "pages/about/about",
-    "pages/ai-report/ai-report"
+    "pages/ai-report/ai-report",
+    "pages/im-test/im-test",
+    "pages/search/search"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -48,5 +50,6 @@
       "desc": "用于提供位置信息"
     }
   },
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "renderer": "webview"
 }

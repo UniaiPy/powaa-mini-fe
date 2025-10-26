@@ -1,12 +1,7 @@
 {
-  "navigationBarBackgroundColor": "#FFFFFF",
-  "navigationBarTextStyle": "black",
   "navigationBarTitleText": "我的名片",
-  "backgroundColor": "#F9FAFB",
-  "disableScroll": false,
+  "navigationStyle": "custom",
   "usingComponents": {
-    "bottom-nav": "/components/bottom-nav/bottom-nav"
-  },
-  "enablePullDownRefresh": false,
-  "pageOrientation": "portrait"
+    "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar"
+  }
 }

@@ -1,7 +1,6 @@
 {
-  "navigationBarTitleText": "关于我们",
+  "navigationBarTitleText": "小瓦AI分身",
   "navigationBarBackgroundColor": "#ffffff",
   "navigationBarTextStyle": "black",
-  "navigationStyle": "custom",
   "backgroundColor": "#f9fafb"
 }

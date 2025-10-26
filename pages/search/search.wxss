@@ -1,0 +1,586 @@
+/* pages/search/search.wxss *//* pages/chat/chat.wxss */
+
+/* 全局样式 */
+page {
+  background-color: #f9fafb;
+  height: 100%;
+}
+
+/* Flex布局工具类 */
+.flex {
+  display: flex;
+}
+
+.flex-container {
+  display: flex;
+  flex-direction: row; /* 横向排列（默认） */
+  justify-content: space-around; /* 主轴（横向）居中 */
+  align-items: center; /* 交叉轴（纵向）居中 */
+  width: 100%;
+}
+
+.text-l {
+  text-align: left;
+}
+
+.text-c {
+  text-align: center;
+}
+
+.text-r {
+  text-align: right;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.left-0 {
+  left: 0;
+}
+
+.right-0 {
+  right: 0;
+}
+
+.left-12 {
+  left: 24rpx;
+}
+
+.right-12 {
+  right: 24rpx;
+}
+
+.p-2 {
+  padding: 8rpx;
+}
+
+.mb-2 {
+  margin-bottom: 8rpx;
+}
+
+.mb-3 {
+  margin-bottom: 12rpx;
+}
+
+.ml-4 {
+  margin-left: 16rpx;
+}
+
+.mr-4 {
+  margin-right: 16rpx;
+}
+
+.mr-6 {
+  margin-right: 24rpx;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.w-16 {
+  width: 64rpx;
+}
+
+.h-16 {
+  height: 64rpx;
+}
+
+.w-20 {
+  width: 80rpx;
+}
+
+.h-20 {
+  height: 80rpx;
+}
+
+.w-24 {
+  width: 96rpx;
+}
+
+.h-24 {
+  height: 96rpx;
+}
+
+.h-40 {
+  height: 160rpx;
+}
+
+.text-xl {
+  font-size: 40rpx;
+}
+
+.text-base {
+  font-size: 32rpx;
+}
+
+.text-sm {
+  font-size: 28rpx;
+}
+
+.text-xs {
+  font-size: 24rpx;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.text-white {
+  color: white;
+}
+
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+.text-black {
+  color: #000000;
+}
+
+.rounded-lg {
+  border-radius: 16rpx;
+}
+
+.rounded-full {
+  border-radius: 9999rpx;
+}
+
+.shadow-sm {
+  box-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.1);
+}
+
+.shadow-lg {
+  box-shadow: 0 4rpx 6rpx -1rpx rgba(0, 0, 0, 0.1), 0 2rpx 4rpx -1rpx rgba(0, 0, 0, 0.06);
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+/* 搜索结果为空时的样式 */
+.no-results {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60rpx 20rpx;
+  text-align: center;
+  min-height: 200rpx;
+  background-color: #ffffff;
+}
+
+.no-results-text {
+  font-size: 28rpx;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+.bg-white {
+  background-color: white;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.border-l {
+  border-left: 2rpx solid #e5e7eb;
+}
+
+.border-gray-200 {
+  border-color: #e5e7eb;
+}
+
+.object-cover {
+  object-fit: cover;
+}
+
+.hidden {
+  display: none;
+}
+
+/* 页面容器 */
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f9fafb;
+}
+
+/* 自定义滚动条样式 (在小程序中效果有限) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(203, 213, 225, 0.5);
+  border-radius: 4px;
+}
+
+/* 顶部导航 */
+.fixed-nav {
+  /* position: sticky;
+  top: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  padding: 12rpx 24rpx; */
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* 主内容区域 */
+.content-with-fixed-nav {
+  flex: 1;
+  padding: 24rpx 0;
+}
+
+.py-2 {
+  padding-left: 16rpx;
+  padding-right: 16rpx;
+}
+
+/* 聊天卡片样式 */
+.chat-card {
+  background: white;
+  margin-bottom: 0;
+  padding: 24rpx 16rpx;
+  border-radius: 0;
+  border-bottom: 1rpx solid #f3f4f6;
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+
+.chat-card:active {
+  background-color: #f3f4f6;
+}
+
+/* 未读消息徽章 */
+.unread-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 22rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 20rpx;
+  font-weight: bold;
+  min-width: 32rpx;
+  height: 32rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  float: right;
+  margin-top: 12rpx;
+}
+
+/* 同意按钮 */
+.accept-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 22rpx;
+  padding: 0 15rpx !important;
+  border-radius: 20rpx;
+  font-weight: 500;
+  min-width: 96rpx;
+  height: 48rpx !important;
+  line-height: 48rpx !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: none;
+  margin-top: 8rpx;
+}
+
+/* 微信小程序按钮样式重置 */
+.accept-btn button {
+  background: transparent;
+  color: white;
+  font-size: 24rpx;
+  padding: 0;
+  min-height: 48rpx;
+  line-height: 48rpx;
+}
+
+.accept-btn button::after {
+  border: none;
+}
+
+/* 最后消息 */
+.last-message {
+  color: #6b7280;
+  font-size: 26rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400rpx;
+}
+
+.last-message.multi-line {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+  max-height: 2.8em;
+}
+
+/* 分组标题行 */
+.chat-section-title {
+  font-size: 28rpx;
+  color: #6b7280;
+  padding: 24rpx 32rpx;
+  background-color: #f9fafb;
+  font-weight: 500;
+  min-height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.chat-section-title.active {
+  background-color: #e5e7eb;
+  color: #374151;
+  font-weight: 600;
+}
+
+.chat-section-title:active {
+  background-color: #f3f4f6;
+}
+
+/* 搜索框覆盖层 */
+.search-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: rgba(0, 0, 0, 0.5); */
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.search-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  animation: slideDown 0.3s ease-out;
+  max-height: 80vh;
+}
+
+.search-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 24rpx 240rpx 24rpx 24rpx !important;
+  height: 80rpx;
+  line-height: 80rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 50rpx;
+  font-size: 30rpx;
+  outline: none;
+  background: #f8fafc;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  border-color: #8b5cf6;
+  background: white;
+  box-shadow: 0 0 0 6rpx rgba(139, 92, 246, 0.1);
+}
+
+.search-actions {
+  position: absolute;
+  right: 8rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.search-btn {
+  background: #8b5cf6 !important;
+  color: white!important;
+  border: none;
+  padding: 0 24rpx !important;
+  border:none!important;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.search-btn button {
+  background: transparent;
+  color: white;
+  font-size: 28rpx;
+  padding: 0;
+  min-height: 48rpx;
+  line-height: 48rpx;
+}
+
+.search-btn button::after {
+  border: none;
+}
+
+.cancel-btn {
+  background: transparent;
+  color: #6b7280 !important;
+  border: 2rpx solid #e5e7eb !important;
+  padding: 0 24rpx!important;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+}
+
+.cancel-btn button {
+  background: transparent;
+  color: #6b7280;
+  font-size: 28rpx;
+  padding: 0;
+  min-height: 48rpx;
+  line-height: 48rpx;
+  border: none;
+}
+
+.cancel-btn button::after {
+  border: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0;
+    transform: translateY(-40rpx);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-results {
+  max-height: 600rpx;
+  overflow-y: auto;
+  margin-top: 24rpx;
+  border-top: 2rpx solid #e5e7eb;
+  padding-top: 24rpx;
+}
+
+.search-result-item {
+  padding: 24rpx;
+  border-bottom: 2rpx solid #f3f4f6;
+  display: flex;
+  align-items: center;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:active {
+  background-color: #f9fafb;
+}
+
+.search-result-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8rpx;
+  font-size: 32rpx;
+}
+
+.search-result-message {
+  color: #6b7280;
+  font-size: 28rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 图标样式 */
+.icon-search::before {
+  content: "🔍";
+  font-size: 32rpx;
+}
+
+/* 渐变背景 */
+.bg-gradient-to-r {
+  background-image: linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to));
+}
+
+.from-purple-500 {
+  --tw-gradient-from: #8b5cf6;
+}
+
+.to-purple-600 {
+  --tw-gradient-to: #7c3aed;
+}
+
+/* 响应式调整 */
+@media (min-width: 768rpx) {
+  .last-message {
+    max-width: 500rpx;
+  }
+}

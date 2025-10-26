@@ -1,7 +1,7 @@
 <!-- pages/share/share.wxml -->
 <view class="page-container">
   <!-- 顶部导航 -->
-  <view class="fixed-nav flex items-center justify-between py-3 px-6 text-black">
+  <!-- <view class="fixed-nav flex items-center justify-between py-3 px-6 text-black">
     <view class="flex items-center gap-3">
       <view class="cursor-pointer" bindtap="navigateBack">
         <text class="iconfont icon-chevron-left text-black text-lg"></text>
@@ -9,83 +9,71 @@
     </view>
     <view class="text-xl font-bold text-gray-900">分享</view>
     <view class="w-6"></view>
-  </view>
-  
+  </view> -->
   <!-- 主要内容区域 -->
   <view class="content-with-fixed-nav flex-1 px-4 py-3 space-y-0">
-    <view class="bg-white rounded-lg overflow-hidden shadow-sm">
-      
+    <view class="bg-white rounded-lg overflow-hidden">
       <!-- 分享方式 -->
       <view class="section-card">
         <view class="section-header">
-          <view class="section-title">
-            分享方式
-          </view>
+          <view class="section-title">分享方式</view>
         </view>
         <view class="section-content" id="shareMethodContent">
-          <view class="grid grid-cols-3 gap-2 mb-3 mt-3">
+          <view class="grid grid-cols-3 gap-2 mb-6 mt-3">
             <!-- 微信好友 -->
             <view class="share-platform rounded-xl p-3 text-center" data-platform="wechat" bindtap="onSharePlatformTap">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
-                <text class="iconfont icon-weixin text-2xl text-green-600"></text>
+                <text class="fa fa-weixin text-xl text-green-600"></text>
               </view>
               <text class="text-xs font-medium text-gray-700">微信好友</text>
             </view>
-            
             <!-- 微信群 -->
             <view class="share-platform rounded-xl p-3 text-center" data-platform="wechat-group" bindtap="onSharePlatformTap">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
-                <text class="iconfont icon-users text-2xl text-green-600"></text>
+                <text class="fa fa-users text-xl text-green-600"></text>
               </view>
               <text class="text-xs font-medium text-gray-700">微信群</text>
             </view>
-            
             <!-- 朋友圈 -->
             <view class="share-platform rounded-xl p-3 text-center" data-platform="moments" bindtap="onSharePlatformTap">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
-                <text class="iconfont icon-globe text-2xl text-green-600"></text>
+                <text class="fa fa-globe text-xl text-green-600"></text>
               </view>
-              <text class="text-xs font-medium text-gray-700">朋友圈</text>
+              <text class="text-xs font-medium">朋友圈</text>
             </view>
           </view>
-          
           <view class="grid grid-cols-3 gap-2">
             <!-- 微博 -->
             <view class="share-platform rounded-xl p-3 text-center" data-platform="weibo" bindtap="onSharePlatformTap">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
-                <text class="iconfont icon-weibo text-2xl text-red-500"></text>
+                <text class="fa fa-weibo text-xl text-red-500"></text>
               </view>
               <text class="text-xs font-medium text-gray-700">微博</text>
             </view>
-            
             <!-- QQ -->
             <view class="share-platform rounded-xl p-3 text-center" data-platform="qq" bindtap="onSharePlatformTap">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
-                <text class="iconfont icon-qq text-2xl text-blue-500"></text>
+                <text class="fa fa-qq text-xl text-blue-500"></text>
               </view>
               <text class="text-xs font-medium text-gray-700">QQ</text>
             </view>
-            
             <!-- 其他 -->
             <view class="share-platform rounded-xl p-3 text-center" data-platform="other" bindtap="onSharePlatformTap">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
-                <text class="iconfont icon-ellipsis-h text-2xl text-gray-500"></text>
+                <text class="fa fa-ellipsis-h text-xl text-gray-500"></text>
               </view>
               <text class="text-xs font-medium text-gray-700">其他</text>
             </view>
           </view>
         </view>
       </view>
-      
       <!-- 底部空白占位符 -->
       <view class="h-4"></view>
     </view>
   </view>
 </view>
-  
 <!-- 底部导航栏组件 -->
 <bottom-nav unread-count="{{unreadCount}}" />
-
 <!-- 成功提示 -->
 <view class="success-toast {{showToast ? 'show' : ''}}">
   <text class="iconfont icon-check-circle mr-2"></text>

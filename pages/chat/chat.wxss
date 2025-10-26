@@ -14,7 +14,7 @@ page {
 .flex-container {
   display: flex;
   flex-direction: row; /* 横向排列（默认） */
-  justify-content: center; /* 主轴（横向）居中 */
+  justify-content: space-around; /* 主轴（横向）居中 */
   align-items: center; /* 交叉轴（纵向）居中 */
   width: 100%;
 }
@@ -199,6 +199,23 @@ page {
   overflow: hidden;
 }
 
+/* 搜索结果为空时的样式 */
+.no-results {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60rpx 20rpx;
+  text-align: center;
+  min-height: 200rpx;
+  background-color: #ffffff;
+}
+
+.no-results-text {
+  font-size: 28rpx;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
 .whitespace-nowrap {
   white-space: nowrap;
 }
@@ -251,20 +268,21 @@ page {
 
 /* 顶部导航 */
 .fixed-nav {
-  position: sticky;
+  /* position: sticky;
   top: 0;
-  background-color: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   z-index: 10;
-  padding: 12rpx 24rpx;
+  padding: 12rpx 24rpx; */
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 /* 主内容区域 */
 .content-with-fixed-nav {
   flex: 1;
   padding: 24rpx 0;
+  position: relative;
 }
 
 .py-2 {
@@ -301,18 +319,21 @@ page {
   align-items: center;
   justify-content: center;
   text-align: center;
+  float: right;
+  margin-top: 12rpx;
 }
 
 /* 同意按钮 */
 .accept-btn {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  font-size: 24rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 16rpx;
+  font-size: 22rpx;
+  padding: 0 15rpx !important;
+  border-radius: 20rpx;
   font-weight: 500;
   min-width: 96rpx;
-  height: 48rpx;
+  height: 48rpx !important;
+  line-height: 48rpx !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -378,10 +399,10 @@ page {
 .chat-section-title:active {
   background-color: #f3f4f6;
 }
-
+.content-container{position: relative;flex: 1;}
 /* 搜索框覆盖层 */
 .search-overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -392,10 +413,10 @@ page {
 }
 
 .search-container {
-  position: fixed;
+  /* position: absolute;
   top: 0;
   left: 0;
-  right: 0;
+  right: 0; */
   background: white;
   padding: 32rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
@@ -411,10 +432,12 @@ page {
 
 .search-input {
   width: 100%;
-  padding: 24rpx 240rpx 24rpx 48rpx;
+  padding: 24rpx 240rpx 24rpx 24rpx !important;
+  height: 80rpx;
+  line-height: 80rpx;
   border: 2rpx solid #e5e7eb;
   border-radius: 50rpx;
-  font-size: 32rpx;
+  font-size: 30rpx;
   outline: none;
   background: #f8fafc;
   box-sizing: border-box;
@@ -437,10 +460,11 @@ page {
 }
 
 .search-btn {
-  background: #8b5cf6;
-  color: white;
+  background: #8b5cf6 !important;
+  color: white!important;
   border: none;
-  padding: 12rpx 24rpx;
+  padding: 0 24rpx !important;
+  border:none!important;
   border-radius: 32rpx;
   font-size: 28rpx;
   font-weight: 500;
@@ -461,9 +485,9 @@ page {
 
 .cancel-btn {
   background: transparent;
-  color: #6b7280;
-  border: 2rpx solid #e5e7eb;
-  padding: 12rpx 24rpx;
+  color: #6b7280 !important;
+  border: 2rpx solid #e5e7eb !important;
+  padding: 0 24rpx!important;
   border-radius: 32rpx;
   font-size: 28rpx;
 }

@@ -220,7 +220,7 @@ Page({
 
     this.setData({
       searchResults: results,
-      showSearchResults: results.length > 0
+      showSearchResults: true
     });
   },
 

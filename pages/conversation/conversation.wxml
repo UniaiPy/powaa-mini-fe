@@ -1,25 +1,36 @@
 <!-- 会话页面 -->
 <view class="container">
-  <!-- 用户信息栏 -->
-  <view class="user-info-bar">
+  <!-- 顶部导航栏 -->
+  <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
+    <view class="user-info-bar">
+      <view class="user-info flex-1">
+        <view class="flex items-center">
+          <text id="userName" class="user-name text-base font-bold text-gray-900">张小明</text>
+          <view class="user-status ml-2 flex items-center"></view>
+        </view>
+      </view>
+      <view id="moreOptionsBtn" class="more-options-btn" bindtap="toggleMoreOptions">
+        <text class="fa fa-ellipsis-v"></text>
+      </view>
+    </view>
+  </custom-navigation-bar>
+  <!-- <view class="user-info-bar">
     <view class="back-btn" bindtap="navigateToChat">
       <text class="fa fa-chevron-left text-black text-lg"></text>
     </view>
     <view class="user-info flex-1">
       <view class="flex items-center">
         <text id="userName" class="user-name text-xl font-bold text-gray-900">张小明</text>
-        <view class="user-status ml-2 flex items-center">
-        </view>
+        <view class="user-status ml-2 flex items-center"></view>
       </view>
     </view>
-    <view id="moreOptionsBtn" class="more-options-btn" bindtap="toggleMoreOptionsMenu">
-      <text class="fa fa-ellipsis-vertical text-gray-600"></text>
+    <view id="moreOptionsBtn" class="more-options-btn" bindtap="toggleMoreOptions">
+      <text class="fa fa-ellipsis-h"></text>
     </view>
-  </view>
-  
+  </view> -->
   <!-- 更多选项菜单 -->
-  <view id="moreOptionsMenu" class="more-options-menu {{showMoreOptionsMenu ? 'show' : ''}}" wx:if="{{showMoreOptionsMenu}}">
-    <view class="option-item" bindtap="navigateToProfile">
+  <view id="moreOptionsMenu" class="more-options-menu {{showMoreOptions ? 'show' : ''}}" wx:if="{{showMoreOptions}}">
+    <view class="option-item" bindtap="navigateToUserProfile">
       <text class="fa fa-address-card text-gray-500 w-5"></text>
       <text class="ml-2 text-gray-700 text-sm">查看名片</text>
     </view>
@@ -36,63 +47,46 @@
       <text class="ml-2 text-gray-700 text-sm">举报用户</text>
     </view>
   </view>
-  
   <!-- 聊天容器 -->
-  <scroll-view class="chat-container" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true">
+  <scroll-view class="chat-container" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true" bindtap="hideAllMenus">
     <!-- 对方消息示例 -->
     <view class="message-wrapper">
       <view class="avatar-circle other-avatar" bindtap="navigateToPreview">
         <image src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
       </view>
-      <view class="message other-message">
-        你好，很高兴认识你！我看了你的个人资料，我们似乎有很多共同的兴趣。
-      </view>
+      <view class="message other-message">你好，很高兴认识你！我看了你的个人资料，我们似乎有很多共同的兴趣。</view>
     </view>
-    
     <!-- 用户消息示例 -->
     <view class="message-wrapper justify-end">
-      <view class="message user-message">
-        你好！是的，我也注意到了。你也喜欢旅行和摄影吗？
-      </view>
+      <view class="message user-message">你好！是的，我也注意到了。你也喜欢旅行和摄影吗？</view>
       <view class="avatar-circle user-avatar">
         <image src="/images/ai.png" mode="aspectFill"></image>
       </view>
     </view>
-    
     <!-- 对方消息示例 -->
     <view class="message-wrapper">
       <view class="avatar-circle other-avatar" bindtap="navigateToPreview">
         <image src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
       </view>
-      <view class="message other-message">
-        没错！我最近刚从云南回来，那里的风景真的太美了。你去过云南吗？
-      </view>
+      <view class="message other-message">没错！我最近刚从云南回来，那里的风景真的太美了。你去过云南吗？</view>
     </view>
-    
     <!-- 用户消息示例 -->
     <view class="message-wrapper justify-end">
-      <view class="message user-message">
-        我去年去过大理和丽江，确实很美！你有什么推荐的地方吗？
-      </view>
+      <view class="message user-message">我去年去过大理和丽江，确实很美！你有什么推荐的地方吗？</view>
       <view class="avatar-circle user-avatar" bindtap="navigateToUserProfile">
         <image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
       </view>
     </view>
-    
     <!-- 对方消息示例 -->
     <view class="message-wrapper">
       <view class="avatar-circle other-avatar" bindtap="navigateToPreview">
         <image src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
       </view>
-      <view class="message other-message">
-        我强烈推荐香格里拉和梅里雪山，尤其是在秋天，风景绝美！我有一些照片，可以分享给你看看。
-      </view>
+      <view class="message other-message">我强烈推荐香格里拉和梅里雪山，尤其是在秋天，风景绝美！我有一些照片，可以分享给你看看。</view>
     </view>
-    
     <!-- 底部占位 -->
     <view class="bottom-space"></view>
   </scroll-view>
-  
   <!-- 输入区域 -->
   <view class="input-area">
     <view class="input-container">
@@ -100,59 +94,58 @@
         <text class="fa fa-plus"></text>
       </view>
       <input type="text" class="input-field" id="messageInput" placeholder="输入消息..." model:value="{{messageContent}}" bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur"></input>
-      <view class="send-btn" id="sendBtn" bindtap="sendMessage" wx:if="{{showSendBtn}}">
+      <view class="send-btn" id="sendBtn" bindtap="sendMessage">
         <text class="fa fa-paper-plane"></text>
       </view>
-      <view class="hold-to-talk-btn" id="holdToTalkBtn" wx:else bindtouchstart="onHoldToTalkStart" bindtouchend="onHoldToTalkEnd" bindtouchcancel="onHoldToTalkCancel">
+      <!-- <view class="hold-to-talk-btn" id="holdToTalkBtn" wx:else bindtouchstart="onHoldToTalkStart" bindtouchend="onHoldToTalkEnd" bindtouchcancel="onHoldToTalkCancel">
         <text class="fa fa-microphone"></text>
         <text>按住说话</text>
-      </view>
+      </view> -->
     </view>
   </view>
-  
   <!-- 功能菜单 -->
   <view class="function-menu {{showFunctionMenu ? 'show' : ''}}" wx:if="{{showFunctionMenu}}">
     <view class="function-grid">
-      <view class="function-item" bindtap="selectImage">
+      <view class="function-item" bindtap="onFunctionItemClick" data-type="image">
         <view class="function-icon image">
-          <text class="fa fa-image"></text>
+          <i class="fa fa-image"></i>
         </view>
-        <text class="function-label">图片</text>
+        <view class="function-label">图片</view>
       </view>
-      <view class="function-item" bindtap="selectFile">
+      <view class="function-item" bindtap="onFunctionItemClick" data-type="file">
         <view class="function-icon file">
-          <text class="fa fa-file"></text>
+          <i class="fa fa-file"></i>
         </view>
-        <text class="function-label">文件</text>
+        <view class="function-label">文件</view>
       </view>
-      <view class="function-item" bindtap="selectLocation">
+      <view class="function-item" bindtap="onFunctionItemClick" data-type="location">
         <view class="function-icon location">
-          <text class="fa fa-map-marker-alt"></text>
+          <i class="fa fa-map-marker"></i>
         </view>
-        <text class="function-label">位置</text>
+        <view class="function-label">位置</view>
       </view>
-      <view class="function-item" bindtap="selectEmoji">
+      <view class="function-item" bindtap="onFunctionItemClick" data-type="emoji">
         <view class="function-icon emoji">
-          <text class="fa fa-smile"></text>
+          <i class="fa fa-smile-o"></i>
         </view>
-        <text class="function-label">表情</text>
+        <view class="function-label">表情</view>
       </view>
     </view>
   </view>
-  
   <!-- AI分身悬浮按钮 -->
-  <view class="ai-avatar-button {{aiStatus === 'offline' ? 'offline' : ''}}" bindtap="toggleAIMenu">
+  <view class="ai-avatar-button {{aiStatus === 'offline' ? 'offline' : ''}}" bindtap="toggleAiMenu">
     <view class="ai-avatar-ripple"></view>
-    <text class="ai-avatar-icon">🤖</text>
+    <view class="ai-avatar-icon">
+      <image src="/assets/icons/robot.png"></image>
+    </view>
   </view>
-  
   <!-- AI分身开关菜单 -->
-  <view class="ai-menu {{showAIMenu ? 'show' : ''}}" wx:if="{{showAIMenu}}">
+  <view class="ai-menu {{showAiMenu ? 'show' : ''}}" wx:if="{{showAiMenu}}">
     <view class="ai-toggle-container">
-      <text class="ai-label">小瓦AI分身</text>
+      <text class="ai-label">{{aiOnline ? 'AI分身已上线' : 'AI分身已下线'}}</text>
       <view class="ai-toggle-switch">
-        <input type="checkbox" class="ai-toggle-input" checked="{{aiEnabled}}" bindchange="toggleAIEnabled" />
-        <view class="ai-toggle-slider"></view>
+        <switch class="ai-toggle-input" checked="{{aiOnline}}" bindchange="toggleAiOnline" />
+        <!-- <view class="ai-toggle-slider"></view> -->
       </view>
     </view>
   </view>

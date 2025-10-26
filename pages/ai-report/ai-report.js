@@ -30,30 +30,38 @@ Page({
    * 初始化雷达图
    */
   initializeRadarChart: function () {
-    const ctx = wx.createCanvasContext('personalityRadar', this);
-    
-    // 雷达图数据
-    const labels = ['开放性', '尽责性', '外向性', '宜人性', '情绪稳定', '连接动因', '表达风格', '互动偏好', '成长导向'];
-    const data = [89, 92, 85, 88, 91, 83, 87, 79, 86];
-    const colors = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#06B6D4', '#10B981'];
-    
-    // 获取Canvas尺寸
-    const query = wx.createSelectorQuery().in(this);
+    const query = wx.createSelectorQuery();
     query.select('#personalityRadar')
-      .boundingClientRect(res => {
-        if (res) {
-          const width = res.width;
-          const height = res.height;
-          const centerX = width / 2;
-          const centerY = height / 2;
-          const radius = Math.min(width, height) * 0.4;
-          
-          // 绘制雷达图
-          this.drawRadarChart(ctx, centerX, centerY, radius, labels, data, colors);
-          ctx.draw();
-        }
+      .fields({ node: true, size: true })
+      .exec((res) => {
+        const canvas = res[0].node;
+        const ctx = canvas.getContext('2d');
+        
+        // 设置Canvas尺寸和分辨率
+        const dpr = wx.getSystemInfoSync().pixelRatio || 1;
+        const { width, height } = res[0];
+        
+        // 设置Canvas的实际宽高（解决压缩问题）
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        
+        // 设置绘制比例
+        ctx.scale(dpr, dpr);
+        
+        // 雷达图数据
+        const labels = ['开放性', '尽责性', '外向性', '宜人性', '情绪稳定', '连接动因', '表达风格', '互动偏好', '成长导向'];
+        const data = [89, 92, 85, 88, 91, 83, 87, 79, 86];
+        const colors = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#06B6D4', '#10B981'];
+        
+        const centerX = width / 2;
+        const centerY = height / 2;
+        // 调整半径计算方式，确保雷达图完全显示且不被压缩
+        const radius = Math.min(width, height) * 0.35;
+        
+        // 绘制雷达图
+        this.drawRadarChart(ctx, centerX, centerY, radius, labels, data, colors);
       })
-      .exec();
+    
   },
 
   /**
@@ -62,11 +70,11 @@ Page({
   drawRadarChart: function (ctx, centerX, centerY, radius, labels, data, colors) {
     const angleStep = (2 * Math.PI) / labels.length;
     const levels = 4; // 网格层数
-    
+
     // 绘制背景网格
-    ctx.setStrokeStyle('rgba(0,0,0,0.1)');
-    ctx.setFillStyle('white');
-    ctx.setLineWidth(1);
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.fillStyle = 'white';
+    ctx.lineWidth = 1;
     
     // 绘制同心圆网格
     for (let level = 1; level <= levels; level++) {
@@ -103,9 +111,9 @@ Page({
     
     // 绘制数据区域
     ctx.beginPath();
-    ctx.setFillStyle('rgba(139, 92, 246, 0.2)');
-    ctx.setStrokeStyle('rgb(139, 92, 246)');
-    ctx.setLineWidth(3);
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.2)';
+    ctx.strokeStyle = 'rgb(139, 92, 246)';
+    ctx.lineWidth = 3;
     
     for (let i = 0; i < data.length; i++) {
       const value = data[i] / 100; // 归一化到0-1范围
@@ -132,23 +140,23 @@ Page({
       const y = centerY + Math.sin(angle) * radius * value;
       
       // 绘制点的外圈
-      ctx.setFillStyle(colors[i]);
+      ctx.fillStyle = colors[i];
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, 2 * Math.PI);
       ctx.fill();
       
       // 绘制点的内圈
-      ctx.setFillStyle('white');
+      ctx.fillStyle = 'white';
       ctx.beginPath();
       ctx.arc(x, y, 2, 0, 2 * Math.PI);
       ctx.fill();
     }
     
     // 绘制标签
-    ctx.setFontSize(12);
-    ctx.setTextAlign('center');
-    ctx.setTextBaseline('middle');
-    ctx.setFillStyle('#374151');
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#374151';
     
     for (let i = 0; i < labels.length; i++) {
       const angle = -Math.PI / 2 + i * angleStep;

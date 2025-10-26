@@ -28,7 +28,7 @@ Page({
     showFunctionMenu: false,
     showAIMenu: false,
     showModelMenu: false,
-    isAIToggleOn: true,
+    aiOnline: true,
     selectedModel: '高级模型',
     aiStatus: 'online',
     inputType: 'text' // 'text' 或 'voice'
@@ -121,7 +121,7 @@ Page({
   /**
    * 切换功能菜单显示
    */
-  toggleFunctionMenu() {
+  showPlusMenu() {
     this.setData({
       showFunctionMenu: !this.data.showFunctionMenu,
       showAIMenu: false,
@@ -154,10 +154,11 @@ Page({
   /**
    * 切换AI状态
    */
-  toggleAIStatus() {
-    const isOn = !this.data.isAIToggleOn;
+  toggleAiOnline() {
+    const isOn = !this.data.aiOnline;
+    console.log('切换AI状态:', isOn);
     this.setData({
-      isAIToggleOn: isOn,
+      aiOnline: isOn,
       aiStatus: isOn ? 'online' : 'offline'
     });
 
@@ -233,21 +234,21 @@ Page({
    */
   onFunctionItemClick(e) {
     const functionType = e.currentTarget.dataset.type;
-    console.log('点击了功能:', functionType);
+    // console.log('点击了功能:', functionType);
     
     // 根据不同功能类型执行不同操作
     switch (functionType) {
       case 'image':
-        console.log('选择图片');
+        this.selectImage()
         break;
       case 'file':
-        console.log('选择文件');
+        this.selectFile()
         break;
       case 'location':
-        console.log('发送位置');
+        this.selectLocation()
         break;
       case 'emoji':
-        console.log('选择表情');
+        this.selectEmoji()
         break;
     }
 
@@ -255,6 +256,55 @@ Page({
     this.setData({
       showFunctionMenu: false
     });
+  },
+  /**
+   * 选择图片
+   */
+  selectImage() {
+    wx.chooseImage({
+      count: 9,
+      success: (res) => {
+        console.log('选择的图片:', res.tempFilePaths)
+        // 这里可以处理图片发送逻辑
+        this.hideAllMenus()
+      }
+    })
+  },
+
+  /**
+   * 选择文件
+   */
+  selectFile() {
+    wx.chooseMessageFile({
+      count: 10,
+      type: 'file',
+      success: (res) => {
+        console.log('选择的文件:', res.tempFiles)
+        // 这里可以处理文件发送逻辑
+        this.hideAllMenus()
+      }
+    })
+  },
+
+  /**
+   * 选择位置
+   */
+  selectLocation() {
+    wx.chooseLocation({
+      success: (res) => {
+        console.log('选择的位置:', res)
+        // 这里可以处理位置发送逻辑
+        this.hideAllMenus()
+      }
+    })
+  },
+
+  /**
+   * 显示表情选择器
+   */
+  selectEmoji() {
+    console.log('显示表情选择器')
+    this.hideAllMenus()
   },
 
   /**
@@ -282,9 +332,12 @@ Page({
   /**
    * 点击AI报告图标
    */
-  onAIReportClick() {
-    console.log('查看AI报告');
+
+  openAIReport() {
     // 这里可以添加跳转到AI报告页面的逻辑
+    wx.navigateTo({
+      url: '/pages/ai-report/ai-report',
+    });
   },
 
   /**

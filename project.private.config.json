@@ -1,15 +1,29 @@
 {
-  "libVersion": "2.30.0",
+  "libVersion": "3.10.3",
   "projectname": "powaa-mini-fe",
   "condition": {
     "miniprogram": {
       "list": [
         {
-          "name": "pages/login/login",
-          "pathName": "pages/login/login",
+          "name": "pages/preview/preview",
+          "pathName": "pages/preview/preview",
           "query": "",
           "scene": null,
           "launchMode": "default"
+        },
+        {
+          "name": "pages/share/share",
+          "pathName": "pages/share/share",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/im-test/im-test",
+          "pathName": "pages/im-test/im-test",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
         }
       ]
     }

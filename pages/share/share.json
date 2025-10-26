@@ -2,7 +2,6 @@
   "navigationBarTitleText": "分享",
   "navigationBarBackgroundColor": "#ffffff",
   "navigationBarTextStyle": "black",
-  "navigationStyle": "custom",
   "enablePullDownRefresh": false,
   "disableScroll": false,
   "backgroundColor": "#f7f7f7",

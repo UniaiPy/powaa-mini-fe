@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "聊天",
+  "navigationStyle": "custom",
   "usingComponents": {
-    "bottom-nav": "/components/bottom-nav/bottom-nav"
+    "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar"
   }
 }

@@ -4,6 +4,7 @@ Page({
    * 页面的初始数据
    */
   data: {
+    aiStatus: 'active',      // AI分身状态（active/ inactive）
     chatUnreadCount: 0,      // 聊天未读消息数
     showMatchDegreeModal: false, // 是否显示匹配度说明弹窗
     showChatModal: false,     // 是否显示聊天弹窗
@@ -223,41 +224,57 @@ Page({
    */
   loadSocialMediaData: function() {
     // 模拟社交媒体数据
-    const socialMediaList = [
+    const socialMediaList= [
       {
-        icon: 'icon-github',
-        color: '#333',
-        text: 'github.com/xiaoya-design'
+        id: '1',
+        name: 'GitHub',
+        username: 'AI-Assistant',
+        url: 'https://github.com/AI-Assistant',
+        icon: 'github',
+        iconColor: 'text-gray-700'
       },
       {
-        icon: 'icon-dribbble',
-        color: '#ea4c89',
-        text: 'dribbble.com/xiaoya'
+        id: '2',
+        name: '知乎',
+        username: 'zhihu',
+        url: 'https://zhihu.com/people/ai-assistant',
+        icon: 'zhihu',
+        iconColor: 'text-blue-500'
       },
       {
-        icon: 'icon-behance',
-        color: '#1769ff',
-        text: 'behance.net/xiaoya'
+        id: '3',
+        name: '微博',
+        username: 'weibo',
+        url: 'https://weibo.com/aiassistant',
+        icon: 'weibo',
+        iconColor: 'text-red-500'
       }
-    ];
+    ]
     
     // 实际项目中，这里应该将数据绑定到页面
     // 由于我们在wxml中没有动态生成社交媒体列表，所以这里只是示例
+    this.setData({
+      socialMediaList: socialMediaList
+    });
+    
+    // 打印到控制台（实际项目中可能不需要这一步）
     console.log('社交媒体数据:', socialMediaList);
   },
 
-  /**
-   * 复制到剪贴板功能
-   */
-  copyToClipboard: function(text) {
+  // 复制社交媒体链接
+  copySocialMedia(e) {
+    const url = e.currentTarget.dataset.url
     wx.setClipboardData({
-      data: text,
+      data: url,
       success: () => {
-        this.showToast('复制成功');
+        wx.showToast({
+          title: '链接已复制',
+          icon: 'success'
+        })
       },
       fail: () => {
         this.showToast('复制失败');
       }
-    });
+    })
   }
 })

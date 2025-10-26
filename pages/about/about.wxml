@@ -1,11 +1,11 @@
 <!-- pages/about/about.wxml -->
 <view class="container">
   <!-- 顶部导航 -->
-  <view class="fixed-nav">
+  <!-- <view class="fixed-nav">
     <view class="left-placeholder"></view>
     <text class="nav-title">小瓦AI分身</text>
     <view class="right-placeholder"></view>
-  </view>
+  </view> -->
   
   <!-- 主要内容区域 -->
   <view class="content-with-fixed-nav">
@@ -16,7 +16,7 @@
           <view class="section-title">
             关于我们
           </view>
-          <image class="toggle-icon {{isOpen.about ? 'rotated' : ''}}" src="../../assets/icons/chevron-down.png"></image>
+          <text class="fa fa-chevron-down toggle-icon {{isOpen.about ? 'rotated' : ''}}"></text>
         </view>
         <view class="section-content" wx:if="{{isOpen.about}}">
           小瓦AI分身，是一款基于AI技术的社交助手。我们旨在通过先进的 AI 技术为用户打造个性化的数字分身，在不同平台（h5、web、小程序、app等）上统一呈现，帮助用户更好地展示自己、持续在线互动，并建立更高效的社交连接。
@@ -29,12 +29,12 @@
           <view class="section-title">
             联系我们
           </view>
-          <image class="toggle-icon {{isOpen.contact ? 'rotated' : ''}}" src="../../assets/icons/chevron-down.png"></image>
+          <text class="fa fa-chevron-down toggle-icon {{isOpen.contact ? 'rotated' : ''}}"></text>
         </view>
         <view class="space-y-2" wx:if="{{isOpen.contact}}">
           <view class="contact-item" bindtap="navigateToPreview">
             <view class="contact-icon service-icon">
-              <text class="icon-font">👤</text>
+              <text class="fa fa-user"></text>
             </view>
             <view class="contact-info">
               <view class="contact-label">小瓦客服</view>
@@ -43,7 +43,7 @@
           </view>
           <view class="contact-item" bindtap="makePhoneCall">
             <view class="contact-icon phone-icon">
-              <text class="icon-font">📞</text>
+              <text class="fa fa-phone"></text>
             </view>
             <view class="contact-info">
               <view class="contact-label">商务合作</view>
@@ -52,7 +52,7 @@
           </view>
           <view class="contact-item">
             <view class="contact-icon wechat-icon">
-              <text class="icon-font">💬</text>
+              <text class="fa fa-weixin"></text>
             </view>
             <view class="contact-info">
               <view class="contact-label">微信公众号</view>
@@ -68,7 +68,7 @@
           <view class="section-title">
             使用帮助
           </view>
-          <image class="toggle-icon {{isOpen.help ? 'rotated' : ''}}" src="../../assets/icons/chevron-down.png"></image>
+          <text class="fa fa-chevron-down toggle-icon {{isOpen.help ? 'rotated' : ''}}"></text>
         </view>
         <view class="space-y-4" wx:if="{{isOpen.help}}">
           <view class="policy-content">
@@ -104,7 +104,7 @@
           <view class="section-title">
             用户协议
           </view>
-          <image class="toggle-icon {{isOpen.terms ? 'rotated' : ''}}" src="../../assets/icons/chevron-down.png"></image>
+          <text class="fa fa-chevron-down toggle-icon {{isOpen.terms ? 'rotated' : ''}}"></text>
         </view>
         <view class="space-y-4" wx:if="{{isOpen.terms}}">
           <view class="policy-content">
@@ -173,7 +173,7 @@
           <view class="section-title">
             隐私政策
           </view>
-          <image class="toggle-icon {{isOpen.privacy ? 'rotated' : ''}}" src="../../assets/icons/chevron-down.png"></image>
+          <text class="fa fa-chevron-down toggle-icon {{isOpen.privacy ? 'rotated' : ''}}"></text>
         </view>
         <view class="space-y-4" wx:if="{{isOpen.privacy}}">
           <view class="policy-content">

@@ -1,0 +1,24 @@
+{
+  "name": "powaa-mini-fe",
+  "version": "1.0.0",
+  "description": "这是一个基于微信小程序的AI分身聊天应用，用户可以通过微信一键登录并与AI分身进行聊天交互。",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniaiPy/powaa-mini-fe.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/UniaiPy/powaa-mini-fe/issues"
+  },
+  "homepage": "https://github.com/UniaiPy/powaa-mini-fe#readme",
+  "dependencies": {
+    "@tencentcloud/chat-uikit-wechat": "^2.4.4"
+  }
+}

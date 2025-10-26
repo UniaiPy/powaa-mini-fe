@@ -26,26 +26,34 @@ Page({
         name: 'GitHub',
         username: 'AI-Assistant',
         url: 'https://github.com/AI-Assistant',
-        icon: 'icon-github',
+        icon: 'github',
         iconColor: 'text-gray-700'
       },
       {
         id: '2',
         name: '知乎',
-        username: 'AI助手官方',
+        username: 'zhihu',
         url: 'https://zhihu.com/people/ai-assistant',
-        icon: 'icon-zhihu',
+        icon: 'zhihu',
         iconColor: 'text-blue-500'
+      },
+      {
+        id: '3',
+        name: '微博',
+        username: 'weibo',
+        url: 'https://weibo.com/aiassistant',
+        icon: 'weibo',
+        iconColor: 'text-red-500'
       }
     ],
     
     // 支持的社交媒体平台
     platforms: [
-      { name: 'GitHub', icon: 'icon-github', iconColor: 'text-gray-700' },
-      { name: '知乎', icon: 'icon-zhihu', iconColor: 'text-blue-500' },
-      { name: '微博', icon: 'icon-weibo', iconColor: 'text-red-500' },
-      { name: '掘金', icon: 'icon-juejin', iconColor: 'text-blue-600' },
-      { name: '微信', icon: 'icon-wechat', iconColor: 'text-green-600' },
+      { name: 'GitHub', icon: 'github', iconColor: 'text-gray-700' },
+      { name: '知乎', icon: 'zhihu', iconColor: 'text-blue-500' },
+      { name: '微博', icon: 'weibo', iconColor: 'text-red-500' },
+      { name: '掘金', icon: 'juejin', iconColor: 'text-blue-600' },
+      { name: '微信', icon: 'wechat', iconColor: 'text-green-600' },
       { name: '自定义', icon: '', iconColor: 'text-gray-600' }
     ],
     
@@ -92,9 +100,8 @@ Page({
    * 导航到关于页面
    */
   navigateToAbout() {
-    wx.showToast({
-      title: '导航到关于页面',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/about/about'
     })
   },
 
@@ -102,9 +109,12 @@ Page({
    * 打开预览
    */
   openPreview() {
-    wx.showToast({
-      title: '打开预览模式',
-      icon: 'none'
+    // wx.showToast({
+    //   title: '打开预览模式',
+    //   icon: 'none'
+    // })
+    wx.navigateTo({
+      url: '/pages/preview/preview?type=profile'
     })
   },
 
@@ -112,9 +122,8 @@ Page({
    * 打开分享
    */
   openShare() {
-    wx.showShareMenu({
-      withShareTicket: true,
-      menus: ['shareAppMessage', 'shareTimeline']
+    wx.navigateTo({
+      url: '/pages/share/share'
     })
   },
 
@@ -232,6 +241,19 @@ Page({
     })
   },
 
+  // 复制社交媒体链接
+  copySocialMedia(e) {
+    const url = e.currentTarget.dataset.url
+    wx.setClipboardData({
+      data: url,
+      success: () => {
+        wx.showToast({
+          title: '链接已复制',
+          icon: 'success'
+        })
+      }
+    })
+  },
   /**
    * 编辑社交媒体
    */
@@ -404,10 +426,75 @@ Page({
   },
 
   /**
+   * 处理个人简介输入
+   */
+  onProfileDescriptionInput(e) {
+    this.setData({
+      editProfileDescription: e.detail.value
+    })
+  },
+
+  /**
+   * 处理联系电话输入
+   */
+  onContactPhoneInput(e) {
+    this.setData({
+      editContactPhone: e.detail.value
+    })
+  },
+
+  /**
+   * 处理微信输入
+   */
+  onContactWechatInput(e) {
+    this.setData({
+      editContactWechat: e.detail.value
+    })
+  },
+
+  /**
+   * 处理地址输入
+   */
+  onContactAddressInput(e) {
+    this.setData({
+      editContactAddress: e.detail.value
+    })
+  },
+
+  /**
+   * 处理自定义平台名称输入
+   */
+  onCustomPlatformNameInput(e) {
+    this.setData({
+      editCustomPlatformName: e.detail.value
+    })
+  },
+
+  /**
+   * 处理社交媒体用户名输入
+   */
+  onSocialUsernameInput(e) {
+    this.setData({
+      editSocialUsername: e.detail.value
+    })
+  },
+
+  /**
+   * 处理社交媒体链接输入
+   */
+  onSocialUrlInput(e) {
+    this.setData({
+      editSocialUrl: e.detail.value
+    })
+  },
+
+  /**
    * 阻止冒泡
+   * 在微信小程序中，使用catch前缀绑定事件已经能阻止冒泡
    */
   preventBubbling() {
-    // 阻止事件冒泡到模态框背景
+    // 在微信小程序中，由于事件模型的差异，不需要显式调用stopPropagation
+    // 通过在WXML中使用catchtap而不是bindtap来绑定事件可以防止冒泡
   },
 
   /**

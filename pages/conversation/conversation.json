@@ -1,13 +1,13 @@
 {
   "navigationBarBackgroundColor": "#ffffff",
   "navigationBarTextStyle": "black",
-  "navigationBarTitleText": "AI助手",
-  "navigationStyle": "default",
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
   "backgroundColor": "#f9fafb",
   "enablePullDownRefresh": true,
   "disableScroll": false,
   "usingComponents": {
-    "bottom-nav": "/components/bottom-nav/bottom-nav"
+     "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar"
   },
   "pageOrientation": "portrait"
 }

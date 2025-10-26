@@ -78,7 +78,15 @@
   max-height: 80vh;
   overflow-y: auto;
 }
-
+.modal-content input{
+  padding: 0 20rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  background-color: white;
+}
 .profile-modal .modal-body {
   padding: 20px;
 }
@@ -98,7 +106,8 @@
   padding: 16px 20px 12px;
   border-bottom: 1px solid #F3F4F6;
 }
-
+.w-2{width: 15rpx;}
+.h-2{height: 15rpx;}
 /* Flex 工具类 */
 .flex {
   display: flex;
@@ -307,11 +316,12 @@
 .text-blue-600 {
   color: #3B82F6;
 }
-
-.text-green-600 {
-  color: #10B981;
-}
-
+.w-16{width: 64rpx;}
+.h-16{height: 64rpx;}
+.w-8{width: 32rpx;}
+.h-8{height: 32rpx;}
+.w-32{width: 128rpx;}
+.h-32{height: 128rpx;}
 .bg-white {
   background-color: #FFFFFF;
 }

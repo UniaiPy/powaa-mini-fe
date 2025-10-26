@@ -39,6 +39,7 @@ Page({
     showAiMenu: false,
     // AI分身是否在线
     aiOnline: true,
+    aiStatus: 'online',
     // 当前聊天对象信息
     chatInfo: {
       name: 'AI助手',
@@ -54,12 +55,17 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
+    // console.log(decodeURIComponent(options.user));
+    let userInfo=JSON.parse(decodeURIComponent(options.user));
+    wx.setNavigationBarTitle({
+      title: userInfo.name,
+    })
     // 从URL参数中获取聊天对象信息
-    if (options.userId && options.userName) {
+    if (userInfo.id && userInfo.name) {
       this.setData({
         chatInfo: {
-          name: options.userName || 'AI助手',
-          avatar: options.avatar || '/images/ai.png'
+          name: userInfo.name || 'AI助手',
+          avatar: userInfo.avatar || '/images/ai.png'
         }
       })
     }
@@ -223,7 +229,7 @@ Page({
   /**
    * 切换功能菜单
    */
-  toggleFunctionMenu() {
+  showPlusMenu() {
     this.setData({
       showFunctionMenu: !this.data.showFunctionMenu,
       showMoreOptions: false,
@@ -246,9 +252,21 @@ Page({
    * 切换AI分身状态
    */
   toggleAiOnline(e) {
+    const isOn = !this.data.aiOnline;
+    console.log('切换AI状态:', isOn);
     this.setData({
-      aiOnline: e.detail.value
-    })
+      aiOnline: isOn,
+      aiStatus: isOn ? 'online' : 'offline'
+    });
+
+    // 可以在这里添加AI状态切换的逻辑
+    if (isOn) {
+      // AI上线逻辑
+      console.log('AI已上线');
+    } else {
+      // AI下线逻辑
+      console.log('AI已下线');
+    }
   },
 
   /**
@@ -339,11 +357,38 @@ Page({
   goBack() {
     wx.navigateBack()
   },
+  /**
+   * 点击功能项
+   */
+  onFunctionItemClick(e) {
+    const functionType = e.currentTarget.dataset.type;
+    // console.log('点击了功能:', functionType);
+    
+    // 根据不同功能类型执行不同操作
+    switch (functionType) {
+      case 'image':
+        this.selectImage()
+        break;
+      case 'file':
+        this.selectFile()
+        break;
+      case 'location':
+        this.selectLocation()
+        break;
+      case 'emoji':
+        this.selectEmoji()
+        break;
+    }
 
+    // 关闭菜单
+    this.setData({
+      showFunctionMenu: false
+    });
+  },
   /**
    * 选择图片
    */
-  chooseImage() {
+  selectImage() {
     wx.chooseImage({
       count: 9,
       success: (res) => {
@@ -357,7 +402,7 @@ Page({
   /**
    * 选择文件
    */
-  chooseFile() {
+  selectFile() {
     wx.chooseMessageFile({
       count: 10,
       type: 'file',
@@ -372,7 +417,7 @@ Page({
   /**
    * 选择位置
    */
-  chooseLocation() {
+  selectLocation() {
     wx.chooseLocation({
       success: (res) => {
         console.log('选择的位置:', res)
@@ -385,7 +430,7 @@ Page({
   /**
    * 显示表情选择器
    */
-  showEmojiPicker() {
+  selectEmoji() {
     console.log('显示表情选择器')
     this.hideAllMenus()
   },
@@ -406,6 +451,64 @@ Page({
     if (!target.dataset.menu) {
       this.hideAllMenus()
     }
+  },
+
+  /**
+   * 导航到预览页面
+   */
+  navigateToPreview() {
+    wx.navigateTo({
+      url: '/pages/preview/preview?type=avatar'
+    })
+  },
+
+
+
+  /**
+   * 分享名片
+   */
+  shareCard() {
+    wx.navigateTo({
+      url: '/pages/share/share'
+    })
+  },
+
+  /**
+   * 屏蔽用户
+   */
+  blockUser() {
+    wx.showModal({
+      title: '确认屏蔽',
+      content: '屏蔽后，您将不再收到该用户的消息，确定要屏蔽吗？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showToast({
+            title: '已屏蔽用户',
+            icon: 'success'
+          })
+        }
+      }
+    })
+    this.hideAllMenus()
+  },
+
+  /**
+   * 举报用户
+   */
+  reportUser() {
+    wx.showModal({
+      title: '确认举报',
+      content: '举报后，我们会尽快处理您的举报信息，感谢您的反馈。',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showToast({
+            title: '举报成功',
+            icon: 'success'
+          })
+        }
+      }
+    })
+    this.hideAllMenus()
   },
 
   /**
@@ -434,5 +537,24 @@ Page({
       title: `与${chatInfo.name}的对话`,
       path: `/pages/conversation/conversation?userName=${encodeURIComponent(chatInfo.name)}`
     }
+  },
+
+  /**
+   * 导航到用户资料页面
+   */
+  navigateToUserProfile() {
+    console.log('导航到用户资料页面')
+    wx.switchTab({
+      url: '/pages/profile/profile'
+    })
+  },
+
+  /**
+   * 导航到聊天列表页面
+   */
+  navigateToChat() {
+    wx.navigateTo({
+      url: '/pages/chat/chat'
+    })
   }
 })

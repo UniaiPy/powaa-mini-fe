@@ -36,7 +36,7 @@
 /* 主要内容区域 */
 .content-with-fixed-nav {
   flex: 1;
-  padding-top: 56px;
+  padding-top: 16px;
   padding-bottom: 80px;
   padding-left: 16px;
   padding-right: 16px;
