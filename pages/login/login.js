@@ -37,7 +37,7 @@ Page({
   },
 
   // 微信一键登录
-  wxLogin: async function() {
+  wxLogin: function() {
     // 检查是否同意用户协议
     if (!this.data.agreeTerms) {
       wx.showToast({
@@ -48,104 +48,117 @@ Page({
     }
 
     this.setData({ loading: true })
-
-    try {
-      // 1. 获取用户信息（需要用户授权）
-      const userProfile = await this.getUserProfile()
-      
-      // 2. 调用微信登录获取code
-      await app.wxLogin()
-      
-      // 3. 登录成功，跳转到聊天页面
-      wx.switchTab({
-        url: '/pages/chat/chat'
-      })
-    } catch (error) {
-      console.error('登录失败:', error)
-      wx.showToast({
-        title: error.message || '登录失败，请重试',
-        icon: 'none'
-      })
-    } finally {
-      this.setData({ loading: false })
-    }
-  },
-
-  // 获取用户信息
-  getUserProfile: function() {
-    // 在模拟数据模式下，直接返回模拟用户信息
-    if (app.globalData.useMockData) {
-      return Promise.resolve({
-        nickName: '测试用户',
-        avatarUrl: '/images/user-avatar.png',
-        gender: 0,
-        country: '中国',
-        province: '北京',
-        city: '北京'
-      })
-    }
     
-    // 实际环境下的用户信息获取
-    // 注意：wx.getUserProfile在较新版本的微信中不再推荐使用
-    return new Promise((resolve, reject) => {
-      // 先尝试使用wx.getUserProfile
-      try {
-        wx.getUserProfile({
-          desc: '用于完善用户资料',
-          success: (res) => {
-            resolve(res.userInfo)
-          },
-          fail: (error) => {
-            // 如果失败，可以尝试使用getUserInfo（虽然也已不推荐）
-            wx.getUserInfo({
-              success: (res) => {
-                resolve(res.userInfo)
-              },
-              fail: (err) => {
-                reject(new Error('获取用户信息失败'))
+    wx.showLoading({
+      title: '登录中...',
+    })
+    
+    // 1. 先调用wx.login获取code
+    wx.login({
+      success: (res) => {
+        if (res.code) {
+          console.log('获取登录code成功:', res.code)
+          // 2. 调用全局登录方法，传入code
+          app.login(res.code)
+            .then((userInfo) => {
+              console.log('登录成功', userInfo)
+              wx.hideLoading()
+              this.setData({ loading: false })
+              console.log('检查用户信息完整性:', userInfo)
+              // 检查用户信息是否完整（头像、昵称、手机号）
+              const isUserInfoComplete = userInfo && 
+                                        userInfo.nickname && 
+                                        userInfo.avatar_url && 
+                                        userInfo.phone_number;
+              
+              if (!isUserInfoComplete) {
+                console.log('新用户，跳转到名片页面完善信息')
+                wx.showToast({
+                  title: '请完善您的名片信息',
+                  icon: 'none',
+                  duration: 1500
+                })
+                setTimeout(() => {
+                  // 跳转到名片页面完善个人信息
+                  wx.switchTab({
+                    url: '/pages/profile/profile'
+                  })
+                }, 1500)
+              } else {
+                // 老用户，直接跳转到聊天页面
+                 console.log('新用户')
+                wx.switchTab({
+                  url: '/pages/chat/chat'
+                })
               }
             })
-          }
+            .catch((error) => {
+              console.error('登录失败', error)
+              wx.hideLoading()
+              this.setData({ loading: false })
+              wx.showToast({
+                title: error.message || '登录失败，请重试',
+                icon: 'none'
+              })
+            })
+        } else {
+          console.error('获取登录code失败:', res)
+          wx.hideLoading()
+          this.setData({ loading: false })
+          wx.showToast({
+            title: '登录失败，请重试',
+            icon: 'none'
+          })
+        }
+      },
+      fail: (err) => {
+        console.error('微信登录接口调用失败:', err)
+        wx.hideLoading()
+        this.setData({ loading: false })
+        wx.showToast({
+          title: '网络异常，请检查',
+          icon: 'none'
         })
-      } catch (e) {
-        reject(new Error('获取用户信息失败'))
       }
     })
+  },
+
+  // 获取用户信息 - 简化版本，直接调用全局方法
+  getUserProfile: function() {
+    return app.getUserProfile()
+      .catch((error) => {
+        console.error('获取用户信息失败:', error)
+        throw error
+      })
   },
 
   // 更新未读消息数量
   updateUnreadCount: function() {
     try {
-      // 从本地存储获取未读消息数量
-      const unreadCount = parseInt(wx.getStorageSync('chatUnreadCount') || '0')
-      
-      // 更新页面数据
+      const unreadCount = wx.getStorageSync('unreadCount') || 0
       this.setData({
         unreadCount: unreadCount
       })
     } catch (error) {
-      console.error('更新未读消息数量失败:', error)
-      this.setData({
-        unreadCount: 0
-      })
+      console.error('更新未读消息数失败:', error)
     }
   },
 
   // 导航到聊天页面
   navigateToChat: function() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/chat/chat'
     })
   },
 
-  // 导航到AI分身页面
+  // 导航到头像选择页面
   navigateToAvatar: function() {
     wx.navigateTo({
       url: '/pages/avatar/avatar'
     })
   },
 
-  // 导航到名片页面
+  // 导航到个人资料页面
   navigateToProfile: function() {
     wx.navigateTo({
       url: '/pages/profile/profile'
@@ -155,16 +168,14 @@ Page({
   // 打开用户协议
   openUserTerms: function() {
     wx.navigateTo({
-      // url: '/pages/terms/terms'
-      url: '/pages/about/about?section=terms'
+      url: '/pages/terms/terms'
     })
   },
 
   // 打开隐私政策
   openPrivacyPolicy: function() {
     wx.navigateTo({
-      // url: '/pages/privacy/privacy'
-      url: '/pages/about/about?section=privacy'
+      url: '/pages/privacy/privacy'
     })
   }
 })

@@ -10,7 +10,7 @@ Page({
     showChatModal: false,     // 是否显示聊天弹窗
     showToast: false,         // 是否显示提示
     toastMessage: '',         // 提示消息
-    greetingMessage: '你好，李小雅！很高兴认识你，我对你的设计工作很感兴趣，想和你聊聊。' // 打招呼消息
+    greetingMessage: '你好，很高兴认识你！' // 打招呼消息
   },
 
   /**
@@ -22,8 +22,20 @@ Page({
       chatUnreadCount: 3 // 示例数据，实际应从全局状态或API获取
     });
     
-    // 加载社交媒体数据
-    this.loadSocialMediaData();
+    // 保存传递过来的参数
+    const app = getApp();
+    const currentUserId = app.globalData.userInfo?.id;
+    const targetUserId = options.userId || '';
+    const type = options.type || '';
+    
+    this.setData({
+      userId: targetUserId,
+      type: type,
+      // 判断是否为当前用户自己的名片（确保类型一致并进行空值检查）
+      isOwnProfile: currentUserId && targetUserId && String(currentUserId) === String(targetUserId)
+    });
+    // 加载用户个人资料数据
+    this.loadProfileData();
   },
 
   /**
@@ -73,9 +85,10 @@ Page({
    * 用户点击右上角分享
    */
   onShareAppMessage: function () {
+    const userId = this.data.userId;
     return {
       title: '预览名片',
-      path: '/pages/preview/preview',
+      path: `/pages/preview/preview?userId=${userId}&type=${this.data.type}`,
       imageUrl: '/images/share-cover.png' // 分享封面图
     };
   },
@@ -84,8 +97,9 @@ Page({
    * 导航到个人资料页面
    */
   navigateToProfile: function() {
+    const userId = this.data.userId;
     wx.navigateTo({
-      url: '/pages/profile/profile'
+      url: `/pages/profile/profile?userId=${userId}`
     });
   },
 
@@ -203,8 +217,9 @@ Page({
    * 导航到名片页面
    */
   navigateToProfile: function() {
+    const userId = this.data.userId;
     wx.navigateTo({
-      url: '/pages/profile/profile'
+      url: `/pages/profile/profile?userId=${userId}`
     });
   },
 
@@ -220,45 +235,66 @@ Page({
   },
 
   /**
-   * 加载社交媒体数据
+   * 加载用户个人资料数据
    */
-  loadSocialMediaData: function() {
-    // 模拟社交媒体数据
-    const socialMediaList= [
-      {
-        id: '1',
-        name: 'GitHub',
-        username: 'AI-Assistant',
-        url: 'https://github.com/AI-Assistant',
-        icon: 'github',
-        iconColor: 'text-gray-700'
-      },
-      {
-        id: '2',
-        name: '知乎',
-        username: 'zhihu',
-        url: 'https://zhihu.com/people/ai-assistant',
-        icon: 'zhihu',
-        iconColor: 'text-blue-500'
-      },
-      {
-        id: '3',
-        name: '微博',
-        username: 'weibo',
-        url: 'https://weibo.com/aiassistant',
-        icon: 'weibo',
-        iconColor: 'text-red-500'
-      }
-    ]
+  loadProfileData: function() {
+    const app = getApp();
     
-    // 实际项目中，这里应该将数据绑定到页面
-    // 由于我们在wxml中没有动态生成社交媒体列表，所以这里只是示例
-    this.setData({
-      socialMediaList: socialMediaList
+    wx.showLoading({
+      title: '加载中...',
     });
     
-    // 打印到控制台（实际项目中可能不需要这一步）
-    console.log('社交媒体数据:', socialMediaList);
+    const userId = this.data.userId;
+    const requestUrl = `/api/users/profile/${userId}`;
+    
+    app.request({
+      url: requestUrl,
+      method: 'GET',
+      success: (res) => {
+        console.log('获取用户信息成功:', res);
+        
+        if (res.code === 0 && res.data) {
+          // 更新页面数据
+          const updateData = {};
+          
+          // 更新用户基本信息
+          if (res.data.userInfo) {
+            updateData.userInfo = res.data.userInfo;
+            // 更新打招呼消息中的用户名
+            if (res.data.userInfo.name) {
+              updateData.greetingMessage = `你好，${res.data.userInfo.name}！很高兴认识你！`;
+            }
+          }
+          
+          // 更新联系信息
+          if (res.data.contactInfo) {
+            updateData.contactInfo = res.data.contactInfo;
+          }
+          
+          // 更新社交媒体列表
+          if (res.data.socialMediaList) {
+            updateData.socialMediaList = res.data.socialMediaList;
+          }
+          
+          // 更新头像
+          if (res.data.avatar_url) {
+            updateData.avatarUrl = res.data.avatar_url;
+          }
+          
+          // 设置页面数据
+          this.setData(updateData);
+        } else {
+          this.showToast(res.message || '获取用户信息失败');
+        }
+      },
+      fail: (error) => {
+        console.error('获取用户信息失败:', error);
+        this.showToast('网络错误，请稍后重试');
+      },
+      complete: () => {
+        wx.hideLoading();
+      }
+    });
   },
 
   // 复制社交媒体链接

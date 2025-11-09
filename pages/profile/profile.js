@@ -6,46 +6,24 @@ Page({
   data: {
     // 用户基本信息
     userInfo: {
-      name: 'AI助手',
+      name: '',
       aiStatus: '在线',
       statusColor: '#10B981',
-      description: '我是您的智能AI助手，可以帮助您完成各种任务，提供专业建议，解答各类问题。无论是工作、学习还是生活中的疑问，都可以随时向我咨询。'
+      description: ''
     },
     
     // 联系信息
     contactInfo: {
-      phone: '138****8888',
-      wechat: 'AI_assistant_888',
-      address: '北京市朝阳区'
+      phone: '',
+      wechat: '',
+      address: ''
     },
     
     // 社交媒体列表
-    socialMediaList: [
-      {
-        id: '1',
-        name: 'GitHub',
-        username: 'AI-Assistant',
-        url: 'https://github.com/AI-Assistant',
-        icon: 'github',
-        iconColor: 'text-gray-700'
-      },
-      {
-        id: '2',
-        name: '知乎',
-        username: 'zhihu',
-        url: 'https://zhihu.com/people/ai-assistant',
-        icon: 'zhihu',
-        iconColor: 'text-blue-500'
-      },
-      {
-        id: '3',
-        name: '微博',
-        username: 'weibo',
-        url: 'https://weibo.com/aiassistant',
-        icon: 'weibo',
-        iconColor: 'text-red-500'
-      }
-    ],
+    socialMediaList: [],
+    
+    // 头像URL - 直接使用后端返回的临时访问URL
+    avatarUrl: '',
     
     // 支持的社交媒体平台
     platforms: [
@@ -61,6 +39,7 @@ Page({
     showProfileModal: false,
     showContactModal: false,
     showSocialMediaModal: false,
+    showProfileAuthModal: false,
     
     // 编辑状态数据
     editProfileDescription: '',
@@ -73,27 +52,599 @@ Page({
     editSocialUsername: '',
     editSocialUrl: '',
     isEditingSocial: false,
-    editingSocialId: null
+    editingSocialId: null,
+    tempAvatarUrl: '',
+    tempAvatarKey: null,
+    tempNickname: ''
+  },
+
+  /**
+   * 生命周期函数--监听页面加载
+   */
+  /**
+   * 从后台获取用户名片数据
+   */
+  fetchUserProfileData() {
+    const app = getApp()
+    
+    // 检查token是否存在
+    if (!app.globalData.token) {
+      console.error('token不存在，无法获取用户名片数据')
+      return
+    }
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: '加载中...',
+    })
+    
+    // 使用全局request方法发送请求
+    const userId = app.globalData.userInfo?.id || this.data.userInfo?.id;
+    app.request({
+      url: `/api/users/profile/${userId}`,
+      method: 'GET',
+      success: async (res) => {
+        // 根据后端实际返回格式判断成功与否：code=0表示成功
+        if ((res.code === 0 || res.success) && res.data) {
+          const profileData = res.data
+          const updateData = {}
+          
+          console.log('获取到的用户名片数据:', profileData)
+          
+          // 更新用户基本信息
+          if (profileData.userInfo) {
+            updateData.userInfo = {
+              name: profileData.userInfo.name || '用户',
+              aiStatus: profileData.userInfo.aiStatus || '在线',
+              statusColor: profileData.userInfo.statusColor || '#10B981',
+              description: profileData.userInfo.description || ''
+            }
+          }
+          
+          // 更新联系信息
+          if (profileData.contactInfo) {
+            updateData.contactInfo = {
+              phone: profileData.contactInfo.phone || '',
+              wechat: profileData.contactInfo.wechat || '',
+              address: profileData.contactInfo.address || ''
+            }
+          }
+          
+          // 更新社交媒体列表
+          if (profileData.socialMediaList && Array.isArray(profileData.socialMediaList)) {
+            updateData.socialMediaList = profileData.socialMediaList
+          }
+          
+          // 更新编辑框数据，确保使用当前数据作为回退
+          updateData.editProfileDescription = updateData.userInfo?.description || this.data.userInfo.description
+          updateData.editContactPhone = updateData.contactInfo?.phone || this.data.contactInfo.phone
+          updateData.editContactWechat = updateData.contactInfo?.wechat || this.data.contactInfo.wechat
+          updateData.editContactAddress = updateData.contactInfo?.address || this.data.contactInfo.address
+          
+          // 处理头像URL - 后端已返回临时访问URL，可以直接使用
+          if (profileData.avatar_url) {
+            updateData.avatarUrl = profileData.avatar_url
+          }
+          
+          // 一次性更新所有数据，确保数据一致性
+          if (Object.keys(updateData).length > 0) {
+            this.setData(updateData)
+            console.log('成功获取并更新用户名片数据')
+          }
+        } else {
+          // 处理后端返回的错误信息
+          const errorMessage = res.message || res.error || '未知错误'
+          console.error('获取用户名片数据失败:', errorMessage)
+          wx.showToast({
+            title: '获取用户信息失败',
+            icon: 'none'
+          })
+        }
+      },
+      fail: (error) => {
+        console.error('网络请求失败:', error)
+        wx.showToast({
+          title: '网络请求失败',
+          icon: 'none'
+        })
+      },
+      complete: () => {
+        // 隐藏加载提示
+        wx.hideLoading()
+      }
+    })
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
-    // 初始化编辑数据
+    // 初始化编辑数据 - 使用从接口获取的实际数据
     this.setData({
       editProfileDescription: this.data.userInfo.description,
       editContactPhone: this.data.contactInfo.phone,
       editContactWechat: this.data.contactInfo.wechat,
       editContactAddress: this.data.contactInfo.address
     })
+    
+    // 获取用户名片数据 - 确保使用最新数据更新页面
+    this.fetchUserProfileData()
   },
 
   /**
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    // 页面显示时的逻辑
+    // 从全局数据获取用户信息
+    const app = getApp()
+    const globalUserInfo = app.globalData.userInfo
+    
+    console.log('从全局获取用户信息:', globalUserInfo)
+    
+    if (globalUserInfo) {
+      // 准备更新的数据
+      const updateData = {}
+      
+      // 检查是否需要更新昵称（优先使用全局数据中的昵称）
+      if (globalUserInfo.nickname && globalUserInfo.nickname !== this.data.userInfo.name) {
+        updateData['userInfo.name'] = globalUserInfo.nickname
+      }
+      
+      // 检查是否需要更新手机号（优先使用全局数据中的手机号）
+      if (globalUserInfo.phone_number && globalUserInfo.phone_number !== this.data.contactInfo.phone) {
+        updateData['contactInfo.phone'] = globalUserInfo.phone_number
+        updateData.editContactPhone = globalUserInfo.phone_number
+      }
+      
+      // 处理头像URL - 后端已返回临时访问URL，可以直接使用
+      if (globalUserInfo.avatar_url) {
+        this.setData({ avatarUrl: globalUserInfo.avatar_url })
+      }
+      
+      // 有数据更新时才调用setData
+      if (Object.keys(updateData).length > 0) {
+        this.setData(updateData)
+      }
+    }
+    
+    // 检查是否需要重新获取数据（例如用户信息为空或不完整时）
+    const needRefreshData = !this.data.userInfo.name || 
+                           this.data.userInfo.name === 'AI助手' ||
+                           !this.data.contactInfo.phone || 
+                           this.data.contactInfo.phone === '138****8888';
+    
+    if (needRefreshData) {
+      // 重新从服务器获取最新的用户名片数据
+      this.fetchUserProfileData();
+    }
+  },
+  
+  /**
+   * 显示头像昵称编辑弹窗
+   */
+  showProfileEditModal() {
+    console.log('显示头像昵称编辑弹窗')
+    this.setData({
+      showProfileAuthModal: true,
+      tempAvatarUrl: '',
+      tempNickname: this.data.userInfo.name
+    })
+  },
+  
+  /**
+   * 关闭头像昵称编辑弹窗
+   */
+  closeProfileAuthModal() {
+    this.setData({
+      showProfileAuthModal: false,
+      tempAvatarUrl: '',
+      tempAvatarKey: null,
+      tempNickname: ''
+    })
+  },
+  
+  /**
+   * 阻止冒泡事件
+   */
+  preventBubbling() {
+    // 防止点击弹窗内容时关闭弹窗
+  },
+  
+  /**
+   * 处理头像选择
+   */
+  onChooseAvatar0(e) {
+    const { avatarUrl } = e.detail
+    this.setData({
+      tempAvatarUrl: avatarUrl
+    })
+  },
+
+  /**
+   * 处理头像选择
+   */
+  onChooseAvatar(e) {
+    const { avatarUrl } = e.detail
+    // 导入上传工具
+    const { uploadImage } = require('../../utils/upload.js')
+    
+    // 使用工具方法上传头像
+    uploadImage({
+      filePath: avatarUrl,
+      folder: 'avatars',
+      loadingTitle: '头像上传中...'
+    })
+    .then(result => {
+      // 上传成功 - 获取OSS key和临时访问URL（后端已处理）
+      const ossKey = result.key; // 获取OSS文件键
+      const temporaryUrl = result.url; // 直接使用后端返回的临时访问URL
+      
+      console.log('头像OSS key:', ossKey);
+      console.log('后端返回的临时访问URL:', temporaryUrl);
+      
+      // 保存OSS key和临时URL
+      this.setData({
+        tempAvatarKey: ossKey,
+        tempAvatarUrl: temporaryUrl
+      })
+      
+      wx.showToast({
+        title: '头像上传成功',
+        icon: 'success'
+      })
+    })
+    .catch(error => {
+      console.error('头像上传失败:', error)
+      wx.showToast({
+        title: error.message || '头像上传失败',
+        icon: 'none'
+      })
+      // 回退到临时URL，确保用户可以看到选择的头像即使上传失败
+      this.setData({
+        tempAvatarUrl: avatarUrl,
+        tempAvatarKey: null
+      })
+    })
+  },
+  
+  /**
+   * 处理昵称输入
+   */
+  onNicknameInput(e) {
+    this.setData({
+      tempNickname: e.detail.value
+    })
+  },
+  
+  /**
+   * 保存头像和昵称
+   */
+  saveProfileAuth() {
+    const { tempAvatarUrl, tempAvatarKey, tempNickname } = this.data
+    
+    // 验证昵称
+    if (!tempNickname.trim()) {
+      wx.showToast({
+        title: '昵称不能为空',
+        icon: 'none'
+      })
+      return
+    }
+    
+    // 更新数据
+    const updateData = {}
+    
+    if (tempNickname) {
+      updateData['userInfo.name'] = tempNickname
+    }
+    
+    if (tempAvatarUrl) {
+      // 处理头像URL，添加尺寸参数
+      const avatarUrl = tempAvatarUrl.replace('/0', '/132')
+      updateData.avatarUrl = avatarUrl
+    }
+    
+    this.setData(updateData)
+    
+    // 保存到全局
+    const app = getApp()
+    if (app.globalData.userInfo) {
+      app.globalData.userInfo.nickname = tempNickname || app.globalData.userInfo.nickname
+      if (updateData.avatarUrl) {
+        app.globalData.userInfo.avatar_url = updateData.avatarUrl
+      }
+    }
+    
+    // 将头像和昵称发送到后端保存
+    this.saveWechatInfoToServer({
+      nickname: tempNickname,
+      avatar_url: tempAvatarKey || updateData.avatarUrl || ''
+    })
+    
+    this.setData({
+      showProfileAuthModal: false
+    })
+    
+    wx.showToast({
+      title: '保存成功',
+      icon: 'success'
+    })
+  },
+  
+  /**
+   * 获取微信用户信息（包括头像）- 兼容旧方法
+   */
+  getWechatUserInfo() {
+    this.showProfileEditModal()
+  },
+  
+  /**
+   * 将微信信息保存到服务器
+   */
+  saveWechatInfoToServer(userInfo) {
+    const app = getApp()
+    
+    // 检查token是否存在
+    if (!app.globalData.token) {
+      console.error('token不存在')
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      return
+    }
+    
+    // 检查网络状态
+    const checkNetworkStatus = () => {
+      return new Promise((resolve, reject) => {
+        wx.getNetworkType({
+          success: (res) => {
+            const networkType = res.networkType
+            console.log('当前网络类型:', networkType)
+            if (networkType === 'none') {
+              reject(new Error('当前无网络连接'))
+            } else {
+              resolve()
+            }
+          },
+          fail: () => {
+            // 无法获取网络状态时，继续执行请求
+            resolve()
+          }
+        })
+      })
+    }
+    
+    // 执行请求并使用全局request方法处理网络请求
+    checkNetworkStatus()
+      .then(() => {
+        console.log('网络状态正常，开始保存微信信息')
+        
+        // 使用全局的request方法发送请求，自动处理token刷新
+        app.request({
+          url: '/api/users/update-wechat-info',
+          method: 'POST',
+          data: {
+            nickname: userInfo.nickname,
+            avatar_url: userInfo.avatar_url
+          },
+          success: (res) => {
+            if (res.success) {
+              console.log('保存微信信息到服务器成功')
+              wx.showToast({
+                title: '保存成功',
+                icon: 'success'
+              })
+            } else {
+              console.error('保存微信信息失败:', res)
+              wx.showToast({
+                title: '保存信息失败: ' + (res.error || '未知错误'),
+                icon: 'none'
+              })
+            }
+          },
+          fail: (error) => {
+            console.error('保存微信信息请求失败:', JSON.stringify(error))
+            
+            // 显示详细错误信息
+            const errorMsg = error.message || '网络错误，请稍后重试'
+            wx.showToast({
+              title: errorMsg,
+              icon: 'none',
+              duration: 3000
+            })
+            
+            // 添加重试按钮选项，使用更友好的提示
+            setTimeout(() => {
+              wx.showModal({
+                title: '保存失败',
+                content: `无法保存信息：${errorMsg}\n是否重新尝试？`,
+                confirmText: '重新尝试',
+                cancelText: '取消',
+                success: (modalRes) => {
+                  if (modalRes.confirm) {
+                    console.log('用户确认重新尝试保存微信信息')
+                    // 重新执行整个流程，包括网络检查
+                    this.saveWechatInfoToServer(userInfo)
+                  }
+                }
+              })
+            }, 1500)
+          }
+        })
+      })
+      .catch(error => {
+        console.error('保存微信信息过程中的错误:', error.message)
+        wx.showToast({
+          title: error.message || '网络错误，请稍后重试',
+          icon: 'none',
+          duration: 3000
+        })
+      })
+  },
+  
+  /**
+   * 获取微信手机号
+   */
+  getWechatPhoneNumber(e) {
+    console.log('getWechatPhoneNumber方法被调用，事件对象:', e)
+    
+    if (!e || !e.detail) {
+      console.error('事件对象格式错误:', e)
+      wx.showToast({
+        title: '授权失败，请重试',
+        icon: 'none'
+      })
+      return
+    }
+    
+    console.log('授权状态:', e.detail.errMsg)
+    console.log('事件详情完整信息:', JSON.stringify(e.detail))
+    
+    if (e.detail.errMsg === 'getPhoneNumber:ok') {
+      const app = getApp()
+      
+      // 检查token是否存在
+      if (!app.globalData.token) {
+        console.error('token不存在')
+        wx.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        // 跳转到登录页面
+        wx.navigateTo({
+          url: '/pages/login/login'
+        })
+        return
+      }
+      
+      // 兼容不同版本的微信小程序
+      let encryptedData = null
+      let iv = null
+      let cloudID = e.detail.cloudID
+      
+      // 检查可用的加密数据字段
+      if (!cloudID) {
+        // 尝试获取旧版本的加密数据
+        encryptedData = e.detail.encryptedData
+        iv = e.detail.iv
+        
+        console.log('未获取到cloudID，尝试使用旧版本字段:', {
+          encryptedData: encryptedData ? '存在' : '不存在',
+          iv: iv ? '存在' : '不存在'
+        })
+        
+        // 如果没有任何加密数据，显示错误
+        if (!encryptedData && !iv) {
+          console.error('未获取到cloudID和旧版本加密数据')
+          wx.showToast({
+            title: '获取加密信息失败，请检查微信版本',
+            icon: 'none'
+          })
+          return
+        }
+      } else {
+        console.log('成功获取cloudID:', cloudID)
+      }
+      
+      // 根据可用的加密数据类型构建请求数据
+      let requestData = {}
+      if (cloudID) {
+        requestData.cloudID = cloudID
+      } else {
+        requestData.encryptedData = encryptedData
+        requestData.iv = iv
+      }
+      
+      // 执行获取手机号的流程（包含token刷新逻辑）
+      this.executeGetPhoneNumber(requestData)
+    } else {
+      console.log('用户拒绝授权手机号')
+      wx.showToast({
+        title: '请授权获取手机号',
+        icon: 'none'
+      })
+    }
+  },
+  
+  // 刷新token的方法
+  refreshToken() {
+    const app = getApp()
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: app.globalData.baseUrl + '/api/auth/refresh-token',
+        method: 'POST',
+        header: {
+          'content-type': 'application/json',
+          'Authorization': app.globalData.token ? 'Bearer ' + app.globalData.token : ''
+        },
+        success: (res) => {
+          if (res.statusCode === 200 && res.data.success && res.data.token) {
+            console.log('token刷新成功')
+            app.globalData.token = res.data.token
+            resolve(res.data.token)
+          } else {
+            console.error('token刷新失败:', res.data)
+            // 清除无效token
+            app.globalData.token = null
+            reject(new Error('token刷新失败'))
+          }
+        },
+        fail: (err) => {
+          console.error('token刷新网络错误:', err)
+          reject(new Error('网络错误'))
+        }
+      })
+    })
+  },
+  
+  // 执行获取手机号的流程，包含token刷新和重试逻辑
+  executeGetPhoneNumber(requestData) {
+    const app = getApp()
+    
+    wx.showLoading({
+      title: '获取手机号中...'
+    })
+    
+    // 使用全局app.request方法
+    app.request({
+      url: '/api/auth/get-phone-number',
+      method: 'POST',
+      data: requestData,
+      success: (res) => {
+        console.log('获取手机号接口响应:', res)
+        // 处理正常响应
+        if (res.success && res.phone_number) {
+          // 更新手机号
+          this.setData({
+            'contactInfo.phone': res.phone_number,
+            editContactPhone: res.phone_number
+          })
+          
+          wx.showToast({
+            title: '手机号获取成功',
+            icon: 'success'
+          })
+        } else {
+          console.error('获取手机号失败:', res)
+          wx.showToast({
+            title: '获取手机号失败: ' + (res.error || '未知错误'),
+            icon: 'none',
+            duration: 3000
+          })
+        }
+      },
+      fail: (err) => {
+        console.error('获取手机号请求失败:', err)
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        })
+      },
+      complete: () => {
+        wx.hideLoading()
+      }
+    })
   },
 
   /**
@@ -113,8 +664,10 @@ Page({
     //   title: '打开预览模式',
     //   icon: 'none'
     // })
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
     wx.navigateTo({
-      url: '/pages/preview/preview?type=profile'
+      url: `/pages/preview/preview?type=profile&userId=${userId}`
     })
   },
 
@@ -130,7 +683,7 @@ Page({
   /**
    * 显示个人资料编辑模态框
    */
-  showProfileEditModal() {
+  showInfoEditModal() {
     this.setData({
       editProfileDescription: this.data.userInfo.description,
       showProfileModal: true
@@ -150,19 +703,55 @@ Page({
    * 保存个人资料编辑
    */
   saveProfileEdit() {
-    const updatedUserInfo = {
-      ...this.data.userInfo,
-      description: this.data.editProfileDescription
-    }
+    const app = getApp()
+    const intro = this.data.editProfileDescription.trim()
     
-    this.setData({
-      userInfo: updatedUserInfo,
-      showProfileModal: false
+    // 显示加载提示
+    wx.showLoading({
+      title: '保存中...',
     })
     
-    wx.showToast({
-      title: '保存成功',
-      icon: 'success'
+    // 调用后端接口保存个人资料
+    app.request({
+      url: '/api/users/update-profile-intro',
+      method: 'POST',
+      data: {
+        intro: intro
+      },
+      success: (res) => {
+        if (res.code === 0 || res.success) {
+          // 更新本地数据
+          const updatedUserInfo = {
+            ...this.data.userInfo,
+            description: intro
+          }
+          
+          this.setData({
+            userInfo: updatedUserInfo,
+            showProfileModal: false
+          })
+          
+          wx.showToast({
+            title: '保存成功',
+            icon: 'success'
+          })
+        } else {
+          wx.showToast({
+            title: res.message || res.error || '保存失败',
+            icon: 'none'
+          })
+        }
+      },
+      fail: (error) => {
+        console.error('保存个人资料失败:', error)
+        wx.showToast({
+          title: '保存失败，请稍后重试',
+          icon: 'none'
+        })
+      },
+      complete: () => {
+        wx.hideLoading()
+      }
     })
   },
 
@@ -191,10 +780,13 @@ Page({
    * 保存联系信息编辑
    */
   saveContactEdit() {
-    // 简单验证
-    if (!this.data.editContactPhone) {
+    const app = getApp()
+    
+    // 验证手机号格式（允许****格式的部分隐藏手机号）
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (this.data.editContactPhone && !phoneRegex.test(this.data.editContactPhone) && !this.data.editContactPhone.includes('*')) {
       wx.showToast({
-        title: '请输入手机号码',
+        title: '请输入正确的手机号',
         icon: 'none'
       })
       return
@@ -208,20 +800,55 @@ Page({
       return
     }
     
-    const updatedContactInfo = {
-      phone: this.data.editContactPhone,
-      wechat: this.data.editContactWechat,
-      address: this.data.editContactAddress
-    }
-    
-    this.setData({
-      contactInfo: updatedContactInfo,
-      showContactModal: false
+    // 显示加载提示
+    wx.showLoading({
+      title: '保存中...',
     })
     
-    wx.showToast({
-      title: '保存成功',
-      icon: 'success'
+    // 调用后端接口保存联系信息
+    app.request({
+      url: '/api/users/update-profile-contact',
+      method: 'POST',
+      data: {
+        phone: this.data.editContactPhone,
+        wechat: this.data.editContactWechat,
+        address: this.data.editContactAddress
+      },
+      success: (res) => {
+        if (res.code === 0 || res.success) {
+          // 更新本地数据
+          const updatedContactInfo = {
+            phone: this.data.editContactPhone,
+            wechat: this.data.editContactWechat,
+            address: this.data.editContactAddress
+          }
+          
+          this.setData({
+            contactInfo: updatedContactInfo,
+            showContactModal: false
+          })
+          
+          wx.showToast({
+            title: '保存成功',
+            icon: 'success'
+          })
+        } else {
+          wx.showToast({
+            title: res.message || res.error || '保存失败',
+            icon: 'none'
+          })
+        }
+      },
+      fail: (error) => {
+        console.error('保存联系信息失败:', error)
+        wx.showToast({
+          title: '保存失败，请稍后重试',
+          icon: 'none'
+        })
+      },
+      complete: () => {
+        wx.hideLoading()
+      }
     })
   },
 
@@ -254,6 +881,7 @@ Page({
       }
     })
   },
+  
   /**
    * 编辑社交媒体
    */
@@ -309,6 +937,8 @@ Page({
    * 保存社交媒体编辑
    */
   saveSocialMediaEdit() {
+    const app = getApp()
+    
     // 简单验证
     if (this.data.editSocialPlatform.name === '自定义' && !this.data.editCustomPlatformName) {
       wx.showToast({
@@ -334,52 +964,132 @@ Page({
       return
     }
     
-    let updatedList = [...this.data.socialMediaList]
     const platformName = this.data.editSocialPlatform.name === '自定义' ? this.data.editCustomPlatformName : this.data.editSocialPlatform.name
     
-    if (this.data.isEditingSocial) {
-      // 编辑现有项
-      updatedList = updatedList.map(item => {
-        if (item.id === this.data.editingSocialId) {
-          return {
-            ...item,
-            name: platformName,
-            username: this.data.editSocialUsername,
-            url: this.data.editSocialUrl,
-            icon: this.data.editSocialPlatform.icon || '',
-            iconColor: this.data.editSocialPlatform.iconColor
-          }
-        }
-        return item
-      })
-    } else {
-      // 添加新项
-      const newItem = {
-        id: Date.now().toString(),
-        name: platformName,
-        username: this.data.editSocialUsername,
-        url: this.data.editSocialUrl,
-        icon: this.data.editSocialPlatform.icon || '',
-        iconColor: this.data.editSocialPlatform.iconColor
-      }
-      updatedList.push(newItem)
+    // 准备API请求数据
+    const requestData = {
+      name: platformName,
+      username: this.data.editSocialUsername,
+      url: this.data.editSocialUrl,
+      icon: this.data.editSocialPlatform.icon || '',
+      icon_color: this.data.editSocialPlatform.iconColor
     }
     
-    this.setData({
-      socialMediaList: updatedList,
-      showSocialMediaModal: false
+    // 如果是编辑模式，添加id
+    if (this.data.isEditingSocial) {
+      requestData.id = this.data.editingSocialId
+    }
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: '保存中...',
     })
     
-    wx.showToast({
-      title: this.data.isEditingSocial ? '更新成功' : '添加成功',
-      icon: 'success'
-    })
+    // 根据操作类型调用不同的后端接口
+    if (this.data.isEditingSocial) {
+      // 编辑操作
+      app.request({
+        url: `/api/users/social-media/${this.data.editingSocialId}`,
+        method: 'PUT',
+        data: requestData,
+        success: (res) => {
+          if (res.code === 0 || res.success) {
+            // 更新本地数据
+            const updatedList = [...this.data.socialMediaList].map(item => {
+              if (item.id === this.data.editingSocialId) {
+                return {
+                  ...item,
+                  name: platformName,
+                  username: this.data.editSocialUsername,
+                  url: this.data.editSocialUrl,
+                  icon: this.data.editSocialPlatform.icon || '',
+                  iconColor: this.data.editSocialPlatform.iconColor
+                }
+              }
+              return item
+            })
+            
+            this.setData({
+              socialMediaList: updatedList,
+              showSocialMediaModal: false
+            })
+            
+            wx.showToast({
+              title: '更新成功',
+              icon: 'success'
+            })
+          } else {
+            wx.showToast({
+              title: res.message || res.error || '更新失败',
+              icon: 'none'
+            })
+          }
+        },
+        fail: (error) => {
+          console.error('更新社交媒体信息失败:', error)
+          wx.showToast({
+            title: '更新失败，请稍后重试',
+            icon: 'none'
+          })
+        },
+        complete: () => {
+          wx.hideLoading()
+        }
+      })
+    } else {
+      // 新增操作
+      app.request({
+        url: '/api/users/social-media',
+        method: 'POST',
+        data: requestData,
+        success: (res) => {
+          if (res.code === 0 || res.success) {
+            // 添加新项
+            const newItem = {
+              id: res.data?.id || Date.now().toString(), // 使用后端返回的id或生成临时id
+              name: platformName,
+              username: this.data.editSocialUsername,
+              url: this.data.editSocialUrl,
+              icon: this.data.editSocialPlatform.icon || '',
+              iconColor: this.data.editSocialPlatform.iconColor
+            }
+            const updatedList = [...this.data.socialMediaList, newItem]
+            
+            this.setData({
+              socialMediaList: updatedList,
+              showSocialMediaModal: false
+            })
+            
+            wx.showToast({
+              title: '添加成功',
+              icon: 'success'
+            })
+          } else {
+            wx.showToast({
+              title: res.message || res.error || '添加失败',
+              icon: 'none'
+            })
+          }
+        },
+        fail: (error) => {
+          console.error('添加社交媒体信息失败:', error)
+          wx.showToast({
+            title: '添加失败，请稍后重试',
+            icon: 'none'
+          })
+        },
+        complete: () => {
+          wx.hideLoading()
+        }
+      })
+    }
   },
 
   /**
    * 删除社交媒体
    */
   deleteSocialMedia(e) {
+    const app = getApp()
     const id = e.currentTarget.dataset.id
     
     wx.showModal({
@@ -387,14 +1097,44 @@ Page({
       content: '确定要删除这个社交媒体账号吗？',
       success: (res) => {
         if (res.confirm) {
-          const updatedList = this.data.socialMediaList.filter(item => item.id !== id)
-          this.setData({
-            socialMediaList: updatedList
+          // 显示加载提示
+          wx.showLoading({
+            title: '删除中...',
           })
           
-          wx.showToast({
-            title: '删除成功',
-            icon: 'success'
+          // 调用后端接口删除社交媒体
+          app.request({
+            url: `/api/users/social-media/${id}`,
+            method: 'DELETE',
+            success: (res) => {
+              if (res.code === 0 || res.success) {
+                // 更新本地数据
+                const updatedList = this.data.socialMediaList.filter(item => item.id !== id)
+                this.setData({
+                  socialMediaList: updatedList
+                })
+                
+                wx.showToast({
+                  title: '删除成功',
+                  icon: 'success'
+                })
+              } else {
+                wx.showToast({
+                  title: res.message || res.error || '删除失败',
+                  icon: 'none'
+                })
+              }
+            },
+            fail: (error) => {
+              console.error('删除社交媒体失败:', error)
+              wx.showToast({
+                title: '删除失败，请稍后重试',
+                icon: 'none'
+              })
+            },
+            complete: () => {
+              wx.hideLoading()
+            }
           })
         }
       }
@@ -405,20 +1145,52 @@ Page({
    * 从模态框中删除社交媒体
    */
   deleteSocialMediaFromModal() {
+    const app = getApp()
+    
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这个社交媒体账号吗？',
       success: (res) => {
         if (res.confirm) {
-          const updatedList = this.data.socialMediaList.filter(item => item.id !== this.data.editingSocialId)
-          this.setData({
-            socialMediaList: updatedList,
-            showSocialMediaModal: false
+          // 显示加载提示
+          wx.showLoading({
+            title: '删除中...',
           })
           
-          wx.showToast({
-            title: '删除成功',
-            icon: 'success'
+          // 调用后端接口删除社交媒体
+          app.request({
+            url: `/api/users/social-media/${this.data.editingSocialId}`,
+            method: 'DELETE',
+            success: (res) => {
+              if (res.code === 0 || res.success) {
+                // 更新本地数据
+                const updatedList = this.data.socialMediaList.filter(item => item.id !== this.data.editingSocialId)
+                this.setData({
+                  socialMediaList: updatedList,
+                  showSocialMediaModal: false
+                })
+                
+                wx.showToast({
+                  title: '删除成功',
+                  icon: 'success'
+                })
+              } else {
+                wx.showToast({
+                  title: res.message || res.error || '删除失败',
+                  icon: 'none'
+                })
+              }
+            },
+            fail: (error) => {
+              console.error('删除社交媒体失败:', error)
+              wx.showToast({
+                title: '删除失败，请稍后重试',
+                icon: 'none'
+              })
+            },
+            complete: () => {
+              wx.hideLoading()
+            }
           })
         }
       }

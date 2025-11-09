@@ -25,21 +25,61 @@
   <view class="content-with-fixed-nav">
     <!-- 头像和基本信息 -->
     <view class="flex justify-center pt-2 pb-2">
-      <view class="w-32 h-32 rounded-full overflow-hidden shadow-md relative cursor-pointer" style="box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);">
-        <image src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" mode="widthFix" class="w-full h-full"></image>
-        <!-- 编辑提示图标 -->
-        <view class="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 hover-opacity-100 transition-all">
-          <text class="iconfont icon-camera text-white text-lg"></text>
+      <view class="relative px-4" bindtap="showProfileEditModal">
+        <image src="{{avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'}}" mode="widthFix" class="w-32 h-32 rounded-full"></image>
+        <view class="absolute right-0 bottom-0 items-center justify-center cursor-pointer">
+          <text class="fa fa-edit text-gray-500 text-lg"></text>
         </view>
       </view>
     </view>
-    <view class="text-center mb-3">
+    <view class="text-center mb-3" bindtap="showProfileEditModal">
       <view class="flex items-center justify-center gap-2">
         <text class="text-lg font-semibold text-gray-900">{{userInfo.name}}</text>
         <view class="flex items-center gap-1">
           <text class="text-sm text-gray-500">·</text>
-          <text class="text-sm text-gray-500">{{userInfo.aiStatus}}</text>
+          <text class="text-sm text-gray-500">AI分身</text>
           <view class="w-2 h-2 rounded-full" style="background-color: {{userInfo.statusColor}}"></view>
+        </view>
+        <!-- 编辑提示图标 -->
+      </view>
+    </view>
+    <!-- 底部弹窗 - 头像昵称授权 -->
+    <view class="bottom-modal-overlay" wx:if="{{showProfileAuthModal}}" bindtap="closeProfileAuthModal">
+      <view class="modal-content bottom-modal" catchtap="preventBubbling">
+        <view class="modal-header">
+          <view class="text-lg font-semibold text-gray-900">授权用户头像昵称</view>
+          <view class="w-8 h-8 flex items-center justify-center text-gray-500 hover-text-gray-700 hover-bg-gray-100 rounded-full" bindtap="closeProfileAuthModal">
+            <text class="fa fa-times"></text>
+          </view>
+        </view>
+        <view class="modal-body">
+          <!-- 头像选择 -->
+          <view class="space-item mb-5 border-b border-gray-100 py-2 relative">
+            <view class="flex items-center justify-between">
+              <view class="block text-sm font-medium text-gray-700 mb-2">头像</view>
+              <image src="{{tempAvatarUrl || avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'}}" mode="widthFix" class="w-16 h-16 rounded-full mr-4"></image>
+            </view>
+            <button class="opacity-0 absolute w-full right-0 top-0 bg-purple-600 text-white rounded-lg text-sm px-4" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+              选择头像
+            </button>
+          </view>
+          <!-- 昵称输入 -->
+          <view class="space-item mb-5">
+            <view class="flex items-center justify-between">
+              <view class="block text-sm font-medium text-gray-700 mb-2 mr-4">昵称</view>
+              <input value="{{tempNickname || userInfo.name}}" placeholder="请填写昵称" type="nickname" maxlength="20" class="flex-1 px-3 py-2 no-border rounded-lg" bindinput="onNicknameInput"></input>
+            </view>
+            <!-- <text class="text-xs text-gray-500 mt-1 block">昵称限制在20个字符以内</text> -->
+          </view>
+          <!-- 按钮区域 -->
+          <view class="flex pt-2 gap-3">
+            <button class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm" bindtap="closeProfileAuthModal">
+              取消
+            </button>
+            <button class="flex-1 px-4 py-1 bg-purple-600 text-white rounded-lg text-sm" bindtap="saveProfileAuth">
+              确定
+            </button>
+          </view>
         </view>
       </view>
     </view>
@@ -51,7 +91,7 @@
           <text class="text-purple-600 ml-1">*</text>
         </view>
         <view class="flex items-center space-x-2">
-          <view class="text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="showProfileEditModal">
+          <view class="text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="showInfoEditModal">
             <text class="fa fa-edit mr-1.5"></text>
             编辑
           </view>
@@ -103,11 +143,11 @@
       </view>
       <view class="mt-3">
         <view class="space-y-1 text-sm text-gray-600" wx:if="{{socialMediaList.length > 0}}">
-          <view class="flex items-center justify-between p-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
+          <view class="flex items-center justify-between py-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
             <view class="flex items-center">
               <!-- <text class="fa fa-{{item.icon}} {{item.iconColor}} mr-3"></text> -->
               <text class="mr-5">{{item.name}}</text>
-              <text class="text-gray-500">{{item.username}}</text>
+              <text class="text-gray-500">@{{item.username}}</text>
             </view>
             <view class="flex items-center">
               <view class="mr-3 text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="copySocialMedia" data-url="{{item.url}}">
@@ -151,7 +191,7 @@
           <textarea value="{{editProfileDescription}}" placeholder="请输入您的个人简介..." class="w-full px-3 py-2 border border-gray-300 rounded-lg  resize-y min-h-[200px] max-h-[400px]" bindinput="onProfileDescriptionInput"></textarea>
         </view>
         <view class="flex pt-4">
-          <button class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg" bindtap="saveProfileEdit">
+          <button class="flex-1 px-4 bg-purple-600 text-white rounded-lg" bindtap="saveProfileEdit">
             保存
           </button>
         </view>
@@ -171,10 +211,16 @@
         <view class="space-y-4">
           <view class="space-item">
             <view class="block text-sm font-medium text-gray-700 mb-2">
-              手机号码
+              手机号
               <text class="text-red-500">*</text>
             </view>
-            <input type="number" value="{{editContactPhone}}" placeholder="请输入手机号码" class="border border-gray-300 rounded-lg" bindinput="onContactPhoneInput"></input>
+            <view class="flex gap-2">
+              <input value="{{editContactPhone}}" placeholder="请输入手机号" class="flex-1 border border-gray-300 rounded-lg" bindinput="onContactPhoneInput"></input>
+              <button class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm" open-type="getPhoneNumber" bindgetphonenumber="getWechatPhoneNumber">
+                <text class="fa fa-wechat mr-1"></text>
+                微信授权
+              </button>
+            </view>
           </view>
           <view class="space-item">
             <view class="block text-sm font-medium text-gray-700 mb-2">
@@ -188,7 +234,7 @@
             <input value="{{editContactAddress}}" placeholder="请输入地址" class="border border-gray-300 rounded-lg" bindinput="onContactAddressInput"></input>
           </view>
           <view class="flex pt-2">
-            <button class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg" bindtap="saveContactEdit">
+            <button class="flex-1 px-4 py-1 bg-purple-600 text-white rounded-lg" bindtap="saveContactEdit">
               保存
             </button>
           </view>

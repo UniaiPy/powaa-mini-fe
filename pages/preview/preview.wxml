@@ -12,8 +12,8 @@
   <!-- 主内容 -->
   <view class="content-with-fixed-nav flex-1 content-card rounded-t-3xl px-4 py-3 space-y-4 relative">
     <view class="bg-white rounded-lg overflow-hidden shadow-sm">
-      <!-- 悬浮按钮 -->
-      <view class="bottom-btns bottom-20 left-0 right-0 z-30 px-4 pb-2 floating-button">
+      <!-- 悬浮按钮 - 仅当不是查看自己的名片时显示 -->
+      <view class="bottom-btns bottom-20 left-0 right-0 z-30 px-4 pb-2 floating-button" wx:if="{{!isOwnProfile}}">
         <view class="max-w-md mx-auto">
           <!-- 一排两个按钮：匹配度说明 + 与ta聊天 -->
           <view class="flex space-x-2">
@@ -31,18 +31,18 @@
       <!-- 头像和基本信息 -->
       <view class="flex justify-center pt-4 pb-2 bg-white">
         <view class="w-16 h-16 rounded-full overflow-hidden">
-          <image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="李小雅" class="w-full h-full object-cover rounded-full"></image>
+          <image src="{{avatarUrl}}" alt="{{userInfo.name}}" class="w-full h-full object-cover rounded-full"></image>
         </view>
       </view>
       <view class="text-center mb-3 bg-white">
         <view class="flex items-center justify-center gap-2">
-          <view class="text-lg font-semibold text-gray-900 user-name">李小雅</view>
+          <view class="text-lg font-semibold text-gray-900 user-name">
+            {{userInfo.name}}
+          </view>
           <view class="flex items-center gap-1">
             <text class="text-sm text-gray-500">·</text>
             <text class="text-sm text-gray-500">AI分身</text>
-            <view class="w-8 h-8 rounded-full {{aiStatus === 'active' ? 'bg-green-600' : 'bg-gray-400'}}" id="aiStatusDot">
-              <!-- <text class="fa fa-check text-xs {{aiStatus === 'active' ? 'text-green-600' : 'text-gray-400'}}"></text> -->
-            </view>
+            <view class="w-8 h-8 rounded-full {{userInfo.aiStatus === '在线' ? 'bg-green-600' : 'bg-gray-400'}}"></view>
           </view>
         </view>
       </view>
@@ -52,7 +52,7 @@
           <view class="text-sm font-semibold text-gray-700">个人资料</view>
         </view>
         <view class="text-sm text-gray-700 leading-relaxed">
-          资深产品设计师，专注于用户体验设计与创新产品开发。拥有5年设计经验，曾参与多个知名产品的设计工作。热爱设计创新，致力于用设计思维改善人们的生活体验。
+          {{userInfo.description || '暂无个人简介'}}
         </view>
       </view>
       <!-- 联系信息 -->
@@ -61,17 +61,17 @@
           <view class="text-sm font-semibold text-gray-700">联系信息</view>
         </view>
         <view class="text-sm text-gray-600 gap-2">
-          <view class="flex items-center">
+          <view class="flex items-center" wx:if="{{contactInfo && contactInfo.phone}}">
             <text class="fa fa-phone text-blue-600 mr-3 w-9 h-9 flex items-center justify-center"></text>
-            <text class="ml-3">138****8888</text>
+            <text class="ml-3">{{contactInfo.phone}}</text>
           </view>
-          <view class="flex items-center">
+          <view class="flex items-center" wx:if="{{contactInfo && contactInfo.wechat}}">
             <text class="fa fa-weixin text-green-600 mr-3 w-9 h-9 flex items-center justify-center"></text>
-            <text class="ml-3">xiaoya_design</text>
+            <text class="ml-3">{{contactInfo.wechat}}</text>
           </view>
-          <view class="flex items-center">
+          <view class="flex items-center" wx:if="{{contactInfo && contactInfo.address}}">
             <text class="fa fa-map-marker text-blue-600 mr-3 w-9 h-9 flex items-center justify-center"></text>
-            <text class="ml-3">上海市浦东新区陆家嘴金融中心</text>
+            <text class="ml-3">{{contactInfo.address}}</text>
           </view>
         </view>
       </view>
@@ -88,7 +88,7 @@
                 <view class="flex items-center">
                   <!-- <text class="fa fa-{{item.icon}} {{item.iconColor}} mr-3"></text> -->
                   <text class="mr-5">{{item.name}}</text>
-                  <text class="text-gray-500">{{item.username}}</text>
+                  <text class="text-gray-500">@{{item.username}}</text>
                 </view>
                 <view class="flex items-center">
                   <view class="mr-3 text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="copySocialMedia" data-url="{{item.url}}">
@@ -149,7 +149,7 @@
         <!-- 弹窗内容 -->
         <view class="p-4">
           <view class="mb-4">
-            <textarea id="greetingMessage" class="p-3 w-full border border-gray-200 rounded-lg p-3 text-gray-700 resize-none" rows="4" placeholder="输入你想说的话..." value="你好，李小雅！很高兴认识你，我对你的设计工作很感兴趣，想和你聊聊。"></textarea>
+            <textarea id="greetingMessage" class="p-3 w-full border border-gray-200 rounded-lg p-3 text-gray-700 resize-none" rows="4" placeholder="输入你想说的话..." value="{{greetingMessage}}" bindinput="onInput"></textarea>
           </view>
           <button class="w-full py-2 btn-primary text-white rounded-lg text-base font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center" bindtap="sendGreeting">
             <text class="fa fa-paper-plane mr-2"></text>
