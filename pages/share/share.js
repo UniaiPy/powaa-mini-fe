@@ -6,7 +6,10 @@ Page({
   data: {
     chatUnreadCount: 0, // 聊天未读消息数
     showToast: false,   // 是否显示提示
-    toastMessage: ''    // 提示消息
+    toastMessage: '',   // 提示消息
+    userSocialMedia: [], // 用户社交媒体列表
+    currentUserId: null, // 当前用户ID
+    previewUrl: '' // 预览页面URL
   },
 
   /**
@@ -16,6 +19,45 @@ Page({
     // 获取聊天未读消息数（模拟数据）
     this.setData({
       chatUnreadCount: 3 // 示例数据，实际应从全局状态或API获取
+    });
+    
+    // 获取当前用户信息
+    const app = getApp();
+    const userId = app.globalData.userInfo?.id || null;
+    
+    if (userId) {
+      this.setData({
+        currentUserId: userId,
+        previewUrl: `/pages/preview/preview?userId=${userId}`
+      });
+      
+      // 获取用户社交媒体信息
+      this.fetchUserSocialMedia();
+    }
+  },
+  
+  /**
+   * 获取用户社交媒体信息
+   */
+  fetchUserSocialMedia: function() {
+    const app = getApp();
+    
+    app.request({
+      url: `/api/users/social-media`,
+      method: 'GET',
+      success: (res) => {
+        if (res.code === 0 && res.data) {
+          // 过滤出有效的社交媒体
+          const validSocialMedia = res.data.filter(item => item.url);
+          
+          this.setData({
+            userSocialMedia: validSocialMedia
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('获取用户社交媒体信息失败:', err);
+      }
     });
   },
 
@@ -67,8 +109,8 @@ Page({
    */
   onShareAppMessage: function () {
     return {
-      title: '分享给好友',
-      path: '/pages/share/share',
+      title: '我的AI分身名片',
+      path: this.data.previewUrl,
       imageUrl: '/images/share-cover.png' // 分享封面图
     };
   },
@@ -78,29 +120,50 @@ Page({
    */
   onSharePlatformTap: function(e) {
     const platform = e.currentTarget.dataset.platform;
-    
-    // 根据不同平台执行不同的分享逻辑
-    switch(platform) {
-      case 'wechat':
-        this.showToast('分享给微信好友');
-        break;
-      case 'wechat-group':
-        this.showToast('分享到微信群');
-        break;
-      case 'moments':
-        this.showToast('分享到朋友圈');
-        break;
-      case 'weibo':
-        this.showToast('分享到微博');
-        break;
-      case 'qq':
-        this.showToast('分享给QQ好友');
-        break;
-      case 'other':
-        this.showToast('分享到其他平台');
-        break;
-      default:
-        this.showToast('分享功能开发中');
+    const socialId = e.currentTarget.dataset.id;
+    console.log('点击分享平台:', platform, socialId);
+    // 处理微信相关分享（分享预览页面）
+    if (['wechat', 'wechat-group', 'moments'].includes(platform)) {
+      if (platform === 'moments') {
+        // 朋友圈分享
+        wx.showShareImageMenu({
+          path: '/images/share-cover.png',
+          success: () => {
+            this.showToast('分享到朋友圈成功');
+          },
+          fail: () => {
+            this.showToast('分享失败');
+          }
+        });
+      } else {
+        // 微信好友和群聊分享
+        wx.showShareMenu({
+          withShareTicket: true,
+          menus: ['shareAppMessage'],
+          success: () => {
+            this.showToast('请选择要分享的好友');
+          },
+          fail: () => {
+            this.showToast('分享失败');
+          }
+        });
+      }
+    } else if (socialId) {
+      // 处理用户自定义社交媒体（复制链接）
+      const socialItem = this.data.userSocialMedia.find(item => item.id === socialId);
+      if (socialItem && socialItem.url) {
+        wx.setClipboardData({
+          data: socialItem.url,
+          success: () => {
+            this.showToast(`已复制${socialItem.name}链接`);
+          },
+          fail: () => {
+            this.showToast('复制链接失败');
+          }
+        });
+      }
+    } else {
+      this.showToast('分享功能开发中');
     }
   },
 

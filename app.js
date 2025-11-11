@@ -91,10 +91,7 @@ App({
             const safeUser = {
               id: user.id || '',
               nickname: user.nickname || '小皮' + user.id,
-              avatar_url: user.avatar_url || '/assets/default-avatar.png',
               phone_number: user.phone || '',
-              wechat: user.wechat || '',
-              intro: user.intro || ''
             }
             
             console.log('准备保存的用户信息:', safeUser)
@@ -164,7 +161,6 @@ App({
     // 检查用户信息是否完整（头像、昵称、手机号）
     const isUserInfoComplete = userInfo && 
                               userInfo.nickname && 
-                              userInfo.avatar_url && 
                               userInfo.phone_number;
     
     if (!isUserInfoComplete) {

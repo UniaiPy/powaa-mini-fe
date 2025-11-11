@@ -58,25 +58,25 @@
   flex-wrap: wrap;
 }
 
-.grid-cols-3 {
-  grid-template-columns: repeat(3, 1fr);
-}
-
 .gap-2 {
   gap: 12px;
+  /* 计算每个元素宽度：33.333%减去间距的影响 */
+  margin-left: -4px;
+  /* 补偿间距，确保一行正好放三个 */
 }
 
 /* 分享平台样式 */
 .share-platform {
-  flex: 1;
+  /* 固定每个元素宽度为三分之一，减去间距影响 */
+  flex-basis: calc(33.333% - 8px);
+  flex-shrink: 0;
   background: white;
-    transition: all 0.3s 
-ease;
-    cursor: pointer;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-radius: 20rpx;
-    padding: 40rpx;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 20rpx;
+  padding: 40rpx;
 }
 
 .share-platform:active {
@@ -162,13 +162,13 @@ ease;
     max-width: 768px;
     margin: 0 auto;
   }
-  
+
   .fixed-nav {
     max-width: 768px;
     left: 50%;
     transform: translateX(-50%);
   }
-  
+
   .bottom-nav {
     max-width: 768px;
     left: 50%;

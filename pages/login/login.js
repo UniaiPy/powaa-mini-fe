@@ -68,7 +68,7 @@ Page({
               // 检查用户信息是否完整（头像、昵称、手机号）
               const isUserInfoComplete = userInfo && 
                                         userInfo.nickname && 
-                                        userInfo.avatar_url && 
+                                        // userInfo.avatar_url && 
                                         userInfo.phone_number;
               
               if (!isUserInfoComplete) {
