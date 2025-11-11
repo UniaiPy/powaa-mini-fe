@@ -8,7 +8,6 @@ Page({
     userInfo: {
       name: '',
       aiStatus: '在线',
-      statusColor: '#10B981',
       description: ''
     },
     
@@ -25,15 +24,8 @@ Page({
     // 头像URL - 直接使用后端返回的临时访问URL
     avatarUrl: '',
     
-    // 支持的社交媒体平台
-    platforms: [
-      { name: 'GitHub', icon: 'github', iconColor: 'text-gray-700' },
-      { name: '知乎', icon: 'zhihu', iconColor: 'text-blue-500' },
-      { name: '微博', icon: 'weibo', iconColor: 'text-red-500' },
-      { name: '掘金', icon: 'juejin', iconColor: 'text-blue-600' },
-      { name: '微信', icon: 'wechat', iconColor: 'text-green-600' },
-      { name: '自定义', icon: '', iconColor: 'text-gray-600' }
-    ],
+    // 支持的社交媒体平台（默认为空，将从后端获取）
+    platforms: [],
     
     // 模态框状态
     showProfileModal: false,
@@ -42,133 +34,62 @@ Page({
     showProfileAuthModal: false,
     
     // 编辑状态数据
-    editProfileDescription: '',
-    editContactPhone: '',
-    editContactWechat: '',
-    editContactAddress: '',
-    editSocialPlatformIndex: 0,
-    editSocialPlatform: null,
-    editCustomPlatformName: '',
-    editSocialUsername: '',
-    editSocialUrl: '',
-    isEditingSocial: false,
-    editingSocialId: null,
-    tempAvatarUrl: '',
-    tempAvatarKey: null,
-    tempNickname: ''
-  },
+    // 编辑状态数据
+    editProfileDescription: '',     // 个人简介编辑框的临时存储值
+    editContactPhone: '',           // 联系电话编辑框的临时存储值
+    editContactWechat: '',          // 微信号编辑框的临时存储值
+    editContactAddress: '',         // 地址编辑框的临时存储值
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  /**
-   * 从后台获取用户名片数据
-   */
-  fetchUserProfileData() {
-    const app = getApp()
-    
-    // 检查token是否存在
-    if (!app.globalData.token) {
-      console.error('token不存在，无法获取用户名片数据')
-      return
-    }
-    
-    // 显示加载提示
-    wx.showLoading({
-      title: '加载中...',
-    })
-    
-    // 使用全局request方法发送请求
-    const userId = app.globalData.userInfo?.id || this.data.userInfo?.id;
-    app.request({
-      url: `/api/users/profile/${userId}`,
-      method: 'GET',
-      success: async (res) => {
-        // 根据后端实际返回格式判断成功与否：code=0表示成功
-        if ((res.code === 0 || res.success) && res.data) {
-          const profileData = res.data
-          const updateData = {}
-          
-          console.log('获取到的用户名片数据:', profileData)
-          
-          // 更新用户基本信息
-          if (profileData.userInfo) {
-            updateData.userInfo = {
-              name: profileData.userInfo.name || '用户',
-              aiStatus: profileData.userInfo.aiStatus || '在线',
-              statusColor: profileData.userInfo.statusColor || '#10B981',
-              description: profileData.userInfo.description || ''
-            }
-          }
-          
-          // 更新联系信息
-          if (profileData.contactInfo) {
-            updateData.contactInfo = {
-              phone: profileData.contactInfo.phone || '',
-              wechat: profileData.contactInfo.wechat || '',
-              address: profileData.contactInfo.address || ''
-            }
-          }
-          
-          // 更新社交媒体列表
-          if (profileData.socialMediaList && Array.isArray(profileData.socialMediaList)) {
-            updateData.socialMediaList = profileData.socialMediaList
-          }
-          
-          // 更新编辑框数据，确保使用当前数据作为回退
-          updateData.editProfileDescription = updateData.userInfo?.description || this.data.userInfo.description
-          updateData.editContactPhone = updateData.contactInfo?.phone || this.data.contactInfo.phone
-          updateData.editContactWechat = updateData.contactInfo?.wechat || this.data.contactInfo.wechat
-          updateData.editContactAddress = updateData.contactInfo?.address || this.data.contactInfo.address
-          
-          // 处理头像URL - 后端已返回临时访问URL，可以直接使用
-          if (profileData.avatar_url) {
-            updateData.avatarUrl = profileData.avatar_url
-          }
-          
-          // 一次性更新所有数据，确保数据一致性
-          if (Object.keys(updateData).length > 0) {
-            this.setData(updateData)
-            console.log('成功获取并更新用户名片数据')
-          }
-        } else {
-          // 处理后端返回的错误信息
-          const errorMessage = res.message || res.error || '未知错误'
-          console.error('获取用户名片数据失败:', errorMessage)
-          wx.showToast({
-            title: '获取用户信息失败',
-            icon: 'none'
-          })
-        }
-      },
-      fail: (error) => {
-        console.error('网络请求失败:', error)
-        wx.showToast({
-          title: '网络请求失败',
-          icon: 'none'
-        })
-      },
-      complete: () => {
-        // 隐藏加载提示
-        wx.hideLoading()
-      }
-    })
-  },
+    editSocialPlatformIndex: 0,     // 当前选择的社交媒体平台在platforms数组中的索引位置
+    editSocialPlatform: null,       // 当前选择的社交媒体平台对象（包含name、icon等信息）
+    editSocialPlatformId: null,     // 当前选择的社交媒体平台ID（用于后端查询）
 
+    editSocialPlatformName: '',     // 当前选择的社交媒体平台名称（用于显示）
+    editSocialUsername: '',         // 社交媒体用户名编辑框的临时存储值
+    editSocialUrl: '',              // 社交媒体主页链接编辑框的临时存储值
+    isEditingSocial: false,         // 标记当前是编辑现有社交媒体还是添加新的社交媒体
+    editingSocialId: null,          // 当前正在编辑的社交媒体记录ID
+    tempAvatarUrl: '',              // 临时头像URL（用于上传预览）
+    tempAvatarKey: null,            // 临时头像在OSS存储的key
+    tempNickname: ''                // 临时昵称（用于显示编辑前的昵称）
+  },
+  
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
-    // 初始化编辑数据 - 使用从接口获取的实际数据
-    this.setData({
-      editProfileDescription: this.data.userInfo.description,
-      editContactPhone: this.data.contactInfo.phone,
-      editContactWechat: this.data.contactInfo.wechat,
-      editContactAddress: this.data.contactInfo.address
-    })
+    // 获取社交媒体平台列表
+    this.fetchSocialPlatforms()
+  },
+  
+  /**
+   * 获取社交媒体平台列表
+   */
+  fetchSocialPlatforms() {
+    const app = getApp();
     
-    // 获取用户名片数据 - 确保使用最新数据更新页面
-    this.fetchUserProfileData()
+    // 使用全局request方法发送请求
+    app.request({
+      url: '/api/users/social-platforms',
+      method: 'GET',
+      success: (res) => {
+        // 根据后端返回格式判断成功与否
+        if ((res.code === 0 || res.success) && res.data?.platforms) {
+          this.setData({
+            platforms: res.data.platforms
+          });
+          console.log('成功获取社交媒体平台列表:', res.data.platforms);
+        } else {
+          console.warn('获取社交媒体平台列表失败，使用默认值');
+        }
+      },
+      fail: (err) => {
+        console.error('获取社交媒体平台列表请求失败:', err);
+      },
+      complete: () => {
+        // 请求完成后重置标志
+      }
+    });
   },
 
   /**
@@ -206,28 +127,99 @@ Page({
         this.setData(updateData)
       }
     }
-    
-    // 检查是否需要重新获取数据（例如用户信息为空或不完整时）
-    const needRefreshData = !this.data.userInfo.name || 
-                           this.data.userInfo.name === 'AI助手' ||
-                           !this.data.contactInfo.phone || 
-                           this.data.contactInfo.phone === '138****8888';
-    
-    if (needRefreshData) {
-      // 重新从服务器获取最新的用户名片数据
-      this.fetchUserProfileData();
-    }
+    // 获取最新的用户名片数据
+    this.fetchUserProfileData();
   },
-  
+
   /**
-   * 显示头像昵称编辑弹窗
+   * 从后台获取用户名片数据
    */
-  showProfileEditModal() {
-    console.log('显示头像昵称编辑弹窗')
-    this.setData({
-      showProfileAuthModal: true,
-      tempAvatarUrl: '',
-      tempNickname: this.data.userInfo.name
+  fetchUserProfileData() {
+    const app = getApp()
+    
+    // 检查token是否存在
+    if (!app.globalData.token) {
+      console.error('token不存在，无法获取用户名片数据')
+      return
+    }
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: '加载中...',
+    })
+    
+    // 使用全局request方法发送请求
+    const userId = app.globalData.userInfo?.id || this.data.userInfo?.id;
+    app.request({
+      url: `/api/users/profile/${userId}`,
+      method: 'GET',
+      success: async (res) => {
+        // 根据后端实际返回格式判断成功与否：code=0表示成功
+        if ((res.code === 0 || res.success) && res.data) {
+          const profileData = res.data
+          const updateData = {}
+          
+          console.log('获取到的用户名片数据:', profileData)
+          
+          // 更新用户基本信息
+          if (profileData.userInfo) {
+            updateData.userInfo = {
+              name: profileData.userInfo.name || '用户',
+              aiStatus: profileData.userInfo.aiStatus || '在线',
+              description: profileData.userInfo.description || ''
+            }
+          }
+          
+          // 更新联系信息
+          if (profileData.contactInfo) {
+            updateData.contactInfo = {
+              phone: profileData.contactInfo.phone || '',
+              wechat: profileData.contactInfo.wechat || '',
+              address: profileData.contactInfo.address || ''
+            }
+          }
+          
+          // 更新社交媒体列表
+          if (profileData.socialMediaList && Array.isArray(profileData.socialMediaList)) {
+            updateData.socialMediaList = profileData.socialMediaList
+          }
+          
+          // 更新编辑框数据，确保使用当前数据作为回退
+          updateData.editProfileDescription = updateData.userInfo?.description || this.data.userInfo.description
+          updateData.editContactPhone = updateData.contactInfo?.phone || this.data.contactInfo.phone
+          updateData.editContactWechat = updateData.contactInfo?.wechat || this.data.contactInfo.wechat
+          updateData.editContactAddress = updateData.contactInfo?.address || this.data.contactInfo.address
+          
+          // 处理头像URL - 后端已返回临时访问URL，可以直接使用
+          if (profileData.avatar_url) {
+            updateData.avatarUrl = profileData.avatar_url
+          }
+          
+          // 一次性更新所有数据，确保数据一致性
+          if (Object.keys(updateData).length > 0) {
+            this.setData(updateData)
+          }
+        } else {
+          // 处理后端返回的错误信息
+          const errorMessage = res.message || res.error || '未知错误'
+          console.error('获取用户名片数据失败:', errorMessage)
+          wx.showToast({
+            title: '获取用户信息失败',
+            icon: 'none'
+          })
+        }
+      },
+      fail: (error) => {
+        console.error('网络请求失败:', error)
+        wx.showToast({
+          title: '网络请求失败',
+          icon: 'none'
+        })
+      },
+      complete: () => {
+        // 隐藏加载提示
+        wx.hideLoading()
+      }
     })
   },
   
@@ -372,10 +364,15 @@ Page({
   },
   
   /**
-   * 获取微信用户信息（包括头像）- 兼容旧方法
+   * 显示头像昵称编辑弹窗
    */
-  getWechatUserInfo() {
-    this.showProfileEditModal()
+  showProfileEditModal() {
+    console.log('显示头像昵称编辑弹窗')
+    this.setData({
+      showProfileAuthModal: true,
+      tempAvatarUrl: '',
+      tempNickname: this.data.userInfo.name
+    })
   },
   
   /**
@@ -567,37 +564,6 @@ Page({
     }
   },
   
-  // 刷新token的方法
-  refreshToken() {
-    const app = getApp()
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: app.globalData.baseUrl + '/api/auth/refresh-token',
-        method: 'POST',
-        header: {
-          'content-type': 'application/json',
-          'Authorization': app.globalData.token ? 'Bearer ' + app.globalData.token : ''
-        },
-        success: (res) => {
-          if (res.statusCode === 200 && res.data.success && res.data.token) {
-            console.log('token刷新成功')
-            app.globalData.token = res.data.token
-            resolve(res.data.token)
-          } else {
-            console.error('token刷新失败:', res.data)
-            // 清除无效token
-            app.globalData.token = null
-            reject(new Error('token刷新失败'))
-          }
-        },
-        fail: (err) => {
-          console.error('token刷新网络错误:', err)
-          reject(new Error('网络错误'))
-        }
-      })
-    })
-  },
-  
   // 执行获取手机号的流程，包含token刷新和重试逻辑
   executeGetPhoneNumber(requestData) {
     const app = getApp()
@@ -644,39 +610,6 @@ Page({
       complete: () => {
         wx.hideLoading()
       }
-    })
-  },
-
-  /**
-   * 导航到关于页面
-   */
-  navigateToAbout() {
-    wx.navigateTo({
-      url: '/pages/about/about'
-    })
-  },
-
-  /**
-   * 打开预览
-   */
-  openPreview() {
-    // wx.showToast({
-    //   title: '打开预览模式',
-    //   icon: 'none'
-    // })
-    const app = getApp()
-    const userId = app.globalData.userInfo.id;
-    wx.navigateTo({
-      url: `/pages/preview/preview?type=profile&userId=${userId}`
-    })
-  },
-
-  /**
-   * 打开分享
-   */
-  openShare() {
-    wx.navigateTo({
-      url: '/pages/share/share'
     })
   },
 
@@ -853,13 +786,13 @@ Page({
   },
 
   /**
-   * 显示社交媒体编辑模态框
+   * 显示添加社媒模态框
    */
   showSocialMediaEditModal() {
     this.setData({
       editSocialPlatformIndex: 0,
       editSocialPlatform: this.data.platforms[0],
-      editCustomPlatformName: '',
+      editSocialPlatformName: '',
       editSocialUsername: '',
       editSocialUrl: '',
       isEditingSocial: false,
@@ -883,12 +816,12 @@ Page({
   },
   
   /**
-   * 编辑社交媒体
+   * 显示编辑社媒模态框
    */
   editSocialMedia(e) {
     const id = e.currentTarget.dataset.id
     const socialItem = this.data.socialMediaList.find(item => item.id === id)
-    
+
     if (socialItem) {
       // 查找平台索引
       let platformIndex = 0
@@ -898,9 +831,9 @@ Page({
       })
       
       this.setData({
-        editSocialPlatformIndex: platform ? platformIndex : 5, // 5 是自定义选项的索引
-        editSocialPlatform: platform || { name: '自定义', icon: '', iconColor: 'text-gray-600' },
-        editCustomPlatformName: platform ? '' : socialItem.name,
+        editSocialPlatformIndex: platform ? platformIndex : 0,
+        editSocialPlatform: platform || this.data.platforms[0] || {},
+        editSocialPlatformName: platform.name || '',
         editSocialUsername: socialItem.username,
         editSocialUrl: socialItem.url,
         isEditingSocial: true,
@@ -919,8 +852,7 @@ Page({
     
     this.setData({
       editSocialPlatformIndex: index,
-      editSocialPlatform: platform,
-      editCustomPlatformName: platform.name === '自定义' ? this.data.editCustomPlatformName : ''
+      editSocialPlatform: platform
     })
   },
 
@@ -939,15 +871,7 @@ Page({
   saveSocialMediaEdit() {
     const app = getApp()
     
-    // 简单验证
-    if (this.data.editSocialPlatform.name === '自定义' && !this.data.editCustomPlatformName) {
-      wx.showToast({
-        title: '请输入自定义平台名称',
-        icon: 'none'
-      })
-      return
-    }
-    
+    // 用户名和主页链接是否为空
     if (!this.data.editSocialUsername) {
       wx.showToast({
         title: '请输入用户名',
@@ -963,16 +887,14 @@ Page({
       })
       return
     }
-    
-    const platformName = this.data.editSocialPlatform.name === '自定义' ? this.data.editCustomPlatformName : this.data.editSocialPlatform.name
+
+    const platformName = this.data.editSocialPlatform.name
     
     // 准备API请求数据
     const requestData = {
-      name: platformName,
+      platform_id: this.data.editSocialPlatform.id || '',
       username: this.data.editSocialUsername,
       url: this.data.editSocialUrl,
-      icon: this.data.editSocialPlatform.icon || '',
-      icon_color: this.data.editSocialPlatform.iconColor
     }
     
     // 如果是编辑模式，添加id
@@ -1002,8 +924,6 @@ Page({
                   name: platformName,
                   username: this.data.editSocialUsername,
                   url: this.data.editSocialUrl,
-                  icon: this.data.editSocialPlatform.icon || '',
-                  iconColor: this.data.editSocialPlatform.iconColor
                 }
               }
               return item
@@ -1044,14 +964,13 @@ Page({
         data: requestData,
         success: (res) => {
           if (res.code === 0 || res.success) {
+            console.log('添加社交媒体成功:', res.data)
             // 添加新项
             const newItem = {
-              id: res.data?.id || Date.now().toString(), // 使用后端返回的id或生成临时id
+              id: res.data?.id, // 使用后端返回的id或生成临时id
               name: platformName,
               username: this.data.editSocialUsername,
               url: this.data.editSocialUrl,
-              icon: this.data.editSocialPlatform.icon || '',
-              iconColor: this.data.editSocialPlatform.iconColor
             }
             const updatedList = [...this.data.socialMediaList, newItem]
             
@@ -1234,15 +1153,6 @@ Page({
   },
 
   /**
-   * 处理自定义平台名称输入
-   */
-  onCustomPlatformNameInput(e) {
-    this.setData({
-      editCustomPlatformName: e.detail.value
-    })
-  },
-
-  /**
    * 处理社交媒体用户名输入
    */
   onSocialUsernameInput(e) {
@@ -1270,13 +1180,44 @@ Page({
   },
 
   /**
+   * 导航到关于页面
+   */
+  navigateToAbout() {
+    wx.navigateTo({
+      url: '/pages/about/about'
+    })
+  },
+
+  /**
+   * 打开预览
+   */
+  openPreview() {
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
+    wx.navigateTo({
+      url: `/pages/preview/preview?type=profile&userId=${userId}`
+    })
+  },
+
+  /**
+   * 打开分享
+   */
+  openShare() {
+    wx.navigateTo({
+      url: '/pages/share/share'
+    })
+  },
+
+  /**
    * 用户点击右上角分享
    */
   onShareAppMessage() {
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: '/pages/profile/profile',
-      imageUrl: '/images/ai.png'
+      path: `/pages/preview/preview?type=profile&userId=${userId}`
+      // imageUrl: '/images/ai.png'
     }
   }
 })

@@ -23,7 +23,7 @@ Page({
     
     // 获取当前用户信息
     const app = getApp();
-    const userId = app.globalData.userInfo?.id || null;
+    const userId = app.globalData.userInfo?.id || '';
     
     if (userId) {
       this.setData({
@@ -73,7 +73,6 @@ Page({
    */
   onShow: function () {
     // 每次显示页面时更新未读消息数
-    this.updateUnreadCount();
   },
 
   /**
@@ -217,15 +216,4 @@ Page({
       url: '/pages/profile/profile'
     });
   },
-
-  /**
-   * 更新未读消息数
-   */
-  updateUnreadCount: function() {
-    // 这里应该从全局状态或API获取实际的未读消息数
-    // 示例中使用模拟数据
-    this.setData({
-      chatUnreadCount: 3
-    });
-  }
 })

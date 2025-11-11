@@ -38,7 +38,7 @@
         <view class="flex items-center gap-1">
           <text class="text-sm text-gray-500">·</text>
           <text class="text-sm text-gray-500">AI分身</text>
-          <view class="w-2 h-2 rounded-full" style="background-color: {{userInfo.statusColor}}"></view>
+          <view class="w-2 h-2 rounded-full {{userInfo.aiStatus === '在线' ? 'bg-green-600' : 'bg-gray-400'}}"></view>
         </view>
         <!-- 编辑提示图标 -->
       </view>

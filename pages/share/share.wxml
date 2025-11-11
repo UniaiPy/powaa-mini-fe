@@ -48,7 +48,7 @@
             <view class="grid gap-2 mb-6">
               <view wx:for="{{userSocialMedia}}" wx:key="id" class="share-platform rounded-xl p-3 text-center" data-platform="social" data-id="{{item.id}}" bindtap="onSharePlatformTap">
                 <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
-                  <text wx:if="{{item.icon}}" class="fa fa-{{item.icon}} text-xl" style="color: {{item.iconColor || '#666666'}}"></text>
+                  <image wx:if="{{item.icon}}" src="{{item.icon}}" class="social-icon" style="width: 24px; height: 24px;" mode="aspectFit"></image>
                   <text wx:else class="fa fa-link text-xl text-blue-500"></text>
                 </view>
                 <text class="text-xs font-medium">{{item.name}}</text>
