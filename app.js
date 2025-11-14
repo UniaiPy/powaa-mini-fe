@@ -1,11 +1,18 @@
 // app.js
+import TencentCloudChat from '@tencentcloud/chat';
+
 App({
   globalData: {
     userInfo: null,
     token: null,
     baseUrl: 'http://127.0.0.1:5001', // 后端API基础地址 https://api.powaaaicard.com
     unreadCount: 0,
-    useMockData: false // 关闭模拟数据，使用真实后端
+    useMockData: false, // 关闭模拟数据，使用真实后端
+    // TUIKit相关配置
+    userID: null,
+    userSig: null,
+    SDKAppID: null,
+    isTUIKitInitialized: false
   },
 
   onLaunch: function () {
@@ -25,6 +32,9 @@ App({
 
     // 获取系统信息
     this.getSystemInfo()
+
+    // 初始化TUIKit（如果用户已登录）
+    this.initTUIKitIfLoggedIn()
 
     // 初始化云开发环境（如果需要）
     // wx.cloud.init({
@@ -123,6 +133,12 @@ App({
     // 每次显示应用时都检查并恢复登录状态
     this.checkLoginStatus()
     this.updateUnreadCount()
+    
+    // 检查TUIKit是否需要初始化
+    if (!this.globalData.isTUIKitInitialized && this.globalData.token && this.globalData.userInfo) {
+      console.log('TUIKit未初始化且用户已登录，尝试初始化')
+      this.initTUIKitIfLoggedIn()
+    }
   },
   
   /**
@@ -357,5 +373,230 @@ App({
     wx.removeStorageSync('userInfo')
     this.globalData.token = null
     this.globalData.userInfo = null
+    
+    // 清除TUIKit相关配置
+    this.globalData.userID = null
+    this.globalData.userSig = null
+    this.globalData.SDKAppID = null
+    this.globalData.isTUIKitInitialized = false
+    
+    // 清除全局TUIKit实例
+    if (wx.$TUIKit) {
+      try {
+        // 先检查登录状态
+        const loginStatus = wx.$TUIKit.getLoginStatus()
+        if (loginStatus === wx.TencentCloudChat.TYPES.LOGIN_STATUS_LOGGED_IN) {
+          wx.$TUIKit.logout()
+        }
+      } catch (error) {
+        console.error('TUIKit登出失败:', error)
+      }
+      wx.$TUIKit = null
+    }
+    
+    wx.$chat_userID = null
+    wx.$chat_userSig = null
+    wx.$chat_SDKAppID = null
+  },
+
+  // 如果用户已登录，初始化TUIKit
+  initTUIKitIfLoggedIn: function() {
+    const token = this.globalData.token
+    const userInfo = this.globalData.userInfo
+    
+    if (token && userInfo) {
+      console.log('用户已登录，开始初始化TUIKit')
+      this.getIMConfigFromServer(token)
+    } else {
+      console.log('用户未登录，跳过TUIKit初始化')
+    }
+  },
+
+  // 从后端获取IM配置参数
+  getIMConfigFromServer: function(token) {
+    return new Promise((resolve, reject) => {
+      try {
+        // 调用后端API获取IM配置参数
+        this.request({
+          url: '/api/im/get-config',
+          method: 'GET',
+          header: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          success: (res) => {
+            console.log('IM配置接口响应:', res)
+            
+            if (res.code === 200 && res.data) {
+              const config = res.data
+              console.log('获取到的IM配置:', {
+                SDKAppID: config.SDKAppID,
+                userID: config.userID,
+                userSigLength: config.userSig ? config.userSig.length : 0
+              })
+              
+              // 检查响应数据
+              if (config && config.userID && config.userSig && config.SDKAppID) {
+                const { userID, userSig, SDKAppID } = config
+                
+                // 保存到全局数据
+                this.globalData.userID = userID
+                this.globalData.userSig = userSig
+                this.globalData.SDKAppID = SDKAppID
+                
+                // 初始化TUIKit
+                this.initializeTUIKit(userID, userSig, SDKAppID)
+                resolve(config)
+              } else {
+                console.error('IM配置参数不完整:', config)
+                reject(new Error('IM配置参数不完整'))
+              }
+            } else {
+              console.error('获取IM配置失败:', res.error || '服务器返回错误')
+              reject(new Error(res.error || '服务器返回错误'))
+            }
+          },
+          fail: (error) => {
+            console.error('获取IM配置失败:', error)
+            reject(error)
+          }
+        })
+      } catch (error) {
+        console.error('获取IM配置异常:', error)
+        reject(error)
+      }
+    })
+  },
+
+  // 初始化TUIKit
+  initializeTUIKit: function(userID, userSig, SDKAppID) {
+    try {
+      console.log('开始初始化TUIKit:', { userID, SDKAppID })
+      
+      // 检查是否已经初始化并登录
+      if (wx.$TUIKit && this.globalData.isTUIKitInitialized) {
+        console.log('TUIKit已初始化，检查登录状态')
+        
+        try {
+          // 检查当前登录状态
+          const loginStatus = wx.$TUIKit.getLoginStatus()
+          console.log('当前TUIKit登录状态:', loginStatus)
+          
+          if (loginStatus === wx.TencentCloudChat.TYPES.LOGIN_STATUS_LOGGED_IN) {
+            // 检查是否是同一用户
+            if (wx.$chat_userID === userID && wx.$chat_SDKAppID === parseInt(SDKAppID)) {
+              console.log('TUIKit已登录相同用户，跳过重复登录')
+              return
+            } else {
+              console.log('TUIKit已登录不同用户，需要重新登录')
+              // 先登出当前用户
+              wx.$TUIKit.logout().then(() => {
+                console.log('已登出旧用户，开始登录新用户')
+                this.performLogin(userID, userSig, SDKAppID)
+              }).catch((error) => {
+                console.log('登出旧用户失败，强制重新登录:', error)
+                this.performLogin(userID, userSig, SDKAppID)
+              })
+              return
+            }
+          } else if (loginStatus === wx.TencentCloudChat.TYPES.LOGIN_STATUS_LOGGING) {
+            console.log('TUIKit正在登录中，等待登录完成')
+            return
+          }
+        } catch (statusError) {
+          console.log('获取登录状态失败，继续执行登录流程:', statusError)
+        }
+      }
+      
+      // 如果TUIKit实例存在但未正确初始化，先销毁
+      if (wx.$TUIKit && !this.globalData.isTUIKitInitialized) {
+        try {
+          wx.$TUIKit.logout()
+        } catch (error) {
+          console.log('销毁旧TUIKit实例失败:', error)
+        }
+        wx.$TUIKit = null
+      }
+      
+      // 执行登录流程
+      this.performLogin(userID, userSig, SDKAppID)
+      
+    } catch (error) {
+      console.error('TUIKit初始化失败:', error)
+      this.globalData.isTUIKitInitialized = false
+    }
+  },
+
+  // 执行实际的登录操作
+  performLogin: function(userID, userSig, SDKAppID) {
+    try {
+      // 初始化TUIKit实例
+      wx.$TUIKit = TencentCloudChat.create({
+        SDKAppID: parseInt(SDKAppID)
+      })
+      
+      // 保存到全局变量
+      wx.$chat_SDKAppID = parseInt(SDKAppID)
+      wx.$chat_userID = userID
+      wx.$chat_userSig = userSig
+      wx.TencentCloudChat = TencentCloudChat
+      
+      // 登录IM
+      wx.$TUIKit.login({
+        userID: userID,
+        userSig: userSig
+      }).then(() => {
+        console.log('TUIKit登录成功')
+        this.globalData.isTUIKitInitialized = true
+        
+        // 设置全局事件监听
+        this.setTUIKitEventListeners()
+        
+      }).catch((error) => {
+        console.error('TUIKit登录失败:', error)
+        this.globalData.isTUIKitInitialized = false
+        
+        // 如果是重复登录错误，不视为失败
+        if (error.message && (error.message.includes('重复登录') || error.message.includes('duplicate login'))) {
+          console.log('检测到重复登录，标记为已初始化')
+          this.globalData.isTUIKitInitialized = true
+          this.setTUIKitEventListeners()
+        } else {
+          // 其他登录错误，清除实例
+          wx.$TUIKit = null
+        }
+      })
+      
+    } catch (error) {
+      console.error('执行登录操作失败:', error)
+      this.globalData.isTUIKitInitialized = false
+      wx.$TUIKit = null
+    }
+  },
+
+  // 设置TUIKit全局事件监听
+  setTUIKitEventListeners: function() {
+    if (!wx.$TUIKit) return
+    
+    try {
+      // 监听SDK_READY事件
+      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_READY, (event) => {
+        console.log('TUIKit SDK准备就绪')
+      })
+      
+      // 监听新消息
+      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED, (event) => {
+        console.log('收到新消息:', event)
+        // 可以在这里处理全局消息通知
+      })
+      
+      // 监听会话列表更新
+      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED, (event) => {
+        console.log('会话列表更新:', event)
+      })
+      
+    } catch (error) {
+      console.error('设置TUIKit事件监听失败:', error)
+    }
   }
 })

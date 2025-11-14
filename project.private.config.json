@@ -17,13 +17,6 @@
           "query": "",
           "launchMode": "default",
           "scene": null
-        },
-        {
-          "name": "pages/im-test/im-test",
-          "pathName": "pages/im-test/im-test",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
         }
       ]
     }

@@ -174,13 +174,48 @@ Page({
     
     // 检查TUIKit是否已初始化
     if (!wx.$TUIKit) {
-      console.error('TUIKit未初始化');
-      wx.hideLoading();
-      this.showToast('IM服务未初始化，请稍后重试');
+      console.error('TUIKit未初始化，尝试初始化');
+      const app = getApp();
+      
+      // 尝试初始化TUIKit
+      if (app.globalData.token && app.globalData.userInfo) {
+        console.log('用户已登录，尝试获取IM配置并初始化TUIKit');
+        app.getIMConfigFromServer(app.globalData.token).then(() => {
+          // 等待一小段时间让初始化完成
+          setTimeout(() => {
+            if (wx.$TUIKit) {
+              console.log('TUIKit初始化成功，重新执行添加好友');
+              this.addFriend(targetUser, message);
+            } else {
+              console.error('TUIKit初始化失败');
+              wx.hideLoading();
+              this.showToast('IM服务初始化失败，请稍后重试');
+            }
+          }, 1000);
+        }).catch((error) => {
+          console.error('获取IM配置失败:', error);
+          wx.hideLoading();
+          this.showToast('IM服务配置获取失败，请稍后重试');
+        });
+      } else {
+        console.error('用户未登录，无法初始化TUIKit');
+        wx.hideLoading();
+        this.showToast('请先登录后再使用此功能');
+      }
       return;
     }
     
     // 调用腾讯云IM添加好友API
+    console.log('发送好友请求的用户对象:', targetUser.userID, '当前用户对象:', wx.$chat_userID);
+    console.log('好友请求参数:', {
+      to: targetUser.userID,
+      source: 'AddSource_Type_Web',
+      remark: '',
+      wording: message,
+      type: 1, // 单向好友
+      addWording: message
+    });
+    
     wx.$TUIKit.addFriend({
       to: targetUser.userID,
       source: 'AddSource_Type_Web',
@@ -190,6 +225,7 @@ Page({
       addWording: message
     }).then(res => {
       console.log('添加好友成功:', res);
+      console.log('成功响应详情:', JSON.stringify(res, null, 2));
       wx.hideLoading();
       
       // 关闭弹窗
@@ -207,10 +243,15 @@ Page({
       
     }).catch(err => {
       console.error('添加好友失败:', err);
+      console.error('失败错误详情:', JSON.stringify(err, null, 2));
+      console.error('错误码:', err.code);
+      console.error('错误消息:', err.message);
+      
       wx.hideLoading();
       
       // 处理特定错误码
       if (err.code === 10009) {
+        console.log('已经是好友关系');
         this.showToast('已经是好友关系');
         // 已经是好友，直接跳转到聊天页面
         setTimeout(() => {
@@ -219,9 +260,11 @@ Page({
           });
         }, 1000);
       } else if (err.code === 10010) {
+        console.log('好友申请已发送，等待对方同意');
         this.showToast('好友申请已发送，请等待对方同意');
         this.closeChatModal();
       } else {
+        console.log('TUIKit添加好友失败，尝试通过后端API发送');
         // 尝试通过后端API发送好友请求
         this.sendFriendRequestViaBackend(targetUser, message);
       }
@@ -234,6 +277,15 @@ Page({
   sendFriendRequestViaBackend: function(targetUser, message) {
     const app = getApp();
     
+    console.log('通过后端API发送好友请求');
+    console.log('目标用户信息:', targetUser);
+    console.log('当前用户信息:', app.globalData.userInfo);
+    console.log('请求参数:', {
+      toUserId: targetUser.userID,
+      message: message,
+      source: 'preview_page'
+    });
+    
     app.request({
       url: '/api/friendships/request',
       method: 'POST',
@@ -243,17 +295,20 @@ Page({
         source: 'preview_page'
       },
       success: (res) => {
-        console.log('通过后端发送好友请求成功:', res);
+        console.log('通过后端发送好友请求成功 - 目标用户:', targetUser.userID, '响应:', res);
+        console.log('成功响应详情:', JSON.stringify(res, null, 2));
         
         if (res.code === 0) {
           this.closeChatModal();
           this.showToast('好友请求已发送');
         } else {
+          console.error('后端API返回错误:', res);
           this.showToast(res.message || '发送失败，请稍后重试');
         }
       },
       fail: (error) => {
         console.error('通过后端发送好友请求失败:', error);
+        console.error('请求失败详情:', JSON.stringify(error, null, 2));
         this.showToast('网络错误，请稍后重试');
       }
     });

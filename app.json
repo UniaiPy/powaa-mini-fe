@@ -9,7 +9,6 @@
     "pages/preview/preview",
     "pages/about/about",
     "pages/ai-report/ai-report",
-    "pages/im-test/im-test",
     "pages/search/search"
   ],
   "window": {

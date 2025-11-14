@@ -1,6 +1,4 @@
 // pages/chat/chat.js
-import TencentCloudChat from '@tencentcloud/chat';
-
 Page({
 
   /**
@@ -23,15 +21,15 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    // 初始化腾讯云IM
-    this.initTencentIM();
+    // 检查TUIKit是否已在app.js中初始化
+    this.checkTUIKitStatus();
   },
   
-  // 初始化腾讯云IM
-  initTencentIM: function() {
+  // 检查TUIKit状态
+  checkTUIKitStatus: function() {
     const app = getApp();
     
-    // 首先检查是否已登录
+    // 检查是否已登录
     if (!app.globalData.token || !app.globalData.userInfo) {
       console.error('用户未登录');
       // 使用模拟数据
@@ -39,136 +37,56 @@ Page({
       return;
     }
     
-    // 从后端获取IM参数
-    this.getIMConfigFromServer(app.globalData.token);
-  },
-  
-  // 从后端获取IM配置参数
-  getIMConfigFromServer: function(token) {
-    const app = getApp();
-    
-    try {
-      // 调用后端API获取IM配置参数
-      app.request({
-        url: '/api/im/get-config',
-        method: 'GET',
-        header: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        success: (res) => {
-          console.log('IM配置接口响应:', res);
-          
-          if (res.code === 200 && res.data) {
-            const config = res.data;
-            console.log('获取到的IM配置:', {
-              SDKAppID: config.SDKAppID,
-              userID: config.userID,
-              userSigLength: config.userSig ? config.userSig.length : 0
-            });
-            
-            // 检查响应数据
-            if (config && config.userID && config.userSig && config.SDKAppID) {
-              const { userID, userSig, SDKAppID } = config;
-              
-              // 保存到全局数据
-              app.globalData.userID = userID;
-              app.globalData.userSig = userSig;
-              app.globalData.SDKAppID = SDKAppID;
-              
-              // 初始化TUIKit
-              this.initializeTUIKit(userID, userSig, SDKAppID);
-            } else {
-              console.error('IM配置参数不完整:', config);
-              // 使用模拟数据
-              this.loadMockData();
-            }
-          } else {
-            console.error('获取IM配置失败:', res.error || '服务器返回错误');
-            // 使用模拟数据
-            this.loadMockData();
-          }
-        },
-        fail: (error) => {
-          console.error('获取IM配置失败:', error);
-          // 使用模拟数据
-          this.loadMockData();
-        }
+    // 检查TUIKit是否已在app.js中初始化
+    if (app.globalData.isTUIKitInitialized && wx.$TUIKit) {
+      console.log('TUIKit已在app.js中初始化，直接使用');
+      this.setData({
+        isImInitialized: true
       });
-    } catch (error) {
-      console.error('获取IM配置异常:', error);
-      // 使用模拟数据
-      this.loadMockData();
+      
+      // 设置页面级别的事件监听
+      this.setImEventListeners();
+      
+      // 加载数据
+      this.loadConversationList();
+      this.loadFriendRequests();
+    } else {
+      console.log('TUIKit未初始化，等待app.js初始化完成');
+      // 等待一段时间后再次检查
+      setTimeout(() => {
+        this.checkTUIKitStatus();
+      }, 1000);
     }
   },
   
-  // 初始化TUIKit
-  initializeTUIKit: function(userID, userSig, SDKAppID) {
-    
-    try {
-      // 初始化TUIKit实例
-      wx.$TUIKit = TencentCloudChat.create({
-        SDKAppID: parseInt(SDKAppID)
-      });
-      
-      // 保存到全局变量
-      wx.$chat_SDKAppID = parseInt(SDKAppID);
-      wx.$chat_userID = userID;
-      wx.$chat_userSig = userSig;
-      wx.TencentCloudChat = TencentCloudChat;
-      
-      // 登录IM
-      wx.$TUIKit.login({
-        userID: userID,
-        userSig: userSig
-      }).then(() => {
-        console.log('IM登录成功');
-        
-        // 设置IM事件监听
-        this.setImEventListeners();
-        
-        this.setData({
-          isImInitialized: true
-        });
-        
-        // 加载数据
-        this.loadConversationList();
-        this.loadFriendRequests();
-      }).catch((error) => {
-        console.error('IM登录失败:', error);
-        // 登录失败时使用模拟数据
-        this.loadMockData();
-      });
-      
-    } catch (error) {
-      console.error('IM初始化失败:', error);
-      // 初始化失败时使用模拟数据
-      this.loadMockData();
-    }
-  },
-  
-  // 设置IM事件监听
+  // 设置IM事件监听（页面级别）
   setImEventListeners: function() {
-    // 监听SDK_READY事件
-    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_READY, (event) => {
-      console.log('IM SDK准备就绪');
-    });
+    if (!wx.$TUIKit) return;
     
-    // 监听会话列表更新
-    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED, (event) => {
-      this.onConversationListUpdated(event);
-    });
-    
-    // 监听新消息
-    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED, (event) => {
-      this.onMessageReceived(event);
-    });
-    
-    // 监听好友请求（如果存在该事件）
-    if (wx.TencentCloudChat.EVENT.FRIEND_REQUEST_LIST_UPDATED) {
-      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_REQUEST_LIST_UPDATED, (event) => {
-        this.onFriendRequestListUpdated(event);
+    try {
+      // 监听SDK_READY事件
+      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_READY, (event) => {
+        console.log('IM SDK准备就绪');
       });
+      
+      // 监听会话列表更新
+      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED, (event) => {
+        this.onConversationListUpdated(event);
+      });
+      
+      // 监听新消息
+      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED, (event) => {
+        this.onMessageReceived(event);
+      });
+      
+      // 监听好友请求（如果存在该事件）
+      if (wx.TencentCloudChat.EVENT.FRIEND_REQUEST_LIST_UPDATED) {
+        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_REQUEST_LIST_UPDATED, (event) => {
+          this.onFriendRequestListUpdated(event);
+        });
+      }
+    } catch (error) {
+      console.error('设置IM事件监听失败:', error);
     }
   },
   
@@ -300,16 +218,27 @@ Page({
   
   // 加载好友请求列表
   loadFriendRequests: function() {
+    console.log('开始加载好友请求列表（收到的好友请求）...');
+    
+    // 获取当前用户信息
+    const app = getApp();
+    const currentUserId = app.globalData.userInfo?.userId || app.globalData.userInfo?.id;
+    console.log('当前用户ID:', currentUserId);
+    console.log('当前用户信息:', app.globalData.userInfo);
+    
     wx.showLoading({
       title: '加载好友请求中...',
     });
     
     // 调用后端API获取待处理的好友请求
-    const app = getApp();
     app.request({
       url: `/api/friendships/pending`,
       method: 'GET',
       success: (res) => {
+        console.log('获取好友请求完整响应:', JSON.stringify(res, null, 2));        
+        console.log('响应状态码:', res.code);
+        console.log('响应数据:', res.data);
+        
         if (res.code === 200 && res.data && res.data.pending_requests) {
           // 验证pending_requests是否为数组
           if (!Array.isArray(res.data.pending_requests)) {
@@ -321,16 +250,35 @@ Page({
             return;
           }
           
+          console.log('收到的好友请求数量:', res.data.pending_requests.length);
+          
+          // 打印每个好友请求的详细信息
+          res.data.pending_requests.forEach((request, index) => {
+            console.log(`好友请求${index + 1}:`, {
+              request_id: request.request_id,
+              sender_id: request.sender_id,
+              sender_nickname: request.sender_nickname,
+              receiver_id: request.receiver_id,
+              message: request.message,
+              request_time: request.request_time,
+              status: request.status
+            });
+          });
+          
           // 处理好友请求数据
           const pendingList = res.data.pending_requests.map(request => {
             return {
               id: request.request_id,
               name: request.sender_nickname || request.sender_id,
               avatar: request.sender_avatar || '',
-              message: '请求添加您为好友',
-              time: request.request_time
+              message: request.message || '请求添加您为好友',
+              time: request.request_time,
+              senderId: request.sender_id,
+              receiverId: request.receiver_id
             };
           });
+          
+          console.log('处理后的待联系列表:', pendingList);
           
           this.setData({
             pendingList: pendingList,
@@ -338,8 +286,15 @@ Page({
           });
         } else {
           console.error('获取好友请求失败:', res.message || '未知错误');
+          console.log('这可能意味着当前没有收到任何好友请求');
+          console.log('检查响应结构:', {
+            code: res.code,
+            hasData: !!res.data,
+            dataKeys: res.data ? Object.keys(res.data) : [],
+            pendingRequestsType: res.data?.pending_requests ? typeof res.data.pending_requests : 'undefined'
+          });
           wx.showToast({
-            title: '加载好友请求失败',
+            title: '暂无收到的好友请求',
             icon: 'none'
           });
           // 设置空数组避免后续错误
@@ -351,6 +306,8 @@ Page({
       },
       fail: (err) => {
         console.error('获取好友请求失败:', err);
+        console.error('请求URL:', `/api/friendships/pending`);
+        console.error('请求方法:', 'GET');
         wx.showToast({
           title: '网络错误',
           icon: 'none'
@@ -359,6 +316,65 @@ Page({
         this.setData({
           pendingList: [],
           originalPendingList: []
+        });
+      },
+      complete: () => {
+        wx.hideLoading();
+      }
+    });
+  },
+  
+  // 查看自己发送的好友请求状态
+  loadSentFriendRequests: function() {
+    console.log('查看自己发送的好友请求...');
+    
+    const app = getApp();
+    const currentUserId = app.globalData.userInfo?.userId || app.globalData.userInfo?.id;
+    console.log('当前用户ID:', currentUserId, '查看发送的好友请求');
+    
+    wx.showLoading({
+      title: '加载中...',
+    });
+    
+    // 调用后端API获取发送的好友请求
+    app.request({
+      url: `/api/friendships/sent`,
+      method: 'GET',
+      success: (res) => {
+        console.log('获取发送的好友请求响应:', JSON.stringify(res, null, 2));
+        
+        if (res.code === 200 && res.data && res.data.sent_requests) {
+          console.log('发送的好友请求数量:', res.data.sent_requests.length);
+          
+          res.data.sent_requests.forEach((request, index) => {
+            console.log(`发送的好友请求${index + 1}:`, {
+              request_id: request.request_id,
+              receiver_id: request.receiver_id,
+              receiver_nickname: request.receiver_nickname,
+              message: request.message,
+              request_time: request.request_time,
+              status: request.status
+            });
+          });
+          
+          wx.showModal({
+            title: '发送的好友请求',
+            content: `您发送了${res.data.sent_requests.length}个好友请求，详情请查看控制台`,
+            showCancel: false
+          });
+        } else {
+          console.log('没有找到发送的好友请求或接口返回异常');
+          wx.showToast({
+            title: '暂无发送的请求',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('获取发送的好友请求失败:', err);
+        wx.showToast({
+          title: '暂不支持查看',
+          icon: 'none'
         });
       },
       complete: () => {
@@ -493,13 +509,16 @@ Page({
       app.onPageShow(this);
     }
     
-    // 每次页面显示时检查IM是否已初始化，如果已初始化则刷新数据
-    if (this.data.isImInitialized) {
+    // 每次页面显示时检查TUIKit状态并刷新数据
+    if (app.globalData.isTUIKitInitialized && wx.$TUIKit) {
+      this.setData({
+        isImInitialized: true
+      });
       this.loadConversationList();
       this.loadFriendRequests();
     } else if (!this.data.originalContactsList.length) {
-      // 如果没有初始化且没有原始数据，则加载模拟数据
-      this.loadMockData();
+      // 如果没有初始化且没有原始数据，则重新检查TUIKit状态
+      this.checkTUIKitStatus();
     }
   },
 
@@ -644,7 +663,7 @@ Page({
       try {
         wx.$TUIKit.createConversation({
           conversationID: 'C2C' + user.id,
-          type: wx.$TUIKit.TYPES.CONV_C2C,
+          type: wx.TencentCloudChat.TYPES.CONV_C2C,
           userID: user.id
         });
       } catch (error) {
