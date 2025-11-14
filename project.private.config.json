@@ -5,11 +5,25 @@
     "miniprogram": {
       "list": [
         {
-          "name": "pages/test-im/test-im",
-          "pathName": "pages/test-im/test-im",
+          "name": "pages/debug-im/debug-im",
+          "pathName": "pages/debug-im/debug-im",
           "query": "",
           "scene": null,
           "launchMode": "default"
+        },
+        {
+          "name": "pages/test-friend-request/test-friend-request",
+          "pathName": "pages/test-friend-request/test-friend-request",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/test-im/test-im",
+          "pathName": "pages/test-im/test-im",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
         },
         {
           "name": "pages/preview/preview",

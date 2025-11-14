@@ -176,12 +176,9 @@ Page({
         this.onMessageReceived(event);
       });
       
-      // 监听好友请求（如果存在该事件）
-      if (wx.TencentCloudChat.EVENT.FRIEND_REQUEST_LIST_UPDATED) {
-        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_REQUEST_LIST_UPDATED, (event) => {
-          this.onFriendRequestListUpdated(event);
-        });
-      }
+      // 设置好友申请监听
+      this.setupFriendApplicationListener();
+      
     } catch (error) {
       console.error('设置IM事件监听失败:', error);
     }
@@ -335,21 +332,24 @@ Page({
   
   // 加载好友请求列表（从IM直接获取）
   loadFriendRequests: function() {
-    console.log('开始从IM加载好友请求列表...');
+    console.log('🔄 开始从IM加载好友请求列表...');
+    console.log('📊 当前页面状态:', {
+      isImInitialized: this.data.isImInitialized,
+      hasTUIKit: !!wx.$TUIKit
+    });
     
     // 获取当前用户信息
     const app = getApp();
     const currentUserId = app.globalData.userInfo?.userId || app.globalData.userInfo?.id;
-    console.log('当前用户ID:', currentUserId);
-    console.log('当前用户信息:', app.globalData.userInfo);
+    console.log('👤 当前用户ID:', currentUserId);
+    console.log('📋 当前用户信息:', app.globalData.userInfo);
     
     // 使用imManager检查状态
     const imStatus = imManager.checkIMStatus();
     if (!imStatus.isInitialized || !imStatus.isLoggedIn) {
       console.error('IM未初始化或未登录，无法获取好友申请列表');
       this.setData({
-        pendingList: [],
-        originalPendingList: []
+        pendingList: []
       });
       wx.showToast({
         title: 'IM未初始化',
@@ -467,8 +467,7 @@ Page({
         
         // 设置空数组避免后续错误
         this.setData({
-          pendingList: [],
-          originalPendingList: []
+          pendingList: []
         });
       })
       .finally(() => {
@@ -510,6 +509,15 @@ Page({
       
       // 重新加载好友申请列表
       this.loadFriendRequests();
+    });
+    
+    // 监听好友列表更新（当好友申请被同意后）
+    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_LIST_UPDATED, (event) => {
+      console.log('=== 👥 好友列表更新事件 ===');
+      console.log('事件数据:', JSON.stringify(event, null, 2));
+      
+      // 刷新会话列表
+      this.loadConversationList();
     });
     
     console.log('✅ 好友申请监听设置完成');
@@ -809,33 +817,48 @@ Page({
       // 如果IM已初始化，使用IM API同意好友请求
       if (this.data.isImInitialized && wx.$TUIKit) {
         wx.$TUIKit.acceptFriendApplication({
-          userID: userId,
-          type: wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME
+          type: wx.TencentCloudChat.TYPES.SNS_ACCEPT_TYPE_AGREE_AND_ADD, // 同意并添加为好友
+          userID: userId
         })
         .then((imResponse) => {
           console.log('IM同意好友申请成功:', imResponse);
           
-          // 移除已处理的请求
-          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
-          this.setData({
-            pendingList: updatedPendingList
-          });
-          
-          wx.showToast({
-            title: `已同意与${name}的好友请求`,
-            icon: 'success'
-          });
-          
-          // 刷新联系人列表
-          this.loadConversationList();
+          // 检查响应结果
+          if (imResponse.data && imResponse.data.code === 0) {
+            // 移除已处理的请求
+            const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+            this.setData({
+              pendingList: updatedPendingList
+            });
+            
+            wx.showToast({
+              title: `已同意与${name}的好友请求`,
+              icon: 'success'
+            });
+            
+            // 刷新联系人列表
+            this.loadConversationList();
+          } else {
+            throw new Error(imResponse.data?.message || '操作失败');
+          }
         })
         .catch((error) => {
           console.error('IM同意好友申请失败:', error);
           console.error('错误码:', error.code);
           console.error('错误信息:', error.message);
           
+          // 根据错误码显示不同提示
+          let errorMessage = '操作失败';
+          if (error.code === 30001) {
+            errorMessage = '服务器错误，请稍后重试';
+          } else if (error.code === 50001) {
+            errorMessage = '网络连接失败';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
           wx.showToast({
-            title: error.message || '操作失败',
+            title: errorMessage,
             icon: 'none'
           });
         })
@@ -884,30 +907,44 @@ Page({
       // 如果IM已初始化，使用IM API拒绝好友请求
       if (this.data.isImInitialized && wx.$TUIKit) {
         wx.$TUIKit.refuseFriendApplication({
-          userID: userId,
-          type: wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME
+          userID: userId
         })
         .then((imResponse) => {
           console.log('IM拒绝好友申请成功:', imResponse);
           
-          // 移除已处理的请求
-          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
-          this.setData({
-            pendingList: updatedPendingList
-          });
-          
-          wx.showToast({
-            title: `已拒绝与${name}的好友请求`,
-            icon: 'success'
-          });
+          // 检查响应结果
+          if (imResponse.data && imResponse.data.code === 0) {
+            // 移除已处理的请求
+            const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+            this.setData({
+              pendingList: updatedPendingList
+            });
+            
+            wx.showToast({
+              title: `已拒绝与${name}的好友请求`,
+              icon: 'success'
+            });
+          } else {
+            throw new Error(imResponse.data?.message || '操作失败');
+          }
         })
         .catch((error) => {
           console.error('IM拒绝好友申请失败:', error);
           console.error('错误码:', error.code);
           console.error('错误信息:', error.message);
           
+          // 根据错误码显示不同提示
+          let errorMessage = '操作失败';
+          if (error.code === 30001) {
+            errorMessage = '服务器错误，请稍后重试';
+          } else if (error.code === 50001) {
+            errorMessage = '网络连接失败';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
           wx.showToast({
-            title: error.message || '操作失败',
+            title: errorMessage,
             icon: 'none'
           });
         })

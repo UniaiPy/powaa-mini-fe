@@ -221,6 +221,7 @@ Page({
     console.log('SNS_ADD_TYPE_BOTH:', TencentCloudChat.TYPES.SNS_ADD_TYPE_BOTH);
     console.log('SNS_ADD_TYPE_FOLLOW:', TencentCloudChat.TYPES.SNS_ADD_TYPE_FOLLOW);
     
+    // 添加双向好友
     wx.$TUIKit.addFriend({
       to: targetUser.userID,
       source: 'AddSource_Type_Web',
@@ -251,8 +252,10 @@ Page({
           
         } else if (res.data.code === 30539) {
           console.log('⚠️ 好友申请已存在，无需重复申请');
+          this.showToast('好友申请已存在，无需重复申请');
         } else {
           console.log('⚠️ 其他响应码:', res.data.code, res.data.message);
+          this.showToast(`操作失败: ${res.data.message || '未知错误'}`);
         }
       }
       
@@ -294,16 +297,21 @@ Page({
         console.log('⏰ 好友申请已发送，等待对方同意');
         this.showToast('好友申请已发送，请等待对方同意');
         this.closeChatModal();
+      } else if (err.code === 20009) {
+        console.log('❌ 非好友无法发送消息，需要先加好友');
+        this.showToast('需要先添加好友才能发送消息');
+      } else if (err.code === 30001) {
+        console.log('❌ 服务器内部错误');
+        this.showToast('服务器错误，请稍后重试');
+      } else if (err.code === 50001) {
+        console.log('❌ 网络连接失败');
+        this.showToast('网络连接失败，请检查网络');
       } else {
-        console.log('❌ TUIKit添加好友失败，尝试通过后端API发送');
-        console.log('失败原因可能包括:');
-        console.log('1. 网络连接问题');
-        console.log('2. IM服务配置问题');
-        console.log('3. 用户权限问题');
-        console.log('4. 参数配置错误');
+        console.log('❌ 其他错误:', err.message);
+        this.showToast(`添加好友失败: ${err.message || '未知错误'}`);
         
-        // 尝试通过后端API发送好友请求
-        // this.sendFriendRequestViaBackend(targetUser, message);
+        // 尝试通过后端API发送好友请求（备用方案）
+        this.sendFriendRequestViaBackend(targetUser, message);
       }
     });
   },

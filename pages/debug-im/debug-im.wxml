@@ -1,0 +1,67 @@
+<view class="container">
+  <view class="header">
+    <text class="title">IM状态调试</text>
+    <button class="reload-btn" bindtap="reload">重新加载</button>
+  </view>
+
+  <!-- 错误信息 -->
+  <view wx:if="{{error}}" class="error-section">
+    <text class="error-title">错误信息:</text>
+    <text class="error-content">{{error}}</text>
+  </view>
+
+  <!-- IM状态 -->
+  <view wx:if="{{imStatus}}" class="status-section">
+    <text class="section-title">IM状态:</text>
+    <view class="status-item">
+      <text class="status-label">初始化状态:</text>
+      <text class="status-value">{{imStatus.isInitialized ? '已初始化' : '未初始化'}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">登录状态:</text>
+      <text class="status-value">{{imStatus.isLoggedIn ? '已登录' : '未登录'}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">TUIKit实例:</text>
+      <text class="status-value">{{imStatus.hasInstance ? '存在' : '不存在'}}</text>
+    </view>
+    <view class="status-item" wx:if="{{imStatus.tUIKitLoginStatus !== undefined}}">
+      <text class="status-label">TUIKit登录状态:</text>
+      <text class="status-value">{{imStatus.tUIKitStatusText}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">可以获取用户资料:</text>
+      <text class="status-value">{{imStatus.canGetProfile ? '是' : '否'}}</text>
+    </view>
+    <view class="status-item" wx:if="{{imStatus.profileUserID}}">
+      <text class="status-label">当前用户ID:</text>
+      <text class="status-value">{{imStatus.profileUserID}}</text>
+    </view>
+  </view>
+
+  <!-- 好友申请 -->
+  <view wx:if="{{friendApplications}}" class="applications-section">
+    <text class="section-title">好友申请 (发送给我):</text>
+    <view wx:if="{{friendApplications.length === 0}}" class="no-applications">
+      <text>暂无好友申请</text>
+    </view>
+    <view wx:for="{{friendApplications}}" wx:key="id" class="application-item">
+      <view class="app-info">
+        <text class="app-label">申请人ID:</text>
+        <text class="app-value">{{item.from}}</text>
+      </view>
+      <view class="app-info">
+        <text class="app-label">申请ID:</text>
+        <text class="app-value">{{item.id}}</text>
+      </view>
+      <view class="app-info">
+        <text class="app-label">申请时间:</text>
+        <text class="app-value">{{item.addTime}}</text>
+      </view>
+      <view class="app-info">
+        <text class="app-label">申请状态:</text>
+        <text class="app-value">{{item.type === 'SNS_APPLICATION_SENT_TO_ME' ? '发送给我' : '我发送的'}}</text>
+      </view>
+    </view>
+  </view>
+</view>

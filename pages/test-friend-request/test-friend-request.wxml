@@ -1,0 +1,99 @@
+<view class="container">
+  <!-- 错误信息 -->
+  <view class="error-section" wx:if="{{error}}">
+    <text class="error-text">{{error}}</text>
+  </view>
+
+  <!-- IM状态信息 -->
+  <view class="status-section">
+    <view class="section-title">IM状态</view>
+    <view class="status-item">
+      <text>当前用户ID: {{currentUserId}}</text>
+    </view>
+    <view class="status-item">
+      <text>初始化状态: {{imStatus.isInitialized ? '✅ 已初始化' : '❌ 未初始化'}}</text>
+    </view>
+    <view class="status-item">
+      <text>登录状态: {{imStatus.isLoggedIn ? '✅ 已登录' : '❌ 未登录'}}</text>
+    </view>
+    <view class="status-item">
+      <text>TUIKit实例: {{imStatus.hasTUIKit ? '✅ 存在' : '❌ 不存在'}}</text>
+    </view>
+  </view>
+
+  <!-- 测试操作 -->
+  <view class="test-section">
+    <view class="section-title">好友请求测试</view>
+    
+    <!-- 发送好友请求 -->
+    <view class="test-item">
+      <view class="input-group">
+        <input 
+          class="input" 
+          type="number" 
+          placeholder="目标用户ID" 
+          value="{{targetUserId}}"
+          bindinput="onTargetUserIdInput"
+        />
+      </view>
+      <button class="test-btn" bindtap="sendFriendRequest">
+        发送好友请求
+      </button>
+    </view>
+
+    <!-- 检查好友申请 -->
+    <view class="test-item">
+      <button class="test-btn" bindtap="checkFriendApplications">
+        检查好友申请列表
+      </button>
+    </view>
+
+    <!-- 重新加载 -->
+    <view class="test-item">
+      <button class="test-btn secondary" bindtap="reload">
+        重新检查状态
+      </button>
+    </view>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="result-section" wx:if="{{testResult}}">
+    <view class="section-title">测试结果</view>
+    <view class="result-item {{testResult.success ? 'success' : 'error'}}">
+      <text>{{testResult.message}}</text>
+    </view>
+    
+    <!-- 详细数据 -->
+    <view class="detail-section" wx:if="{{testResult.data}}">
+      <view class="detail-title">详细数据:</view>
+      
+      <!-- 好友申请统计 -->
+      <view wx:if="{{testResult.data.total !== undefined}}" class="detail-item">
+        <text>总申请数: {{testResult.data.total}}</text>
+      </view>
+      <view wx:if="{{testResult.data.sentToMe !== undefined}}" class="detail-item">
+        <text>发送给我: {{testResult.data.sentToMe}}</text>
+      </view>
+      <view wx:if="{{testResult.data.sentFromMe !== undefined}}" class="detail-item">
+        <text>我发送的: {{testResult.data.sentFromMe}}</text>
+      </view>
+      
+      <!-- 申请列表 -->
+      <view wx:if="{{testResult.data.applications && testResult.data.applications.length > 0}}" class="applications-list">
+        <view class="detail-title">申请列表:</view>
+        <view class="application-item" wx:for="{{testResult.data.applications}}" wx:key="id">
+          <view class="app-header">
+            <text class="app-type">{{item.type === 1 ? '发送给我' : '我发送的'}}</text>
+            <text class="app-status">{{item.status === 1 ? '待处理' : item.status === 2 ? '已同意' : '已拒绝'}}</text>
+          </view>
+          <view class="app-info">
+            <text>申请人: {{item.from}}</text>
+            <text>接收人: {{item.to}}</text>
+            <text>申请ID: {{item.userID || item.id}}</text>
+            <text>时间: {{item.addTime || item.timestamp}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
