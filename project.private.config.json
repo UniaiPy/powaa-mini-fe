@@ -5,11 +5,18 @@
     "miniprogram": {
       "list": [
         {
-          "name": "pages/preview/preview",
-          "pathName": "pages/preview/preview",
+          "name": "pages/test-im/test-im",
+          "pathName": "pages/test-im/test-im",
           "query": "",
           "scene": null,
           "launchMode": "default"
+        },
+        {
+          "name": "pages/preview/preview",
+          "pathName": "pages/preview/preview",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
         },
         {
           "name": "pages/share/share",

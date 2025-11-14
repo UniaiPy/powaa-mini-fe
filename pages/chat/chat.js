@@ -1,4 +1,6 @@
 // pages/chat/chat.js
+import imManager from '../../utils/imManager.js'
+
 Page({
 
   /**
@@ -25,9 +27,9 @@ Page({
     this.checkTUIKitStatus();
   },
   
-  // 检查TUIKit状态
+  // 检查TUIKit状态 - 重新设计使用imManager
   checkTUIKitStatus: function() {
-    const app = getApp();
+    const app = getApp()
     
     // 检查是否已登录
     if (!app.globalData.token || !app.globalData.userInfo) {
@@ -37,9 +39,13 @@ Page({
       return;
     }
     
-    // 检查TUIKit是否已在app.js中初始化
-    if (app.globalData.isTUIKitInitialized && wx.$TUIKit) {
-      console.log('TUIKit已在app.js中初始化，直接使用');
+    // 使用imManager检查状态
+    const imStatus = imManager.checkIMStatus();
+    console.log('IM状态检查:', imStatus);
+    
+    // 如果IM已初始化且已登录，直接加载数据
+    if (imStatus.isInitialized && imStatus.isLoggedIn) {
+      console.log('✅ IM已初始化且已登录，直接加载数据');
       this.setData({
         isImInitialized: true
       });
@@ -51,12 +57,89 @@ Page({
       this.loadConversationList();
       this.loadFriendRequests();
     } else {
-      console.log('TUIKit未初始化，等待app.js初始化完成');
-      // 等待一段时间后再次检查
-      setTimeout(() => {
-        this.checkTUIKitStatus();
-      }, 1000);
+      console.log('⏳ IM未完全初始化，开始初始化流程');
+      // 主动触发IM初始化
+      this.initIMWithManager();
     }
+  },
+  
+  // 使用imManager初始化IM
+  initIMWithManager: function() {
+    const app = getApp();
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: '初始化IM中...',
+    });
+    
+    // 检查是否有必要的用户信息
+    if (!app.globalData.userInfo || !app.globalData.userInfo.userId) {
+      console.error('缺少必要的用户信息');
+      wx.hideLoading();
+      wx.showToast({
+        title: '用户信息不完整',
+        icon: 'none'
+      });
+      this.loadMockData();
+      return;
+    }
+    
+    // 从app.js获取IM配置
+    const userID = app.globalData.userInfo.userId.toString();
+    const userSig = app.globalData.userInfo.userSig;
+    const SDKAppID = app.globalData.sdkAppID;
+    
+    if (!userSig || !SDKAppID) {
+      console.error('缺少IM配置信息:', { userSig: !!userSig, SDKAppID: !!SDKAppID });
+      wx.hideLoading();
+      wx.showToast({
+        title: 'IM配置不完整',
+        icon: 'none'
+      });
+      this.loadMockData();
+      return;
+    }
+    
+    // 使用imManager初始化
+    imManager.initialize(userID, userSig, SDKAppID)
+      .then(() => {
+        console.log('✅ IM初始化成功');
+        wx.hideLoading();
+        this.setData({
+          isImInitialized: true
+        });
+        
+        // 设置页面级别的事件监听
+        this.setImEventListeners();
+        
+        // 加载数据
+        this.loadConversationList();
+        this.loadFriendRequests();
+      })
+      .catch((error) => {
+        console.error('❌ IM初始化失败:', error);
+        wx.hideLoading();
+        
+        // 根据错误类型显示不同的提示
+        if (error.message && error.message.includes('用户未登录')) {
+          wx.showToast({
+            title: '请先登录',
+            icon: 'none'
+          });
+          setTimeout(() => {
+            wx.navigateTo({
+              url: '/pages/login/login'
+            });
+          }, 1500);
+        } else {
+          wx.showToast({
+            title: 'IM初始化失败',
+            icon: 'none'
+          });
+          // 初始化失败时使用模拟数据
+          this.loadMockData();
+        }
+      });
   },
   
   // 设置IM事件监听（页面级别）
@@ -105,18 +188,29 @@ Page({
     this.loadFriendRequests();
   },
   
-  // 加载会话列表
+  // 加载会话列表 - 简化版本，使用imManager状态管理
   loadConversationList: function() {
     wx.showLoading({
       title: '加载会话中...',
     });
     
     try {
-      // 获取会话列表 - 使用Promise方式
-      wx.$TUIKit.getConversationList().then((conversationList) => {
+      // 使用imManager等待登录完成，而不是自定义的waitForSDKReady
+      imManager.waitForLogin(10000)
+        .then(() => {
+          console.log('✅ IM已登录，开始获取会话列表');
+          
+          // 再次检查TUIKit是否可用
+          if (!wx.$TUIKit) {
+            throw new Error('TUIKit实例不可用');
+          }
+          
+          // 调用getConversationList
+          return wx.$TUIKit.getConversationList();
+        })
+        .then((conversationList) => {
           console.log('获取会话列表成功:', conversationList);
           console.log('会话列表类型:', typeof conversationList);
-          console.log('会话列表是否为数组:', Array.isArray(conversationList));
           
           // 处理TUIKit返回的数据格式
           let actualConversationList = conversationList;
@@ -152,20 +246,37 @@ Page({
           // 处理会话列表数据
           this.processConversationList(actualConversationList);
         
-      }).catch((error) => {
-        console.error('获取会话列表失败:', error);
-        wx.showToast({
-          title: '加载会话失败',
-          icon: 'none'
+        })
+        .catch((error) => {
+          console.error('获取会话列表失败:', error);
+          console.error('错误详情:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code
+          });
+          
+          // 根据错误类型显示不同的提示
+          let errorMessage = '加载会话失败';
+          if (error.message && error.message.includes('等待IM登录超时')) {
+            errorMessage = 'IM初始化超时，正在使用模拟数据';
+          } else if (error.message && error.message.includes('TUIKit实例不可用')) {
+            errorMessage = 'IM服务不可用，正在使用模拟数据';
+          }
+          
+          wx.showToast({
+            title: errorMessage,
+            icon: 'none',
+            duration: 2000
+          });
+          
+          // 加载失败时使用模拟数据
+          this.loadMockData();
         });
-        // 加载失败时使用模拟数据
-        this.loadMockData();
-      });
       
     } catch (error) {
       console.error('加载会话列表失败:', error);
       wx.showToast({
-        title: '加载会话失败',
+        title: '加载会话失败，使用模拟数据',
         icon: 'none'
       });
       // 加载失败时使用模拟数据
@@ -226,9 +337,10 @@ Page({
     console.log('当前用户ID:', currentUserId);
     console.log('当前用户信息:', app.globalData.userInfo);
     
-    // 检查IM是否已初始化
-    if (!app.globalData.isTUIKitInitialized || !wx.$TUIKit) {
-      console.error('IM未初始化，无法获取好友申请列表');
+    // 使用imManager检查状态
+    const imStatus = imManager.checkIMStatus();
+    if (!imStatus.isInitialized || !imStatus.isLoggedIn) {
+      console.error('IM未初始化或未登录，无法获取好友申请列表');
       this.setData({
         pendingList: [],
         originalPendingList: []
@@ -244,8 +356,18 @@ Page({
       title: '加载好友请求中...',
     });
     
-    // 使用IM SDK获取好友申请列表
-    wx.$TUIKit.getFriendApplicationList()
+    // 使用imManager等待登录完成
+    imManager.waitForLogin(10000)
+      .then(() => {
+        console.log('✅ IM已登录，开始获取好友申请列表');
+        // 再次检查TUIKit是否可用
+        if (!wx.$TUIKit) {
+          throw new Error('TUIKit实例不可用');
+        }
+        
+        // 调用getFriendApplicationList
+        return wx.$TUIKit.getFriendApplicationList();
+      })
       .then((imResponse) => {
         console.log('IM获取好友申请完整响应:', JSON.stringify(imResponse, null, 2));
         
@@ -313,20 +435,29 @@ Page({
         });
         
         if (pendingList.length === 0) {
-          wx.showToast({
-            title: '暂无收到的好友请求',
-            icon: 'none'
-          });
+          console.log('暂无收到的好友请求');
         }
       })
       .catch((error) => {
         console.error('IM获取好友申请失败:', error);
-        console.error('错误码:', error.code);
-        console.error('错误信息:', error.message);
+        console.error('错误详情:', {
+          message: error.message,
+          stack: error.stack,
+          code: error.code
+        });
+        
+        // 根据错误类型显示不同的提示
+        let errorMessage = '获取好友申请失败';
+        if (error.message && error.message.includes('等待IM登录超时')) {
+          errorMessage = 'IM初始化超时，请重试';
+        } else if (error.message && error.message.includes('TUIKit实例不可用')) {
+          errorMessage = 'IM服务不可用，请稍后重试';
+        }
         
         wx.showToast({
-          title: '获取好友申请失败',
-          icon: 'none'
+          title: errorMessage,
+          icon: 'none',
+          duration: 3000
         });
         
         // 设置空数组避免后续错误
