@@ -13,6 +13,9 @@ import TIMUploadPlugin from 'tim-upload-plugin';
 // 导入敏感词过滤插件（可选）
 import TIMProfanityFilterPlugin from 'tim-profanity-filter-plugin';
 
+// 导入用户隐私设置工具
+import { setUserDefaultPrivacySettings } from './userPrivacySettings.js';
+
 class IMManager {
   constructor() {
     this.isInitialized = false;
@@ -399,13 +402,20 @@ class IMManager {
       
       // 监听SDK_READY事件
       if (validateEventName('SDK_READY')) {
-        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_READY, (event) => {
+        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_READY, async (event) => {
           console.log('🎉 IM SDK准备就绪 (SDK_READY事件)');
           console.log('SDK_READY事件数据:', event);
           
           // 更新登录状态为完全ready
           this.isLoggedIn = true;
           console.log('✅ 更新isLoggedIn状态为true');
+          
+          // 设置用户默认隐私配置
+          try {
+            await setUserDefaultPrivacySettings();
+          } catch (error) {
+            console.warn('设置用户隐私配置失败，但不影响登录:', error);
+          }
           
           // 通知所有监听器
           this._notifyListeners('SDK_READY', event);

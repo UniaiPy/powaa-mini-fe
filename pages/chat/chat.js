@@ -125,6 +125,9 @@ Page({
         // 加载数据
         this.loadConversationList();
         this.loadFriendRequests();
+        
+        // 检查和设置用户隐私设置
+        this.checkAndSetPrivacySettings();
       })
       .catch((error) => {
         console.error('❌ IM初始化失败:', error);
@@ -219,31 +222,17 @@ Page({
           // 调用getConversationList
           return wx.$TUIKit.getConversationList();
         })
-        .then((conversationList) => {
-          console.log('获取会话列表成功:', conversationList);
-          console.log('会话列表类型:', typeof conversationList);
+        .then((imResponse) => {
+          console.log('获取会话列表成功:', imResponse);
           
-          // 处理TUIKit返回的数据格式
-          let actualConversationList = conversationList;
+          // 按照TUIConversation组件的方式处理数据
+          let actualConversationList = [];
           
-          // 如果返回的是对象格式 {code: 0, data: {...}}，提取data中的数组
-          if (typeof conversationList === 'object' && conversationList !== null && !Array.isArray(conversationList)) {
-            if (conversationList.data && Array.isArray(conversationList.data)) {
-              console.log('找到data数组:', conversationList.data);
-              actualConversationList = conversationList.data;
-            } else if (conversationList.data && typeof conversationList.data === 'object' && conversationList.data.conversationList && Array.isArray(conversationList.data.conversationList)) {
-              console.log('找到data.conversationList数组:', conversationList.data.conversationList);
-              actualConversationList = conversationList.data.conversationList;
-            } else {
-              console.log('尝试查找数组属性...');
-              for (const key in conversationList) {
-                if (Array.isArray(conversationList[key])) {
-                  console.log(`找到数组属性: ${key}`, conversationList[key]);
-                  actualConversationList = conversationList[key];
-                  break;
-                }
-              }
-            }
+          if (imResponse && imResponse.data && imResponse.data.conversationList) {
+            actualConversationList = imResponse.data.conversationList;
+            console.log('找到会话列表数组:', actualConversationList);
+          } else {
+            console.warn('未找到会话列表数据，返回结构:', imResponse);
           }
           
           // 验证actualConversationList是否为数组
@@ -295,7 +284,7 @@ Page({
     console.log('开始处理会话列表，数量:', conversationList.length);
     
     // 处理会话列表数据
-    const contactsList = conversationList.map(conversation => {
+    const contactsList = conversationList.map((conversation, index) => {
       console.log('处理会话:', conversation);
       
       // 只处理C2C类型会话
@@ -311,10 +300,11 @@ Page({
       const time = this.formatTime(lastMessage.time || Date.now());
       
       const contact = {
-        id: conversation.userID,
-        name: conversation.showName || conversation.userID,
-        avatar: conversation.avatar || '',
-        lastMessage: lastMessage.nick || lastMessage.payload?.text || '暂无消息',
+        id: conversation.conversationID,
+        userId: conversation.userProfile.userID,
+        name: conversation.userProfile.nick,
+        avatar: this.processAvatarUrl(conversation.userProfile.avatar, 1, conversation.userProfile.userID, index),
+        lastMessage: lastMessage.nick || lastMessage.payload?.text || '这是一条信息',
         time: time,
         unread: conversation.unreadCount || 0
       };
@@ -330,149 +320,199 @@ Page({
     });
   },
   
-  // 加载好友请求列表（从IM直接获取）
-  loadFriendRequests: function() {
-    console.log('🔄 开始从IM加载好友请求列表...');
-    console.log('📊 当前页面状态:', {
-      isImInitialized: this.data.isImInitialized,
-      hasTUIKit: !!wx.$TUIKit
-    });
-    
-    // 获取当前用户信息
-    const app = getApp();
-    const currentUserId = app.globalData.userInfo?.userId || app.globalData.userInfo?.id;
-    console.log('👤 当前用户ID:', currentUserId);
-    console.log('📋 当前用户信息:', app.globalData.userInfo);
-    
-    // 使用imManager检查状态
-    const imStatus = imManager.checkIMStatus();
-    if (!imStatus.isInitialized || !imStatus.isLoggedIn) {
-      console.error('IM未初始化或未登录，无法获取好友申请列表');
-      this.setData({
-        pendingList: []
-      });
-      wx.showToast({
-        title: 'IM未初始化',
-        icon: 'none'
-      });
-      return;
-    }
-    
-    wx.showLoading({
-      title: '加载好友请求中...',
-    });
-    
-    // 使用imManager等待登录完成
-    imManager.waitForLogin(10000)
-      .then(() => {
-        console.log('✅ IM已登录，开始获取好友申请列表');
-        // 再次检查TUIKit是否可用
-        if (!wx.$TUIKit) {
-          throw new Error('TUIKit实例不可用');
+  // 加载好友申请列表
+  async loadFriendRequests() {
+    try {
+      console.log('🔍 开始加载好友申请列表...');
+      
+      if (!this.data.isImInitialized || !wx.$TUIKit) {
+        console.log('📦 IM未初始化，跳过好友申请加载');
+        return;
+      }
+
+      // 等待确保登录完成
+      const imManager = getApp().globalData.imManager;
+      if (imManager) {
+        const isLoginReady = await imManager.waitForLogin(10000);
+        if (!isLoginReady) {
+          console.error('❌ 等待登录超时，无法加载好友申请');
+          return;
+        }
+      }
+
+      console.log('📡 调用TUIKit获取好友申请列表...');
+      const friendApplicationList = await wx.$TUIKit.getFriendApplicationList();
+      console.log('📬 好友申请列表原始数据:', JSON.stringify(friendApplicationList, null, 2));
+
+      if (friendApplicationList.code === 0) {
+        // 修复数据结构解析逻辑
+        let applications = [];
+        
+        // 检查实际的数据结构
+        if (friendApplicationList.data) {
+          if (Array.isArray(friendApplicationList.data)) {
+            applications = friendApplicationList.data;
+          } else if (friendApplicationList.data.friendApplicationList && Array.isArray(friendApplicationList.data.friendApplicationList)) {
+            applications = friendApplicationList.data.friendApplicationList;
+          } else if (friendApplicationList.data.applicationList && Array.isArray(friendApplicationList.data.applicationList)) {
+            applications = friendApplicationList.data.applicationList;
+          } else {
+            console.warn('未知的data结构:', friendApplicationList.data);
+            applications = [];
+          }
+        } else if (friendApplicationList.friendApplicationList && Array.isArray(friendApplicationList.friendApplicationList)) {
+          // 直接在根级别的情况
+          applications = friendApplicationList.friendApplicationList;
+        } else {
+          console.warn('未知的响应结构:', friendApplicationList);
+          applications = [];
         }
         
-        // 调用getFriendApplicationList
-        return wx.$TUIKit.getFriendApplicationList();
-      })
-      .then((imResponse) => {
-        console.log('IM获取好友申请完整响应:', JSON.stringify(imResponse, null, 2));
+        // 确保是数组才进行处理
+        if (!Array.isArray(applications)) {
+          throw new Error('申请列表不是数组格式');
+        }
         
-        // 获取所有好友申请
-        const applicationList = imResponse.data.applicationList || [];
-        console.log('所有好友申请数量:', applicationList.length);
+        console.log('📋 申请列表总数:', applications.length);
         
-        // 打印所有申请的详细信息，用于调试
-        applicationList.forEach((app, index) => {
-          console.log(`申请${index + 1}详细信息:`, {
+        // 调试：打印所有可用的TYPES常量
+        console.log('🔍 TUIKit TYPES常量调试:');
+        console.log('- wx.TencentCloudChat.TYPES:', wx.TencentCloudChat.TYPES);
+        console.log('- SNS_APPLICATION_SENT_TO_ME:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME);
+        console.log('- SNS_APPLICATION_SENT_FROM_ME:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_FROM_ME);
+        
+        // 详细分析申请类型
+        const sentToMeApps = applications.filter(app => {
+          // 检查多种可能的类型值
+          const isSentToMe = app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME ||
+                            app.type === 'SNS_APPLICATION_SENT_TO_ME' ||
+                            app.type === 1; // 有可能是数字类型
+          
+          if (isSentToMe) {
+            console.log('✅ 找到发送给我的申请:', app.userID || app.nick);
+          }
+          return isSentToMe;
+        });
+        
+        const sentFromMeApps = applications.filter(app => {
+          const isSentFromMe = app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_FROM_ME ||
+                              app.type === 'SNS_APPLICATION_SENT_FROM_ME' ||
+                              app.type === 2; // 有可能是数字类型
+          
+          if (isSentFromMe) {
+            console.log('📤 我发送的申请:', app.userID || app.nick);
+          }
+          return isSentFromMe;
+        });
+        
+        console.log('📊 申请类型分析:');
+        console.log('- 收到的申请数量:', sentToMeApps.length);
+        console.log('- 发送的申请数量:', sentFromMeApps.length);
+        console.log('- SNS_APPLICATION_SENT_TO_ME 常量值:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME);
+        console.log('- SNS_APPLICATION_SENT_FROM_ME 常量值:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_FROM_ME);
+
+        // 打印每个申请的详细信息
+        applications.forEach((app, index) => {
+          console.log(`申请${index + 1}详情:`, {
             userID: app.userID,
             nickname: app.nickname,
+            nick: app.nick, // 注意：可能是 nick 而不是 nickname
             type: app.type,
             addTime: app.addTime,
+            time: app.time, // 注意：可能是 time 而不是 addTime
             addSource: app.addSource,
+            source: app.source, // 注意：可能是 source 而不是 addSource
             wording: app.wording,
-            status: app.status,
-            isFromMe: app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME
+            status: app.status
+          });
+        });
+
+        // 只显示收到的好友申请（别人发给当前用户的）
+        const pendingList = sentToMeApps
+          .filter(app => {
+            // 更灵活的有效性检查
+            const userID = app.userID;
+            const time = app.addTime || app.time;
+            const isValid = userID && time;
+            if (!isValid) {
+              console.warn('⚠️ 无效的申请记录:', app);
+            }
+            return isValid;
+          })
+          .map((app, index) => {
+            console.log('✅ 有效申请:', app.userID, app.nick || app.nickname);
+            return {
+              id: app.userID,
+              name: app.nick || app.nickname || app.userID,
+              avatar: this.processAvatarUrl(app.avatar, 2, app.userID, index),
+              message: app.wording,
+              time: this.formatTime(app.addTime || app.time),
+              requestId: app.userID, // 使用userID作为requestId
+              type: 'friend_request',
+              addSource: app.addSource || app.source
+            };
+          });
+
+        console.log('🎯 最终待处理的好友申请列表:', pendingList);
+        console.log('📝 设置到页面的pendingList:', pendingList.length, '条记录');
+        
+        // 添加更详细的调试信息
+        console.log('🔍 调试信息 - pendingList详情:');
+        pendingList.forEach((item, index) => {
+          console.log(`待处理申请${index + 1}:`, {
+            id: item.id,
+            name: item.name,
+            message: item.message,
+            time: item.time,
+            requestId: item.requestId,
+            type: item.type,
+            addSource: item.addSource
           });
         });
         
-        // 获取收到的好友申请（别人发给当前用户的）
-        const pendingApplications = applicationList.filter(app => 
-          app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME && 
-          app.addTime
-        );
-        
-        console.log('过滤后收到的好友申请数量:', pendingApplications.length);
-        console.log('申请列表详情:', pendingApplications);
-        
-        // 打印每个好友申请的详细信息
-        pendingApplications.forEach((application, index) => {
-          console.log(`好友申请${index + 1}:`, {
-            userID: application.userID,
-            nickname: application.nickname,
-            addTime: application.addTime,
-            addSource: application.addSource,
-            wording: application.wording,
-            type: application.type,
-            status: application.status
-          });
-        });
-        
-        // 处理好友申请数据
-        const pendingList = pendingApplications.map(application => {
-          return {
-            id: application.userID + '_' + application.addTime, // 使用用户ID和时间戳作为唯一标识
-            name: application.nickname || application.userID,
-            avatar: application.avatar || '',
-            message: application.wording || '请求添加您为好友',
-            time: this.formatTime(application.addTime),
-            senderId: application.userID,
-            receiverId: currentUserId,
-            addTime: application.addTime,
-            status: application.status,
-            type: application.type
-          };
-        });
-        
-        console.log('处理后的待联系列表:', pendingList);
-        
+        console.log('🔍 调试信息 - 页面状态检查:');
+        console.log('- 当前activeSection:', this.data.activeSection);
+        console.log('- 当前pendingList长度:', this.data.pendingList.length);
+        console.log('- 即将设置的pendingList长度:', pendingList.length);
+
         this.setData({
           pendingList: pendingList
+        }, () => {
+          console.log('✅ pendingList已设置到页面，当前长度:', this.data.pendingList.length);
+          console.log('📋 页面pendingList内容:', this.data.pendingList);
+          
+          // 如果有待处理的好友请求，自动切换到待联系标签
+          if (pendingList.length > 0 && this.data.activeSection === 'contacts') {
+            console.log('🔄 发现好友请求，自动切换到待联系标签');
+            this.setData({
+              activeSection: 'pending'
+            });
+            
+            // 显示提示
+            wx.showToast({
+              title: `收到${pendingList.length}个好友申请`,
+              icon: 'none',
+              duration: 2000
+            });
+          }
         });
-        
-        if (pendingList.length === 0) {
-          console.log('暂无收到的好友请求');
+
+        // 显示通知
+        if (pendingList.length > 0) {
+          const app = getApp();
+          if (app.globalData.imManager) {
+            app.globalData.imManager.showNotification(
+              `收到 ${pendingList.length} 个好友申请`,
+              pendingList.map(req => req.name).join(', ')
+            );
+          }
         }
-      })
-      .catch((error) => {
-        console.error('IM获取好友申请失败:', error);
-        console.error('错误详情:', {
-          message: error.message,
-          stack: error.stack,
-          code: error.code
-        });
-        
-        // 根据错误类型显示不同的提示
-        let errorMessage = '获取好友申请失败';
-        if (error.message && error.message.includes('等待IM登录超时')) {
-          errorMessage = 'IM初始化超时，请重试';
-        } else if (error.message && error.message.includes('TUIKit实例不可用')) {
-          errorMessage = 'IM服务不可用，请稍后重试';
-        }
-        
-        wx.showToast({
-          title: errorMessage,
-          icon: 'none',
-          duration: 3000
-        });
-        
-        // 设置空数组避免后续错误
-        this.setData({
-          pendingList: []
-        });
-      })
-      .finally(() => {
-        wx.hideLoading();
-      });
+      } else {
+        console.error('❌ 获取好友申请列表失败:', friendApplicationList);
+      }
+    } catch (error) {
+      console.error('❌ 加载好友申请列表失败:', error);
+    }
   },
   
   /**
@@ -582,6 +622,63 @@ Page({
     });
   },
   
+  // 处理头像URL，确保在小程序中可以正常显示
+  processAvatarUrl: function(avatarUrl, type, userId, index) {
+    console.log('原始头像URL:', avatarUrl);
+    if (!avatarUrl) {
+      return 'https://images.unsplash.com/photo.png';
+    }
+    
+    // 如果是其他外部URL，直接返回
+    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+      return avatarUrl;
+    }
+    
+    // 如果是相对路径，需要获取临时URL
+    this.getTempAvatarUrl(avatarUrl, type, userId, index);
+    // 立即返回默认头像，异步获取临时URL后会更新
+    return 'https://images.unsplash.com/photo.png';
+  },
+
+  // 获取临时头像URL
+  getTempAvatarUrl: function(avatarKey, type, userId, index) {
+    const app = getApp();
+    
+    // 调用后端接口获取临时访问URL
+    app.request({
+      url: '/api/upload/signed-url',
+      method: 'GET',
+      data: {
+        key: avatarKey,
+        expires: 3600 // 1小时有效期
+      },
+      success: (res) => {
+        if (res.success && res.url) {
+          if (type == 1) {
+            // 更新联系人列表中指定用户的头像URL
+            const updatePath = `contactsList[${index}].avatar`;
+            this.setData({
+              [updatePath]: res.url
+            });
+            console.log('更新联系人头像成功:', userId, res.url);
+          } else {
+            // 更新待联系列表中指定用户的头像URL
+            const updatePath = `pendingList[${index}].avatar`;
+            this.setData({
+              [updatePath]: res.url
+            });
+            console.log('更新待联系用户头像成功:', userId, res.url);
+          }
+        } else {
+          console.warn('获取临时头像URL失败:', res.message);
+        }
+      },
+      fail: (error) => {
+        console.error('获取临时头像URL请求失败:', error);
+      }
+    });
+  },
+
   // 格式化时间
   formatTime: function(timestamp) {
     const date = new Date(timestamp);
@@ -633,10 +730,24 @@ Page({
       });
       this.loadConversationList();
       this.loadFriendRequests();
+      
+      // 检查隐私设置（仅在IM初始化时检查一次）
+      if (!this.hasCheckedPrivacy) {
+        this.checkAndSetPrivacySettings();
+        this.hasCheckedPrivacy = true;
+      }
     } else {
       // 如果没有初始化，则重新检查TUIKit状态
       this.checkTUIKitStatus();
     }
+    
+    // 调试：检查当前页面状态
+    console.log('🔍 页面状态检查:', {
+      isImInitialized: this.data.isImInitialized,
+      activeSection: this.data.activeSection,
+      pendingListLength: this.data.pendingList.length,
+      contactsListLength: this.data.contactsList.length
+    });
   },
 
   /**
@@ -776,18 +887,8 @@ Page({
   navigateToConversation: function(e) {
     const user = e.currentTarget.dataset.user;
     
-    // 如果IM已初始化，使用TUIKit创建会话
-    if (this.data.isImInitialized && wx.$TUIKit) {
-      try {
-        wx.$TUIKit.createConversation({
-          conversationID: 'C2C' + user.id,
-          type: wx.TencentCloudChat.TYPES.CONV_C2C,
-          userID: user.id
-        });
-      } catch (error) {
-        console.error('创建会话失败:', error);
-      }
-    }
+    // 在TUIKit中，会话会在导航到conversation页面时自动创建
+    // 不需要手动调用 createConversation
     
     wx.navigateTo({
       url: `/pages/conversation/conversation?user=${encodeURIComponent(JSON.stringify(user))}`
@@ -806,8 +907,8 @@ Page({
     const requestId = e.currentTarget.dataset.id;
     const name = e.currentTarget.dataset.name;
     
-    // 从requestId中解析出userID（格式：userID_addTime）
-    const userId = requestId.split('_')[0];
+    // 从requestId中解析出userID
+    const userId = requestId;
     
     wx.showLoading({
       title: '处理中...',
@@ -816,31 +917,36 @@ Page({
     try {
       // 如果IM已初始化，使用IM API同意好友请求
       if (this.data.isImInitialized && wx.$TUIKit) {
+        // 检查API是否存在
+        if (typeof wx.$TUIKit.acceptFriendApplication !== 'function') {
+          console.error('acceptFriendApplication API不存在，可用的方法:', Object.getOwnPropertyNames(wx.$TUIKit).filter(name => typeof wx.$TUIKit[name] === 'function'));
+          throw new Error('acceptFriendApplication API不存在');
+        }
+        
+        console.log('开始调用acceptFriendApplication，userID:', userId);
         wx.$TUIKit.acceptFriendApplication({
-          type: wx.TencentCloudChat.TYPES.SNS_ACCEPT_TYPE_AGREE_AND_ADD, // 同意并添加为好友
           userID: userId
         })
         .then((imResponse) => {
           console.log('IM同意好友申请成功:', imResponse);
           
-          // 检查响应结果
-          if (imResponse.data && imResponse.data.code === 0) {
-            // 移除已处理的请求
-            const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
-            this.setData({
-              pendingList: updatedPendingList
-            });
-            
-            wx.showToast({
-              title: `已同意与${name}的好友请求`,
-              icon: 'success'
-            });
-            
-            // 刷新联系人列表
-            this.loadConversationList();
-          } else {
-            throw new Error(imResponse.data?.message || '操作失败');
-          }
+          // 同意好友申请后，发送一条欢迎消息来创建会话
+          // 这样新好友就会出现在会话列表中
+          this.sendWelcomeMessage(userId, name);
+          
+          // 移除已处理的请求
+          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          this.setData({
+            pendingList: updatedPendingList
+          });
+          
+          wx.showToast({
+            title: `已同意与${name}的好友请求`,
+            icon: 'success'
+          });
+          
+          // 刷新联系人列表，这样新好友就会出现在列表中
+          this.loadConversationList();
         })
         .catch((error) => {
           console.error('IM同意好友申请失败:', error);
@@ -891,13 +997,57 @@ Page({
     }
   },
 
+  // 发送欢迎消息以创建会话
+  sendWelcomeMessage: function(userId, userName) {
+    if (!this.data.isImInitialized || !wx.$TUIKit) {
+      console.warn('IM未初始化，无法发送欢迎消息');
+      return;
+    }
+
+    try {
+      // 创建会话ID（C2C类型）
+      const conversationID = `C2C${userId}`;
+      
+      // 创建欢迎消息
+      const welcomeMessage = wx.$TUIKit.createTextMessage({
+        to: userId,
+        conversationType: 'C2C',
+        payload: {
+          text: `你好！我们已经成为好友了，很高兴认识你！👋`
+        }
+      });
+
+      console.log('发送欢迎消息，目标用户:', userId, '消息内容:', welcomeMessage);
+
+      // 发送消息
+      wx.$TUIKit.sendMessage(welcomeMessage, {
+        conversationID: conversationID
+      })
+      .then((res) => {
+        console.log('欢迎消息发送成功:', res);
+        console.log('会话已创建，新好友将出现在会话列表中');
+      })
+      .catch((error) => {
+        console.error('欢迎消息发送失败:', error);
+        // 即使消息发送失败，会话可能仍然会被创建
+        // 我们仍然尝试刷新会话列表
+        setTimeout(() => {
+          this.loadConversationList();
+        }, 1000);
+      });
+
+    } catch (error) {
+      console.error('创建欢迎消息失败:', error);
+    }
+  },
+
   // 拒绝好友请求
   rejectMatch: function(e) {
     const requestId = e.currentTarget.dataset.id;
     const name = e.currentTarget.dataset.name;
     
-    // 从requestId中解析出userID（格式：userID_addTime）
-    const userId = requestId.split('_')[0];
+    // 从requestId中解析出userID
+    const userId = requestId;
     
     wx.showLoading({
       title: '处理中...',
@@ -906,27 +1056,29 @@ Page({
     try {
       // 如果IM已初始化，使用IM API拒绝好友请求
       if (this.data.isImInitialized && wx.$TUIKit) {
+        // 检查API是否存在
+        if (typeof wx.$TUIKit.refuseFriendApplication !== 'function') {
+          console.error('refuseFriendApplication API不存在，可用的方法:', Object.getOwnPropertyNames(wx.$TUIKit).filter(name => typeof wx.$TUIKit[name] === 'function'));
+          throw new Error('refuseFriendApplication API不存在');
+        }
+        
+        console.log('开始调用refuseFriendApplication，userID:', userId);
         wx.$TUIKit.refuseFriendApplication({
           userID: userId
         })
         .then((imResponse) => {
           console.log('IM拒绝好友申请成功:', imResponse);
           
-          // 检查响应结果
-          if (imResponse.data && imResponse.data.code === 0) {
-            // 移除已处理的请求
-            const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
-            this.setData({
-              pendingList: updatedPendingList
-            });
-            
-            wx.showToast({
-              title: `已拒绝与${name}的好友请求`,
-              icon: 'success'
-            });
-          } else {
-            throw new Error(imResponse.data?.message || '操作失败');
-          }
+          // 移除已处理的请求
+          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          this.setData({
+            pendingList: updatedPendingList
+          });
+          
+          wx.showToast({
+            title: `已拒绝与${name}的好友请求`,
+            icon: 'success'
+          });
         })
         .catch((error) => {
           console.error('IM拒绝好友申请失败:', error);
@@ -963,8 +1115,7 @@ Page({
           // 更新待联系列表（移除已拒绝的用户）
           const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList,
-            originalPendingList: updatedPendingList
+            pendingList: updatedPendingList
           });
         }, 1000);
       }
@@ -976,5 +1127,154 @@ Page({
         icon: 'none'
       });
     }
+  },
+
+  // 检查和设置用户隐私设置
+  checkAndSetPrivacySettings: function() {
+    if (!this.data.isImInitialized || !wx.$TUIKit) {
+      console.log('IM未初始化，跳过隐私设置检查');
+      return;
+    }
+
+    // 获取自己的用户资料
+    wx.$TUIKit.getMyProfile()
+      .then((profileResponse) => {
+        console.log('获取用户资料成功:', profileResponse);
+        
+        if (profileResponse.code === 0 && profileResponse.data) {
+          const profile = profileResponse.data;
+          const currentAllowType = profile.allowType;
+          
+          console.log('当前隐私设置:', currentAllowType);
+          
+          // 如果当前允许类型不是需要验证，则更新为需要验证
+          if (currentAllowType !== 'AllowType_Type_NeedConfirm') {
+            console.log('更新隐私设置为需要验证');
+            
+            wx.$TUIKit.updateMyProfile({
+              allowType: 'AllowType_Type_NeedConfirm'
+            })
+            .then((updateResponse) => {
+              console.log('隐私设置更新成功:', updateResponse);
+              wx.showToast({
+                title: '隐私设置已更新',
+                icon: 'success',
+                duration: 2000
+              });
+            })
+            .catch((error) => {
+              console.error('隐私设置更新失败:', error);
+            });
+          } else {
+            console.log('隐私设置已是需要验证，无需更新');
+          }
+        }
+      })
+      .catch((error) => {
+        console.error('获取用户资料失败:', error);
+      });
+  },
+
+  // 测试隐私设置功能
+  testPrivacySettings: function() {
+    console.log('=== 测试隐私设置功能 ===');
+    
+    if (!this.data.isImInitialized || !wx.$TUIKit) {
+      wx.showToast({
+        title: 'IM未初始化',
+        icon: 'none'
+      });
+      return;
+    }
+
+    // 检查当前隐私设置
+    wx.$TUIKit.getMyProfile()
+      .then((profileResponse) => {
+        console.log('📋 当前用户资料:', profileResponse);
+        
+        if (profileResponse.code === 0 && profileResponse.data) {
+          const profile = profileResponse.data;
+          const currentAllowType = profile.allowType;
+          
+          console.log('🔒 当前隐私设置:', currentAllowType);
+          
+          // 显示当前设置给用户
+          let allowTypeText = '未知';
+          switch (currentAllowType) {
+            case 'AllowType_Type_NeedConfirm':
+              allowTypeText = '需要验证';
+              break;
+            case 'AllowType_Type_AllowAny':
+              allowTypeText = '允许任何人';
+              break;
+            case 'AllowType_Type_DenyAny':
+              allowTypeText = '禁止任何人';
+              break;
+          }
+          
+          wx.showModal({
+            title: '当前隐私设置',
+            content: `添加好友方式: ${allowTypeText}`,
+            showCancel: true,
+            cancelText: '取消',
+            confirmText: currentAllowType === 'AllowType_Type_AllowAny' ? '设置为需要验证' : '好的',
+            success: (res) => {
+              if (res.confirm && currentAllowType === 'AllowType_Type_AllowAny') {
+                // 更新为需要验证
+                this.updatePrivacySettings('AllowType_Type_NeedConfirm');
+              }
+            }
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('❌ 获取用户资料失败:', error);
+        wx.showToast({
+          title: '获取资料失败',
+          icon: 'none'
+        });
+      });
+  },
+
+  // 更新隐私设置
+  updatePrivacySettings: function(newAllowType) {
+    wx.showLoading({
+      title: '更新设置中...',
+    });
+
+    wx.$TUIKit.updateMyProfile({
+      allowType: newAllowType
+    })
+    .then((updateResponse) => {
+      console.log('✅ 隐私设置更新成功:', updateResponse);
+      wx.hideLoading();
+      
+      let allowTypeText = '';
+      switch (newAllowType) {
+        case 'AllowType_Type_NeedConfirm':
+          allowTypeText = '需要验证';
+          break;
+        case 'AllowType_Type_AllowAny':
+          allowTypeText = '允许任何人';
+          break;
+        case 'AllowType_Type_DenyAny':
+          allowTypeText = '禁止任何人';
+          break;
+      }
+      
+      wx.showToast({
+        title: `已设置为${allowTypeText}`,
+        icon: 'success',
+        duration: 2000
+      });
+    })
+    .catch((error) => {
+      console.error('❌ 隐私设置更新失败:', error);
+      wx.hideLoading();
+      wx.showToast({
+        title: '更新失败',
+        icon: 'none'
+      });
+    });
   }
 })

@@ -9,10 +9,7 @@
     "pages/preview/preview",
     "pages/about/about",
     "pages/ai-report/ai-report",
-    "pages/search/search",
-    "pages/test-im/test-im",
-    "pages/debug-im/debug-im",
-    "pages/test-friend-request/test-friend-request"
+    "pages/search/search"
   ],
   "window": {
     "backgroundTextStyle": "light",

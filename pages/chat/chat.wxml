@@ -31,6 +31,13 @@
           </view>
           <view class="flex-1 chat-section-title border-l border-gray-200 {{activeSection === 'pending' ? 'active' : ''}}" bindtap="toggleSection" data-section="pending">
             <text>待联系</text>
+            <view wx:if="{{pendingList.length > 0}}" class="pending-badge">
+              {{pendingList.length}}
+            </view>
+          </view>
+          <!-- 调试按钮 - 仅在开发环境显示 -->
+          <view class="px-2" wx:if="{{!isImInitialized}}" bindtap="checkTUIKitStatus">
+            <text class="text-xs text-blue-500">刷新</text>
           </view>
         </view>
         <!-- 联系人内容 -->
@@ -85,9 +92,14 @@
                     <text class="last-message multi-line">{{item.message}}</text>
                   </view>
                   <view class="ml-4">
-                    <button class="accept-btn" bindtap="acceptMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
-                      同意
-                    </button>
+                    <view class="action-buttons">
+                      <button class="accept-btn" bindtap="acceptMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
+                        同意
+                      </button>
+                      <button class="reject-btn" bindtap="rejectMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
+                        拒绝
+                      </button>
+                    </view>
                   </view>
                 </view>
               </view>
