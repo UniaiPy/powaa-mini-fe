@@ -173,10 +173,12 @@ Page({
       avatar: this.data.avatarUrl || ''
     };
     
+    // 获取app实例用于后续使用（提前定义，确保在整个函数作用域内可用）
+    const app = getApp();
+    
     // 检查TUIKit是否已初始化
     if (!wx.$TUIKit) {
       console.error('TUIKit未初始化，尝试初始化');
-      const app = getApp();
       
       // 尝试初始化TUIKit
       if (app.globalData.token && app.globalData.userInfo) {
