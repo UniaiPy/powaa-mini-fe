@@ -130,7 +130,9 @@ page {
 .h-24 {
   height: 96rpx;
 }
-
+.w-40 {
+  width: 160rpx;
+}
 .h-40 {
   height: 160rpx;
 }
@@ -325,21 +327,85 @@ page {
 
 /* 同意按钮 */
 .accept-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background-color: #007aff;
   color: white;
-  font-size: 22rpx;
-  padding: 0 15rpx !important;
-  border-radius: 20rpx;
-  font-weight: 500;
-  min-width: 96rpx;
-  height: 48rpx !important;
-  line-height: 48rpx !important;
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  padding: 0 20rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: none;
-  margin-top: 8rpx;
+  min-width: 96rpx;
+}
+
+.accept-btn:active {
+  background-color: #0056cc;
+  opacity: 0.8;
+}
+
+/* 空状态样式 */
+.empty-state {
+  padding: 80rpx 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-icon {
+  opacity: 0.5;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  color: #8e8e93;
+  font-size: 28rpx;
+}
+
+/* 优化未读消息徽章样式 */
+.unread-badge {
+  background-color: #ff3b30;
+  color: white;
+  font-size: 20rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  padding: 0 10rpx;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  float: right;
+  margin-top: 12rpx;
+}
+
+/* 聊天卡片样式优化 */
+.chat-card {
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f2f2f7;
+  transition: background-color 0.2s;
+  background: white;
+  border-radius: 0;
+  position: relative;
+}
+
+.chat-card:active {
+  background-color: #f8f8f8;
+}
+
+.chat-card:last-child {
+  border-bottom: none;
 }
 
 /* 微信小程序按钮样式重置 */

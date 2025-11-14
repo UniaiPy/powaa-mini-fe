@@ -1193,7 +1193,8 @@ Page({
    */
   openPreview() {
     const app = getApp()
-    const userId = app.globalData.userInfo.id;
+    // const userId = app.globalData.userInfo.id;
+    const userId = 7;
     wx.navigateTo({
       url: `/pages/preview/preview?type=profile&userId=${userId}`
     })

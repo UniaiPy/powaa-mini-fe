@@ -110,7 +110,7 @@ Page({
     return {
       title: '我的AI分身名片',
       path: this.data.previewUrl,
-      imageUrl: '/images/share-cover.png' // 分享封面图
+      imageUrl: '/images/ai.png' // 使用存在的图片作为分享封面
     };
   },
 
@@ -130,7 +130,8 @@ Page({
           success: () => {
             this.showToast('分享到朋友圈成功');
           },
-          fail: () => {
+          fail: (err) => {
+            console.error('朋友圈分享失败:', err);
             this.showToast('分享失败');
           }
         });
@@ -140,10 +141,13 @@ Page({
           withShareTicket: true,
           menus: ['shareAppMessage'],
           success: () => {
-            this.showToast('请选择要分享的好友');
+            console.log('显示分享菜单成功');
+            // 注意：showShareMenu只是显示分享菜单，用户实际分享操作会触发onShareAppMessage
+            // 这里不应该显示"分享成功"，因为用户可能取消分享
           },
-          fail: () => {
-            this.showToast('分享失败');
+          fail: (err) => {
+            console.error('显示分享菜单失败:', err);
+            this.showToast('无法打开分享菜单');
           }
         });
       }
@@ -154,6 +158,9 @@ Page({
         wx.setClipboardData({
           data: socialItem.url,
           success: () => {
+            // 立即隐藏系统默认提示
+            wx.hideToast();
+            // 然后显示自定义提示
             this.showToast(`已复制${socialItem.name}链接`);
           },
           fail: () => {

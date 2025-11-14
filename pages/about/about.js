@@ -9,12 +9,72 @@ Page({
       terms: false,
       privacy: false
     },
-    unreadCount: 0
+    unreadCount: 0,
+    // 新增：存储从API获取的内容
+    aboutContent: '',
+    termsContent: '',
+    privacyContent: '',
+    helpContent: '',
+    contactInfo: {
+      phone: '18101847172',
+      wechat: '小瓦AI分身'
+    }
   },
 
   onLoad: function() {
     // 初始化时更新未读消息数量
     this.updateUnreadCount();
+    // 加载官方信息
+    this.loadOfficialInfo();
+  },
+
+  // 加载官方信息
+  loadOfficialInfo: function() {
+    const app = getApp();
+    
+    // 定义类型与ID的映射关系
+    const typeIdMap = {
+      'about': 1,     // 关于我们对应的ID
+      'terms': 4,     // 用户协议对应的ID
+      'privacy': 5,   // 隐私政策对应的ID
+      'faq': 3        // 常见问题对应的ID
+    };
+    
+    // 遍历需要加载的类型
+    Object.keys(typeIdMap).forEach(type => {
+      const id = typeIdMap[type];
+      
+      app.request({
+        url: `/api/official/${id}`,
+        method: 'GET',
+        success: (res) => {
+          // 注意：app.request可能有不同的数据结构处理，根据实际实现调整
+          if (res.data) {
+            if (type === 'faq') {
+              // FAQ对应help
+              this.setData({
+                helpContent: res.data.content
+              });
+            } else {
+              this.setData({
+                [type + 'Content']: res.data.content
+              });
+            }
+          } else {
+            console.warn(`获取${type}信息返回数据格式不正确:`, res);
+          }
+        },
+        fail: (err) => {
+          console.error(`获取${type}信息失败:`, err);
+          // 可以保留默认内容或显示错误提示
+          wx.showToast({
+            title: `加载${type === 'faq' ? '帮助' : type === 'about' ? '关于我们' : type === 'terms' ? '用户协议' : '隐私政策'}信息失败`,
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      });
+    });
   },
 
   // 切换区块显示/隐藏
@@ -37,7 +97,7 @@ Page({
   // 拨打电话
   makePhoneCall: function() {
     wx.makePhoneCall({
-      phoneNumber: '18101847172',
+      phoneNumber: this.data.contactInfo.phone,
       success: function() {
         console.log('拨打电话成功');
       },

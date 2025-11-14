@@ -36,34 +36,9 @@
         <!-- 联系人内容 -->
         <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'contacts'}}">
           <!-- 联系人列表 -->
-          <block wx:for="{{contactsList}}" wx:key="id">
-            <view class="chat-card" bindtap="navigateToConversation" data-user="{{item}}">
-              <view class="flex items-center justify-between">
-                <view class="flex items-center flex-1">
-                  <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
-                    <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
-                  </view>
-                  <view class="flex-1">
-                    <view class="flex items-center justify-between mb-2">
-                      <text class="text-base font-semibold text-gray-900">{{item.name}}</text>
-                    </view>
-                    <text class="last-message multi-line">{{item.lastMessage}}</text>
-                  </view>
-                  <view class="ml-4" wx:if="{{item.unread > 0}}">
-                    <view class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</view>
-                    <view class="unread-badge">{{item.unread}}</view>
-                  </view>
-                </view>
-              </view>
-            </view>
-          </block>
-        </view>
-        <!-- 待联系内容 -->
-        <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'pending'}}">
-          <!-- 待联系列表 -->
-          <block wx:for="{{pendingList}}" wx:key="id">
-            <view class="chat-card">
-              <view class="flex items-center justify-between">
+          <block wx:if="{{contactsList.length > 0}}">
+            <block wx:for="{{contactsList}}" wx:key="id">
+              <view class="chat-card" bindtap="navigateToConversation" data-user="{{item}}">
                 <view class="flex items-center">
                   <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
                     <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
@@ -71,21 +46,60 @@
                   <view class="flex-1">
                     <view class="flex items-center justify-between mb-2">
                       <text class="text-base font-semibold text-gray-900">{{item.name}}</text>
+                      <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
+                    </view>
+                    <view class="flex items-center justify-between">
+                      <text class="last-message multi-line">{{item.lastMessage}}</text>
+                      <view class="ml-4" wx:if="{{item.unread > 0}}">
+                        <view class="unread-badge">{{item.unread > 99 ? '99+' : item.unread}}</view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </block>
+          </block>
+          <!-- 空状态 -->
+          <view class="empty-state" wx:else>
+            <view class="empty-content">
+              <image src="/images/empty_chat.png" class="empty-icon w-24 h-24" mode="widthFix"></image>
+              <text class="empty-text">暂无会话记录</text>
+            </view>
+          </view>
+        </view>
+        <!-- 待联系内容 -->
+        <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'pending'}}">
+          <!-- 待联系列表 -->
+          <block wx:if="{{pendingList.length > 0}}">
+            <block wx:for="{{pendingList}}" wx:key="id">
+              <view class="chat-card">
+                <view class="flex items-center">
+                  <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
+                    <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
+                  </view>
+                  <view class="flex-1">
+                    <view class="flex items-center justify-between mb-2">
+                      <text class="text-base font-semibold text-gray-900">{{item.name}}</text>
+                      <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
                     </view>
                     <text class="last-message multi-line">{{item.message}}</text>
                   </view>
-                </view>
-                <view class="flex flex-col items-end ml-4">
-                  <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
-                  <view class="mt-2">
-                    <button class="accept-btn" bindtap="acceptMatch" data-name="{{item.name}}" size="mini">
+                  <view class="ml-4">
+                    <button class="accept-btn" bindtap="acceptMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
                       同意
                     </button>
                   </view>
                 </view>
               </view>
-            </view>
+            </block>
           </block>
+          <!-- 空状态 -->
+          <view class="empty-state" wx:else>
+            <view class="empty-content">
+              <image src="/images/empty_chat.png" class="empty-icon w-24 h-24" mode="widthFix"></image>
+              <text class="empty-text">暂无新的好友请求</text>
+            </view>
+          </view>
         </view>
         <!-- 底部空白占位符 -->
         <view class="h-40"></view>

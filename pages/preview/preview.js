@@ -153,20 +153,110 @@ Page({
    */
   sendGreeting: function() {
     const message = this.data.greetingMessage;
-    console.log('发送打招呼消息:', message);
     
-    // 关闭弹窗
-    this.closeChatModal();
+    if (!message || message.trim() === '') {
+      this.showToast('请输入打招呼消息');
+      return;
+    }
     
-    // 显示成功提示
-    this.showToast('消息已发送');
+    // 显示加载状态
+    wx.showLoading({
+      title: '发送中...',
+    });
     
-    // 跳转到聊天页面并传递消息参数
-    setTimeout(() => {
-      wx.navigateTo({
-        url: '/pages/chat/chat?user=李小雅&message=' + encodeURIComponent(message)
-      });
-    }, 1000);
+    // 构建目标用户对象
+    const targetUser = {
+      id: this.data.userId,
+      userID: this.data.userId, // 腾讯云IM使用userID字段
+      name: this.data.userInfo?.name || '用户',
+      avatar: this.data.avatarUrl || ''
+    };
+    
+    // 检查TUIKit是否已初始化
+    if (!wx.$TUIKit) {
+      console.error('TUIKit未初始化');
+      wx.hideLoading();
+      this.showToast('IM服务未初始化，请稍后重试');
+      return;
+    }
+    
+    // 调用腾讯云IM添加好友API
+    wx.$TUIKit.addFriend({
+      to: targetUser.userID,
+      source: 'AddSource_Type_Web',
+      remark: '',
+      wording: message, // 使用打招呼消息作为验证消息
+      type: 1, // 单向好友
+      addWording: message
+    }).then(res => {
+      console.log('添加好友成功:', res);
+      wx.hideLoading();
+      
+      // 关闭弹窗
+      this.closeChatModal();
+      
+      // 显示成功提示
+      this.showToast('好友请求已发送');
+      
+      // 跳转到聊天页面
+      setTimeout(() => {
+        wx.navigateTo({
+          url: `/pages/chat/chat?userId=${targetUser.userID}&userName=${encodeURIComponent(targetUser.name)}`
+        });
+      }, 1000);
+      
+    }).catch(err => {
+      console.error('添加好友失败:', err);
+      wx.hideLoading();
+      
+      // 处理特定错误码
+      if (err.code === 10009) {
+        this.showToast('已经是好友关系');
+        // 已经是好友，直接跳转到聊天页面
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/chat/chat?userId=${targetUser.userID}&userName=${encodeURIComponent(targetUser.name)}`
+          });
+        }, 1000);
+      } else if (err.code === 10010) {
+        this.showToast('好友申请已发送，请等待对方同意');
+        this.closeChatModal();
+      } else {
+        // 尝试通过后端API发送好友请求
+        this.sendFriendRequestViaBackend(targetUser, message);
+      }
+    });
+  },
+
+  /**
+   * 通过后端API发送好友请求（备用方案）
+   */
+  sendFriendRequestViaBackend: function(targetUser, message) {
+    const app = getApp();
+    
+    app.request({
+      url: '/api/friendships/request',
+      method: 'POST',
+      data: {
+        toUserId: targetUser.userID,
+        message: message,
+        source: 'preview_page'
+      },
+      success: (res) => {
+        console.log('通过后端发送好友请求成功:', res);
+        
+        if (res.code === 0) {
+          this.closeChatModal();
+          this.showToast('好友请求已发送');
+        } else {
+          this.showToast(res.message || '发送失败，请稍后重试');
+        }
+      },
+      fail: (error) => {
+        console.error('通过后端发送好友请求失败:', error);
+        this.showToast('网络错误，请稍后重试');
+      }
+    });
   },
 
   /**
