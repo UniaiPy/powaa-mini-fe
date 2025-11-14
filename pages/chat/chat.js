@@ -14,9 +14,7 @@ Page({
     searchText: '',
     showSearchResults: false,
     searchResults: [],
-    isImInitialized: false, // IM初始化状态
-    originalContactsList: [], // 保存原始联系人列表
-    originalPendingList: [] // 保存原始待联系人列表
+    isImInitialized: false // IM初始化状态
   },
 
   /**
@@ -34,8 +32,12 @@ Page({
     // 检查是否已登录
     if (!app.globalData.token || !app.globalData.userInfo) {
       console.error('用户未登录');
-      // 使用模拟数据
-      this.loadMockData();
+      // 跳转到登录页面
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/login/login'
+        });
+      }, 1500);
       return;
     }
     
@@ -80,7 +82,11 @@ Page({
         title: '用户信息不完整',
         icon: 'none'
       });
-      this.loadMockData();
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/login/login'
+        });
+      }, 1500);
       return;
     }
     
@@ -96,7 +102,11 @@ Page({
         title: 'IM配置不完整',
         icon: 'none'
       });
-      this.loadMockData();
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/login/login'
+        });
+      }, 1500);
       return;
     }
     
@@ -136,8 +146,12 @@ Page({
             title: 'IM初始化失败',
             icon: 'none'
           });
-          // 初始化失败时使用模拟数据
-          this.loadMockData();
+          // 初始化失败时跳转到登录页面
+          setTimeout(() => {
+            wx.navigateTo({
+              url: '/pages/login/login'
+            });
+          }, 1500);
         }
       });
   },
@@ -238,9 +252,7 @@ Page({
           // 验证actualConversationList是否为数组
           if (!Array.isArray(actualConversationList)) {
             console.error('会话列表数据格式错误，期望数组，实际收到:', typeof actualConversationList, actualConversationList);
-            // 加载失败时使用模拟数据
-            this.loadMockData();
-            return;
+            throw new Error('会话列表数据格式错误');
           }
           
           // 处理会话列表数据
@@ -258,9 +270,9 @@ Page({
           // 根据错误类型显示不同的提示
           let errorMessage = '加载会话失败';
           if (error.message && error.message.includes('等待IM登录超时')) {
-            errorMessage = 'IM初始化超时，正在使用模拟数据';
+            errorMessage = 'IM初始化超时';
           } else if (error.message && error.message.includes('TUIKit实例不可用')) {
-            errorMessage = 'IM服务不可用，正在使用模拟数据';
+            errorMessage = 'IM服务不可用';
           }
           
           wx.showToast({
@@ -268,19 +280,14 @@ Page({
             icon: 'none',
             duration: 2000
           });
-          
-          // 加载失败时使用模拟数据
-          this.loadMockData();
         });
       
     } catch (error) {
       console.error('加载会话列表失败:', error);
       wx.showToast({
-        title: '加载会话失败，使用模拟数据',
+        title: '加载会话失败',
         icon: 'none'
       });
-      // 加载失败时使用模拟数据
-      this.loadMockData();
     } finally {
       wx.hideLoading();
     }
@@ -322,8 +329,7 @@ Page({
     console.log('处理后的联系人列表:', contactsList);
     
     this.setData({
-      contactsList: contactsList,
-      originalContactsList: contactsList
+      contactsList: contactsList
     });
   },
   
@@ -430,8 +436,7 @@ Page({
         console.log('处理后的待联系列表:', pendingList);
         
         this.setData({
-          pendingList: pendingList,
-          originalPendingList: pendingList
+          pendingList: pendingList
         });
         
         if (pendingList.length === 0) {
@@ -593,89 +598,7 @@ Page({
     }
   },
   
-  // 加载模拟数据（备用）
-  loadMockData: function() {
-    const contacts = [
-      {
-        id: '1',
-        name: '王小明',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-        lastMessage: '你好，很高兴认识你！',
-        time: '2分钟前',
-        unread: 2
-      },
-      {
-        id: '2',
-        name: '李小雅',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
-        lastMessage: '谢谢你的分享，很有帮助！',
-        time: '1小时前',
-        unread: 0
-      },
-      {
-        id: '3',
-        name: '陈佳明',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-        lastMessage: '明天见面聊聊项目吧',
-        time: '3小时前',
-        unread: 1
-      },
-      {
-        id: '4',
-        name: '王小雨',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-        lastMessage: '周末一起去看电影吧',
-        time: '昨天',
-        unread: 0
-      },
-      {
-        id: '5',
-        name: '张明华',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-        lastMessage: '数据分析项目合作',
-        time: '2天前',
-        unread: 0
-      }
-    ];
-    
-    const pending = [
-      {
-        id: 'p1',
-        name: '陈思婷',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
-        message: '嗨，我是陈思婷，对你的专业领域很感兴趣，希望能和你交流学习！',
-        time: '今天 14:30'
-      },
-      {
-        id: 'p2',
-        name: '张明华',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-        message: '你好，我是张明华，看到你在技术领域很有造诣，想请教一些问题。',
-        time: '今天 14:25'
-      },
-      {
-        id: 'p3',
-        name: '林雨晨',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
-        message: '嗨！我是林雨晨，我们似乎有很多共同爱好，希望能一起交流分享~',
-        time: '今天 14:20'
-      },
-      {
-        id: 'p4',
-        name: '王小雨',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-        message: '你好，我是王小雨，看到你的资料很感兴趣，想认识一下你！',
-        time: '昨天 18:45'
-      }
-    ];
-    
-    this.setData({
-      contactsList: contacts,
-      originalContactsList: contacts,
-      pendingList: pending,
-      originalPendingList: pending
-    });
-  },
+
 
   /**
    * 生命周期函数--监听页面初次渲染完成
@@ -702,8 +625,8 @@ Page({
       });
       this.loadConversationList();
       this.loadFriendRequests();
-    } else if (!this.data.originalContactsList.length) {
-      // 如果没有初始化且没有原始数据，则重新检查TUIKit状态
+    } else {
+      // 如果没有初始化，则重新检查TUIKit状态
       this.checkTUIKitStatus();
     }
   },
@@ -786,10 +709,13 @@ Page({
       showSearch: false,
       searchText: '',
       showSearchResults: false,
-      searchResults: [],
-      contactsList: this.data.originalContactsList,
-      pendingList: this.data.originalPendingList
+      searchResults: []
     });
+    // 重新加载数据以恢复原始列表
+    if (this.data.isImInitialized) {
+      this.loadConversationList();
+      this.loadFriendRequests();
+    }
   },
 
   // 搜索输入
@@ -801,19 +727,17 @@ Page({
 
   // 执行搜索
   performSearch: function() {
-    const { searchText, originalContactsList, originalPendingList } = this.data;
+    const { searchText, contactsList, pendingList } = this.data;
     if (!searchText.trim()) {
       this.setData({
         showSearchResults: false,
-        searchResults: [],
-        contactsList: originalContactsList,
-        pendingList: originalPendingList
+        searchResults: []
       });
       return;
     }
 
     // 合并联系人列表和待联系列表进行搜索
-    const allUsers = [...originalContactsList, ...originalPendingList.map(item => ({
+    const allUsers = [...contactsList, ...pendingList.map(item => ({
       ...item,
       lastMessage: item.message,
       unread: 0
@@ -894,8 +818,7 @@ Page({
           // 移除已处理的请求
           const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList,
-            originalPendingList: updatedPendingList
+            pendingList: updatedPendingList
           });
           
           wx.showToast({
@@ -931,8 +854,7 @@ Page({
           // 更新待联系列表（移除已同意的用户）
           const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList,
-            originalPendingList: updatedPendingList
+            pendingList: updatedPendingList
           });
         }, 1000);
       }
@@ -971,8 +893,7 @@ Page({
           // 移除已处理的请求
           const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList,
-            originalPendingList: updatedPendingList
+            pendingList: updatedPendingList
           });
           
           wx.showToast({

@@ -10,6 +10,9 @@ if (typeof TencentCloudChat === 'object' && TencentCloudChat.default) {
 // 导入上传插件
 import TIMUploadPlugin from 'tim-upload-plugin';
 
+// 导入敏感词过滤插件（可选）
+import TIMProfanityFilterPlugin from 'tim-profanity-filter-plugin';
+
 class IMManager {
   constructor() {
     this.isInitialized = false;
@@ -85,6 +88,14 @@ class IMManager {
         console.log('✅ 上传插件注册成功');
       } catch (pluginError) {
         console.warn('⚠️ 上传插件注册失败:', pluginError);
+      }
+      
+      // 注册敏感词过滤插件（可选）
+      try {
+        wx.$TUIKit.registerPlugin({'tim-profanity-filter-plugin': TIMProfanityFilterPlugin});
+        console.log('✅ 敏感词过滤插件注册成功');
+      } catch (filterError) {
+        console.warn('⚠️ 敏感词过滤插件注册失败:', filterError);
       }
       
       // 保存配置
