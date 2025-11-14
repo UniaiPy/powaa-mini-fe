@@ -207,7 +207,17 @@ Page({
     }
     
     // 调用腾讯云IM添加好友API
-    console.log('发送好友请求的用户对象:', targetUser.userID, '当前用户对象:', wx.$chat_userID);
+    console.log('=== 开始发送好友请求 ===');
+    console.log('发送方用户ID:', wx.$chat_userID);
+    console.log('接收方用户ID:', targetUser.userID);
+    console.log('目标用户对象:', targetUser);
+    console.log('当前用户信息:', app.globalData.userInfo);
+    
+    // 检查腾讯云IM常量值
+    console.log('=== 腾讯云IM好友类型常量 ===');
+    console.log('SNS_ADD_TYPE_SINGLE:', TencentCloudChat.TYPES.SNS_ADD_TYPE_SINGLE);
+    console.log('SNS_ADD_TYPE_BOTH:', TencentCloudChat.TYPES.SNS_ADD_TYPE_BOTH);
+    console.log('SNS_ADD_TYPE_FOLLOW:', TencentCloudChat.TYPES.SNS_ADD_TYPE_FOLLOW);
     
     wx.$TUIKit.addFriend({
       to: targetUser.userID,
@@ -226,6 +236,17 @@ Page({
         if (res.data.code === 0) {
           console.log('✅ 好友请求已成功发送到腾讯云IM服务器');
           console.log('目标用户:', targetUser.userID, '应该能在待联系列表中看到此请求');
+          
+          // 立即检查好友申请状态
+          setTimeout(() => {
+            console.log('=== 检查好友申请状态 ===');
+            wx.$TUIKit.getFriendApplicationList().then(appResponse => {
+              console.log('发送方的好友申请列表:', JSON.stringify(appResponse, null, 2));
+            }).catch(err => {
+              console.error('获取发送方好友申请失败:', err);
+            });
+          }, 1000);
+          
         } else if (res.data.code === 30539) {
           console.log('⚠️ 好友申请已存在，无需重复申请');
         } else {

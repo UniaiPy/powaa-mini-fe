@@ -13,9 +13,12 @@ page {
 
 .flex-container {
   display: flex;
-  flex-direction: row; /* 横向排列（默认） */
-  justify-content: space-around; /* 主轴（横向）居中 */
-  align-items: center; /* 交叉轴（纵向）居中 */
+  flex-direction: row;
+  /* 横向排列（默认） */
+  justify-content: space-around;
+  /* 主轴（横向）居中 */
+  align-items: center;
+  /* 交叉轴（纵向）居中 */
   width: 100%;
 }
 
@@ -130,9 +133,11 @@ page {
 .h-24 {
   height: 96rpx;
 }
+
 .w-40 {
   width: 160rpx;
 }
+
 .h-40 {
   height: 160rpx;
 }
@@ -465,7 +470,12 @@ page {
 .chat-section-title:active {
   background-color: #f3f4f6;
 }
-.content-container{position: relative;flex: 1;}
+
+.content-container {
+  position: relative;
+  flex: 1;
+}
+
 /* 搜索框覆盖层 */
 .search-overlay {
   position: absolute;
@@ -527,10 +537,10 @@ page {
 
 .search-btn {
   background: #8b5cf6 !important;
-  color: white!important;
+  color: white !important;
   border: none;
   padding: 0 24rpx !important;
-  border:none!important;
+  border: none !important;
   border-radius: 32rpx;
   font-size: 28rpx;
   font-weight: 500;
@@ -553,7 +563,7 @@ page {
   background: transparent;
   color: #6b7280 !important;
   border: 2rpx solid #e5e7eb !important;
-  padding: 0 24rpx!important;
+  padding: 0 24rpx !important;
   border-radius: 32rpx;
   font-size: 28rpx;
 }
@@ -573,16 +583,22 @@ page {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideDown {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(-40rpx);
   }
-  to { 
+
+  to {
     opacity: 1;
     transform: translateY(0);
   }

@@ -548,6 +548,11 @@ App({
       }).then(() => {
         console.log('TUIKit登录成功')
         this.globalData.isTUIKitInitialized = true
+
+        // 设置加好友需要验证
+        wx.$TUIKit.setSelfInfo({
+          allowType: 'V2TIM_FRIEND_NEED_CONFIRM'
+        });
         
         // 设置全局事件监听
         this.setTUIKitEventListeners()

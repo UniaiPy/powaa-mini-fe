@@ -249,15 +249,31 @@ Page({
       .then((imResponse) => {
         console.log('IM获取好友申请完整响应:', JSON.stringify(imResponse, null, 2));
         
-        // 获取收到的好友申请（别人发给当前用户的）
+        // 获取所有好友申请
         const applicationList = imResponse.data.applicationList || [];
+        console.log('所有好友申请数量:', applicationList.length);
+        
+        // 打印所有申请的详细信息，用于调试
+        applicationList.forEach((app, index) => {
+          console.log(`申请${index + 1}详细信息:`, {
+            userID: app.userID,
+            nickname: app.nickname,
+            type: app.type,
+            addTime: app.addTime,
+            addSource: app.addSource,
+            wording: app.wording,
+            status: app.status,
+            isFromMe: app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME
+          });
+        });
+        
+        // 获取收到的好友申请（别人发给当前用户的）
         const pendingApplications = applicationList.filter(app => 
           app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME && 
-          app.addTime && 
-          (app.addSource === 'AddSource_Type_' || app.addSource === undefined)
+          app.addTime
         );
         
-        console.log('收到的好友申请数量:', pendingApplications.length);
+        console.log('过滤后收到的好友申请数量:', pendingApplications.length);
         console.log('申请列表详情:', pendingApplications);
         
         // 打印每个好友申请的详细信息
@@ -324,6 +340,45 @@ Page({
       });
   },
   
+  /**
+   * 设置好友申请监听
+   */
+  setupFriendApplicationListener: function() {
+    console.log('=== 设置好友申请监听 ===');
+    
+    if (!wx.$TUIKit) {
+      console.error('❌ TUIKit未初始化，无法设置监听');
+      return;
+    }
+    
+    // 监听好友申请列表更新
+    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_LIST_UPDATED, (event) => {
+      console.log('=== 📬 好友申请列表更新事件 ===');
+      console.log('事件数据:', JSON.stringify(event, null, 2));
+      
+      // 重新加载好友申请列表
+      this.loadFriendRequests();
+      
+      // 显示通知
+      wx.showToast({
+        title: '收到新的好友申请',
+        icon: 'none',
+        duration: 2000
+      });
+    });
+    
+    // 监听好友申请被处理
+    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_PROCESS, (event) => {
+      console.log('=== 🔄 好友申请处理事件 ===');
+      console.log('事件数据:', JSON.stringify(event, null, 2));
+      
+      // 重新加载好友申请列表
+      this.loadFriendRequests();
+    });
+    
+    console.log('✅ 好友申请监听设置完成');
+  },
+
   // 查看自己发送的好友请求状态
   loadSentFriendRequests: function() {
     console.log('查看自己发送的好友请求...');
