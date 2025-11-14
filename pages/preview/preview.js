@@ -1,4 +1,5 @@
 // pages/preview/preview.js
+import TencentCloudChat from '@tencentcloud/chat';
 Page({
   /**
    * 页面的初始数据
@@ -207,25 +208,31 @@ Page({
     
     // 调用腾讯云IM添加好友API
     console.log('发送好友请求的用户对象:', targetUser.userID, '当前用户对象:', wx.$chat_userID);
-    console.log('好友请求参数:', {
-      to: targetUser.userID,
-      source: 'AddSource_Type_Web',
-      remark: '',
-      wording: message,
-      type: 1, // 单向好友
-      addWording: message
-    });
     
     wx.$TUIKit.addFriend({
       to: targetUser.userID,
       source: 'AddSource_Type_Web',
       remark: '',
       wording: message, // 使用打招呼消息作为验证消息
-      type: 1, // 单向好友
+      type: TencentCloudChat.TYPES.SNS_ADD_TYPE_BOTH, // 双向好友，需要对方确认
       addWording: message
     }).then(res => {
-      console.log('添加好友成功:', res);
-      console.log('成功响应详情:', JSON.stringify(res, null, 2));
+      console.log('=== TUIKit添加好友成功 ===');
+      console.log('完整响应:', JSON.stringify(res, null, 2));
+      
+      // 检查响应中的关键信息
+      if (res.data) {
+        console.log('响应数据:', res.data);
+        if (res.data.code === 0) {
+          console.log('✅ 好友请求已成功发送到腾讯云IM服务器');
+          console.log('目标用户:', targetUser.userID, '应该能在待联系列表中看到此请求');
+        } else if (res.data.code === 30539) {
+          console.log('⚠️ 好友申请已存在，无需重复申请');
+        } else {
+          console.log('⚠️ 其他响应码:', res.data.code, res.data.message);
+        }
+      }
+      
       wx.hideLoading();
       
       // 关闭弹窗
@@ -242,16 +249,17 @@ Page({
       }, 1000);
       
     }).catch(err => {
-      console.error('添加好友失败:', err);
-      console.error('失败错误详情:', JSON.stringify(err, null, 2));
+      console.error('=== TUIKit添加好友失败 ===');
+      console.error('完整错误信息:', JSON.stringify(err, null, 2));
       console.error('错误码:', err.code);
       console.error('错误消息:', err.message);
+      console.error('错误类型:', typeof err);
       
       wx.hideLoading();
       
       // 处理特定错误码
       if (err.code === 10009) {
-        console.log('已经是好友关系');
+        console.log('✅ 已经是好友关系');
         this.showToast('已经是好友关系');
         // 已经是好友，直接跳转到聊天页面
         setTimeout(() => {
@@ -260,13 +268,19 @@ Page({
           });
         }, 1000);
       } else if (err.code === 10010) {
-        console.log('好友申请已发送，等待对方同意');
+        console.log('⏰ 好友申请已发送，等待对方同意');
         this.showToast('好友申请已发送，请等待对方同意');
         this.closeChatModal();
       } else {
-        console.log('TUIKit添加好友失败，尝试通过后端API发送');
+        console.log('❌ TUIKit添加好友失败，尝试通过后端API发送');
+        console.log('失败原因可能包括:');
+        console.log('1. 网络连接问题');
+        console.log('2. IM服务配置问题');
+        console.log('3. 用户权限问题');
+        console.log('4. 参数配置错误');
+        
         // 尝试通过后端API发送好友请求
-        this.sendFriendRequestViaBackend(targetUser, message);
+        // this.sendFriendRequestViaBackend(targetUser, message);
       }
     });
   },

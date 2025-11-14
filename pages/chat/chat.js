@@ -216,9 +216,9 @@ Page({
     });
   },
   
-  // 加载好友请求列表
+  // 加载好友请求列表（从IM直接获取）
   loadFriendRequests: function() {
-    console.log('开始加载好友请求列表（收到的好友请求）...');
+    console.log('开始从IM加载好友请求列表...');
     
     // 获取当前用户信息
     const app = getApp();
@@ -226,102 +226,102 @@ Page({
     console.log('当前用户ID:', currentUserId);
     console.log('当前用户信息:', app.globalData.userInfo);
     
+    // 检查IM是否已初始化
+    if (!app.globalData.isTUIKitInitialized || !wx.$TUIKit) {
+      console.error('IM未初始化，无法获取好友申请列表');
+      this.setData({
+        pendingList: [],
+        originalPendingList: []
+      });
+      wx.showToast({
+        title: 'IM未初始化',
+        icon: 'none'
+      });
+      return;
+    }
+    
     wx.showLoading({
       title: '加载好友请求中...',
     });
     
-    // 调用后端API获取待处理的好友请求
-    app.request({
-      url: `/api/friendships/pending`,
-      method: 'GET',
-      success: (res) => {
-        console.log('获取好友请求完整响应:', JSON.stringify(res, null, 2));        
-        console.log('响应状态码:', res.code);
-        console.log('响应数据:', res.data);
+    // 使用IM SDK获取好友申请列表
+    wx.$TUIKit.getFriendApplicationList()
+      .then((imResponse) => {
+        console.log('IM获取好友申请完整响应:', JSON.stringify(imResponse, null, 2));
         
-        if (res.code === 200 && res.data && res.data.pending_requests) {
-          // 验证pending_requests是否为数组
-          if (!Array.isArray(res.data.pending_requests)) {
-            console.error('好友请求数据格式错误，期望数组，实际收到:', typeof res.data.pending_requests, res.data.pending_requests);
-            this.setData({
-              pendingList: [],
-              originalPendingList: []
-            });
-            return;
-          }
-          
-          console.log('收到的好友请求数量:', res.data.pending_requests.length);
-          
-          // 打印每个好友请求的详细信息
-          res.data.pending_requests.forEach((request, index) => {
-            console.log(`好友请求${index + 1}:`, {
-              request_id: request.request_id,
-              sender_id: request.sender_id,
-              sender_nickname: request.sender_nickname,
-              receiver_id: request.receiver_id,
-              message: request.message,
-              request_time: request.request_time,
-              status: request.status
-            });
+        // 获取收到的好友申请（别人发给当前用户的）
+        const applicationList = imResponse.data.applicationList || [];
+        const pendingApplications = applicationList.filter(app => 
+          app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME && 
+          app.addTime && 
+          (app.addSource === 'AddSource_Type_' || app.addSource === undefined)
+        );
+        
+        console.log('收到的好友申请数量:', pendingApplications.length);
+        console.log('申请列表详情:', pendingApplications);
+        
+        // 打印每个好友申请的详细信息
+        pendingApplications.forEach((application, index) => {
+          console.log(`好友申请${index + 1}:`, {
+            userID: application.userID,
+            nickname: application.nickname,
+            addTime: application.addTime,
+            addSource: application.addSource,
+            wording: application.wording,
+            type: application.type,
+            status: application.status
           });
-          
-          // 处理好友请求数据
-          const pendingList = res.data.pending_requests.map(request => {
-            return {
-              id: request.request_id,
-              name: request.sender_nickname || request.sender_id,
-              avatar: request.sender_avatar || '',
-              message: request.message || '请求添加您为好友',
-              time: request.request_time,
-              senderId: request.sender_id,
-              receiverId: request.receiver_id
-            };
-          });
-          
-          console.log('处理后的待联系列表:', pendingList);
-          
-          this.setData({
-            pendingList: pendingList,
-            originalPendingList: pendingList
-          });
-        } else {
-          console.error('获取好友请求失败:', res.message || '未知错误');
-          console.log('这可能意味着当前没有收到任何好友请求');
-          console.log('检查响应结构:', {
-            code: res.code,
-            hasData: !!res.data,
-            dataKeys: res.data ? Object.keys(res.data) : [],
-            pendingRequestsType: res.data?.pending_requests ? typeof res.data.pending_requests : 'undefined'
-          });
+        });
+        
+        // 处理好友申请数据
+        const pendingList = pendingApplications.map(application => {
+          return {
+            id: application.userID + '_' + application.addTime, // 使用用户ID和时间戳作为唯一标识
+            name: application.nickname || application.userID,
+            avatar: application.avatar || '',
+            message: application.wording || '请求添加您为好友',
+            time: this.formatTime(application.addTime),
+            senderId: application.userID,
+            receiverId: currentUserId,
+            addTime: application.addTime,
+            status: application.status,
+            type: application.type
+          };
+        });
+        
+        console.log('处理后的待联系列表:', pendingList);
+        
+        this.setData({
+          pendingList: pendingList,
+          originalPendingList: pendingList
+        });
+        
+        if (pendingList.length === 0) {
           wx.showToast({
             title: '暂无收到的好友请求',
             icon: 'none'
           });
-          // 设置空数组避免后续错误
-          this.setData({
-            pendingList: [],
-            originalPendingList: []
-          });
         }
-      },
-      fail: (err) => {
-        console.error('获取好友请求失败:', err);
-        console.error('请求URL:', `/api/friendships/pending`);
-        console.error('请求方法:', 'GET');
+      })
+      .catch((error) => {
+        console.error('IM获取好友申请失败:', error);
+        console.error('错误码:', error.code);
+        console.error('错误信息:', error.message);
+        
         wx.showToast({
-          title: '网络错误',
+          title: '获取好友申请失败',
           icon: 'none'
         });
+        
         // 设置空数组避免后续错误
         this.setData({
           pendingList: [],
           originalPendingList: []
         });
-      },
-      complete: () => {
+      })
+      .finally(() => {
         wx.hideLoading();
-      }
-    });
+      });
   },
   
   // 查看自己发送的好友请求状态
@@ -688,51 +688,50 @@ Page({
     const requestId = e.currentTarget.dataset.id;
     const name = e.currentTarget.dataset.name;
     
+    // 从requestId中解析出userID（格式：userID_addTime）
+    const userId = requestId.split('_')[0];
+    
     wx.showLoading({
       title: '处理中...',
     });
     
     try {
-      // 如果IM已初始化，调用后端API同意好友请求
-      if (this.data.isImInitialized) {
-        const app = getApp();
-        app.request({
-          url: `/api/friendships/approve/${requestId}`,
-          method: 'POST',
-          success: (res) => {
-            if (res.code === 200) {
-              // 移除已处理的请求
-              const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
-              this.setData({
-                pendingList: updatedPendingList,
-                originalPendingList: updatedPendingList
-              });
-              
-              wx.showToast({
-                title: `已同意与${name}的好友请求`,
-                icon: 'success'
-              });
-              
-              // 刷新联系人列表
-              this.loadConversationList();
-            } else {
-              console.error('同意好友请求失败:', res.message);
-              wx.showToast({
-                title: res.message || '操作失败',
-                icon: 'none'
-              });
-            }
-          },
-          fail: (error) => {
-            console.error('请求失败:', error);
-            wx.showToast({
-              title: '网络请求失败',
-              icon: 'none'
-            });
-          },
-          complete: () => {
-            wx.hideLoading();
-          }
+      // 如果IM已初始化，使用IM API同意好友请求
+      if (this.data.isImInitialized && wx.$TUIKit) {
+        wx.$TUIKit.acceptFriendApplication({
+          userID: userId,
+          type: wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME
+        })
+        .then((imResponse) => {
+          console.log('IM同意好友申请成功:', imResponse);
+          
+          // 移除已处理的请求
+          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          this.setData({
+            pendingList: updatedPendingList,
+            originalPendingList: updatedPendingList
+          });
+          
+          wx.showToast({
+            title: `已同意与${name}的好友请求`,
+            icon: 'success'
+          });
+          
+          // 刷新联系人列表
+          this.loadConversationList();
+        })
+        .catch((error) => {
+          console.error('IM同意好友申请失败:', error);
+          console.error('错误码:', error.code);
+          console.error('错误信息:', error.message);
+          
+          wx.showToast({
+            title: error.message || '操作失败',
+            icon: 'none'
+          });
+        })
+        .finally(() => {
+          wx.hideLoading();
         });
       } else {
         // 模拟模式下的处理
@@ -766,81 +765,72 @@ Page({
     const requestId = e.currentTarget.dataset.id;
     const name = e.currentTarget.dataset.name;
     
-    wx.showModal({
-      title: '确认拒绝',
-      content: `确定要拒绝与${name}的好友请求吗？`,
-      success: (res) => {
-        if (res.confirm) {
-          wx.showLoading({
-            title: '处理中...',
+    // 从requestId中解析出userID（格式：userID_addTime）
+    const userId = requestId.split('_')[0];
+    
+    wx.showLoading({
+      title: '处理中...',
+    });
+    
+    try {
+      // 如果IM已初始化，使用IM API拒绝好友请求
+      if (this.data.isImInitialized && wx.$TUIKit) {
+        wx.$TUIKit.refuseFriendApplication({
+          userID: userId,
+          type: wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME
+        })
+        .then((imResponse) => {
+          console.log('IM拒绝好友申请成功:', imResponse);
+          
+          // 移除已处理的请求
+          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          this.setData({
+            pendingList: updatedPendingList,
+            originalPendingList: updatedPendingList
           });
           
-          try {
-            // 如果IM已初始化，调用后端API拒绝好友请求
-            if (this.data.isImInitialized) {
-              const app = getApp();
-              app.request({
-                url: `/api/friendships/reject/${requestId}`,
-                method: 'POST',
-                success: (res) => {
-                  if (res.code === 200) {
-                    // 移除已处理的请求
-                    const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
-                    this.setData({
-                      pendingList: updatedPendingList,
-                      originalPendingList: updatedPendingList
-                    });
-                    
-                    wx.showToast({
-                      title: `已拒绝与${name}的好友请求`,
-                      icon: 'success'
-                    });
-                  } else {
-                    console.error('拒绝好友请求失败:', res.message);
-                    wx.showToast({
-                      title: res.message || '操作失败',
-                      icon: 'none'
-                    });
-                  }
-                },
-                fail: (error) => {
-                  console.error('请求失败:', error);
-                  wx.showToast({
-                    title: '网络请求失败',
-                    icon: 'none'
-                  });
-                },
-                complete: () => {
-                  wx.hideLoading();
-                }
-              });
-            } else {
-              // 模拟模式下的处理
-              setTimeout(() => {
-                wx.hideLoading();
-                wx.showToast({
-                  title: `已拒绝与${name}的好友请求`,
-                  icon: 'success'
-                });
+          wx.showToast({
+            title: `已拒绝与${name}的好友请求`,
+            icon: 'success'
+          });
+        })
+        .catch((error) => {
+          console.error('IM拒绝好友申请失败:', error);
+          console.error('错误码:', error.code);
+          console.error('错误信息:', error.message);
+          
+          wx.showToast({
+            title: error.message || '操作失败',
+            icon: 'none'
+          });
+        })
+        .finally(() => {
+          wx.hideLoading();
+        });
+      } else {
+        // 模拟模式下的处理
+        setTimeout(() => {
+          wx.hideLoading();
+          wx.showToast({
+            title: `已拒绝与${name}的好友请求`,
+            icon: 'success'
+          });
 
-                // 更新待联系列表（移除已拒绝的用户）
-                const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
-                this.setData({
-                  pendingList: updatedPendingList,
-                  originalPendingList: updatedPendingList
-                });
-              }, 1000);
-            }
-          } catch (error) {
-            console.error('拒绝好友请求失败:', error);
-            wx.hideLoading();
-            wx.showToast({
-              title: '处理失败',
-              icon: 'none'
-            });
-          }
-        }
+          // 更新待联系列表（移除已拒绝的用户）
+          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          this.setData({
+            pendingList: updatedPendingList,
+            originalPendingList: updatedPendingList
+          });
+        }, 1000);
       }
-    });
+    } catch (error) {
+      console.error('拒绝好友请求失败:', error);
+      wx.hideLoading();
+      wx.showToast({
+        title: '处理失败',
+        icon: 'none'
+      });
+    }
   }
 })
