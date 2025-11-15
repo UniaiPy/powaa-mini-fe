@@ -292,24 +292,25 @@ Page({
         console.log('跳过非C2C会话:', conversation.type);
         return null;
       }
-      
+      // 用户信息
+      const userProfile = conversation.userProfile || {};
+
       // 获取最后一条消息
       const lastMessage = conversation.lastMessage || {};
       
       // 格式化时间
-      const time = this.formatTime(lastMessage.time || Date.now());
+      const time = this.formatTime(lastMessage.lastTime || Date.now());
       
       const contact = {
         id: conversation.conversationID,
-        userId: conversation.userProfile.userID,
-        name: conversation.userProfile.nick,
-        avatar: this.processAvatarUrl(conversation.userProfile.avatar, 1, conversation.userProfile.userID, index),
-        lastMessage: lastMessage.nick || lastMessage.payload?.text || '这是一条信息',
+        userId: userProfile.userID,
+        name: userProfile.nick,
+        avatar: this.processAvatarUrl(userProfile.avatar, 1, userProfile.userID, index),
+        lastMessage:  lastMessage.payload?.text || lastMessage.nick,
         time: time,
         unread: conversation.unreadCount || 0
       };
       
-      console.log('生成的联系人数据:', contact);
       return contact;
     }).filter(Boolean);
     
@@ -440,15 +441,17 @@ Page({
             return isValid;
           })
           .map((app, index) => {
-            console.log('✅ 有效申请:', app.userID, app.nick || app.nickname);
+            console.log(`处理申请${index + 1}:`, app);
+            // 格式化时间
+            const time = this.formatTime(app.time);
             return {
               id: app.userID,
               name: app.nick || app.nickname || app.userID,
               avatar: this.processAvatarUrl(app.avatar, 2, app.userID, index),
               message: app.wording,
-              time: this.formatTime(app.addTime || app.time),
+              time: time,
               requestId: app.userID, // 使用userID作为requestId
-              type: 'friend_request',
+              type: app.type,
               addSource: app.addSource || app.source
             };
           });
@@ -539,13 +542,6 @@ Page({
             
             // 重新加载好友申请列表
             this.loadFriendRequests();
-            
-            // 显示通知
-            wx.showToast({
-              title: '收到新的好友申请',
-              icon: 'none',
-              duration: 2000
-            });
           });
           console.log('✅ 好友申请列表更新监听设置成功');
         } catch (error) {
@@ -714,25 +710,42 @@ Page({
 
   // 格式化时间
   formatTime: function(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffTime = now - date;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // 检查时间戳格式，如果是秒级时间戳（10位数），转换为毫秒级
+    const timestampMs = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
     
-    if (diffDays === 0) {
-      // 今天
-      return date.getHours().toString().padStart(2, '0') + ':' + 
-             date.getMinutes().toString().padStart(2, '0');
-    } else if (diffDays === 1) {
-      // 昨天
-      return '昨天';
-    } else if (diffDays < 7) {
-      // 一周内
+    const date = new Date(timestampMs);
+    const now = new Date();
+    
+    // 获取各个时间点的零点时间戳
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - (24 * 60 * 60 * 1000);
+    const sixDaysAgoStart = todayStart - (6 * 24 * 60 * 60 * 1000);
+    
+    const messageTime = date.getTime();
+    
+    // 格式化时间部分 HH:mm
+    const formatTime = (d) => {
+      return d.getHours().toString().padStart(2, '0') + ':' + 
+             d.getMinutes().toString().padStart(2, '0');
+    };
+    
+    // 1. 大于等于今天零点时间戳，显示格式 HH:mm
+    if (messageTime >= todayStart) {
+      return formatTime(date);
+    }
+    // 2. 大于等于昨天零点时间戳，显示格式 昨天 + HH:mm
+    else if (messageTime >= yesterdayStart) {
+      return '昨天 ' + formatTime(date);
+    }
+    // 3. 大于等于往前6天的零点时间戳，显示格式星期
+    else if (messageTime >= sixDaysAgoStart) {
       const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
       return weekdays[date.getDay()];
-    } else {
-      // 超过一周显示具体日期
-      return (date.getMonth() + 1) + '-' + date.getDate();
+    }
+    // 4. 其他的显示 mm-dd
+    else {
+      return (date.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+             date.getDate().toString().padStart(2, '0');
     }
   },
   
