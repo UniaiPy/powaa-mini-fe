@@ -14,7 +14,7 @@ import TIMUploadPlugin from 'tim-upload-plugin';
 import TIMProfanityFilterPlugin from 'tim-profanity-filter-plugin';
 
 // 导入用户隐私设置工具
-import { setUserDefaultPrivacySettings } from './userPrivacySettings.js';
+import userPrivacySettings from './userPrivacySettings.js';
 
 class IMManager {
   constructor() {
@@ -412,7 +412,7 @@ class IMManager {
           
           // 设置用户默认隐私配置
           try {
-            await setUserDefaultPrivacySettings();
+            await userPrivacySettings.setUserDefaultPrivacySettings();
           } catch (error) {
             console.warn('设置用户隐私配置失败，但不影响登录:', error);
           }

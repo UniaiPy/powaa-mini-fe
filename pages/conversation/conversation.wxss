@@ -103,6 +103,48 @@
   box-sizing: border-box;
 }
 
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* 错误状态 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  gap: 16px;
+}
+
+.error-text {
+  font-size: 14px;
+  color: #ef4444;
+  text-align: center;
+}
+
+.retry-btn {
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.retry-btn:active {
+  background-color: #7c3aed;
+}
+
 /* 自定义滚动条样式 */
 .chat-container::-webkit-scrollbar {
   width: 8px;
@@ -168,6 +210,7 @@
   font-size: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   word-wrap: break-word;
+  position: relative;
 }
 
 .other-message {
@@ -183,6 +226,23 @@
   background: #8b5cf6;
   color: white;
   border-bottom-right-radius: 6px;
+}
+
+/* 消息时间戳 */
+.message-time {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.user-message .message-time {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.other-message .message-time {
+  color: #6b7280;
+  text-align: left;
 }
 
 /* 底部占位 */
@@ -573,4 +633,137 @@
 
 .text-white {
   color: #ffffff;
+}
+
+/* 表情选择器样式 */
+.emoji-picker {
+  position: fixed;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+}
+
+.emoji-picker.show {
+  transform: translateY(0);
+}
+
+.emoji-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.emoji-picker-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.emoji-picker-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 18px;
+}
+
+.emoji-picker-close:active {
+  background-color: #f3f4f6;
+  border-radius: 6px;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  padding: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-item {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.emoji-item:active {
+  background-color: #f3f4f6;
+}
+
+/* 消息操作菜单样式 */
+.message-action-menu {
+  position: fixed;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  min-width: 120px;
+  border: 1px solid #e5e7eb;
+  display: none;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.message-action-menu.show {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.action-item {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-item:active {
+  background-color: #f3f4f6;
+}
+
+.action-item:first-child {
+  border-radius: 12px 12px 0 0;
+}
+
+.action-item:last-child {
+  border-radius: 0 0 12px 12px;
+}
+
+.action-item:only-child {
+  border-radius: 12px;
+}
+
+.action-item .fa {
+  width: 16px;
+  text-align: center;
+  color: #6b7280;
 }

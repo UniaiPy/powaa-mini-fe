@@ -933,11 +933,20 @@ Page({
   navigateToConversation: function(e) {
     const user = e.currentTarget.dataset.user;
     
-    // 在TUIKit中，会话会在导航到conversation页面时自动创建
-    // 不需要手动调用 createConversation
+    // 创建会话ID（C2C类型）
+    const conversationID = user.id || '';
+    
+    console.log('跳转到会话页面，用户信息:', user);
+    console.log('生成的会话ID:', conversationID);
+    
+    // 构建跳转URL，包含用户信息和会话ID
+    let url = `/pages/conversation/conversation`;
+    if (conversationID) {
+      url += `?conversationID=${conversationID}`;
+    }
     
     wx.navigateTo({
-      url: `/pages/conversation/conversation?user=${encodeURIComponent(JSON.stringify(user))}`
+      url: url
     });
   },
 
