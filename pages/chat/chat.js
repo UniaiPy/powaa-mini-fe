@@ -487,13 +487,7 @@ Page({
             this.setData({
               activeSection: 'pending'
             });
-            
-            // 显示提示
-            wx.showToast({
-              title: `收到${pendingList.length}个好友申请`,
-              icon: 'none',
-              duration: 2000
-            });
+            console.log(`收到${pendingList.length}个好友申请`);
           }
         });
 
@@ -526,39 +520,80 @@ Page({
       return;
     }
     
-    // 监听好友申请列表更新
-    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_LIST_UPDATED, (event) => {
-      console.log('=== 📬 好友申请列表更新事件 ===');
-      console.log('事件数据:', JSON.stringify(event, null, 2));
+    try {
+      // 检查事件常量是否存在
+      const EVENT = wx.TencentCloudChat.EVENT;
+      if (!EVENT) {
+        console.error('❌ TUIKit事件常量不存在');
+        return;
+      }
       
-      // 重新加载好友申请列表
-      this.loadFriendRequests();
+      console.log('📋 可用的事件常量:', EVENT);
       
-      // 显示通知
-      wx.showToast({
-        title: '收到新的好友申请',
-        icon: 'none',
-        duration: 2000
-      });
-    });
-    
-    // 监听好友申请被处理
-    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_PROCESS, (event) => {
-      console.log('=== 🔄 好友申请处理事件 ===');
-      console.log('事件数据:', JSON.stringify(event, null, 2));
+      // 监听好友申请列表更新 - 使用try-catch包装每个监听器
+      if (EVENT.FRIEND_APPLICATION_LIST_UPDATED) {
+        try {
+          wx.$TUIKit.on(EVENT.FRIEND_APPLICATION_LIST_UPDATED, (event) => {
+            console.log('=== 📬 好友申请列表更新事件 ===');
+            console.log('事件数据:', JSON.stringify(event, null, 2));
+            
+            // 重新加载好友申请列表
+            this.loadFriendRequests();
+            
+            // 显示通知
+            wx.showToast({
+              title: '收到新的好友申请',
+              icon: 'none',
+              duration: 2000
+            });
+          });
+          console.log('✅ 好友申请列表更新监听设置成功');
+        } catch (error) {
+          console.error('❌ 设置好友申请列表更新监听失败:', error);
+        }
+      } else {
+        console.warn('⚠️ FRIEND_APPLICATION_LIST_UPDATED 事件常量不存在');
+      }
       
-      // 重新加载好友申请列表
-      this.loadFriendRequests();
-    });
-    
-    // 监听好友列表更新（当好友申请被同意后）
-    wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_LIST_UPDATED, (event) => {
-      console.log('=== 👥 好友列表更新事件 ===');
-      console.log('事件数据:', JSON.stringify(event, null, 2));
+      // 监听好友申请被处理
+      if (EVENT.FRIEND_APPLICATION_PROCESS) {
+        try {
+          wx.$TUIKit.on(EVENT.FRIEND_APPLICATION_PROCESS, (event) => {
+            console.log('=== 🔄 好友申请处理事件 ===');
+            console.log('事件数据:', JSON.stringify(event, null, 2));
+            
+            // 重新加载好友申请列表
+            this.loadFriendRequests();
+          });
+          console.log('✅ 好友申请处理监听设置成功');
+        } catch (error) {
+          console.error('❌ 设置好友申请处理监听失败:', error);
+        }
+      } else {
+        console.warn('⚠️ FRIEND_APPLICATION_PROCESS 事件常量不存在');
+      }
       
-      // 刷新会话列表
-      this.loadConversationList();
-    });
+      // 监听好友列表更新（当好友申请被同意后）
+      if (EVENT.FRIEND_LIST_UPDATED) {
+        try {
+          wx.$TUIKit.on(EVENT.FRIEND_LIST_UPDATED, (event) => {
+            console.log('=== 👥 好友列表更新事件 ===');
+            console.log('事件数据:', JSON.stringify(event, null, 2));
+            
+            // 刷新会话列表
+            this.loadConversationList();
+          });
+          console.log('✅ 好友列表更新监听设置成功');
+        } catch (error) {
+          console.error('❌ 设置好友列表更新监听失败:', error);
+        }
+      } else {
+        console.warn('⚠️ FRIEND_LIST_UPDATED 事件常量不存在');
+      }
+      
+    } catch (error) {
+      console.error('❌ 设置好友申请监听过程中发生错误:', error);
+    }
     
     console.log('✅ 好友申请监听设置完成');
   },
@@ -624,9 +659,9 @@ Page({
   
   // 处理头像URL，确保在小程序中可以正常显示
   processAvatarUrl: function(avatarUrl, type, userId, index) {
-    console.log('原始头像URL:', avatarUrl);
+    const app = getApp();
     if (!avatarUrl) {
-      return 'https://images.unsplash.com/photo.png';
+      return '/images/ai.png';
     }
     
     // 如果是其他外部URL，直接返回
@@ -637,7 +672,7 @@ Page({
     // 如果是相对路径，需要获取临时URL
     this.getTempAvatarUrl(avatarUrl, type, userId, index);
     // 立即返回默认头像，异步获取临时URL后会更新
-    return 'https://images.unsplash.com/photo.png';
+    return '/images/ai.png';
   },
 
   // 获取临时头像URL
@@ -660,14 +695,12 @@ Page({
             this.setData({
               [updatePath]: res.url
             });
-            console.log('更新联系人头像成功:', userId, res.url);
           } else {
             // 更新待联系列表中指定用户的头像URL
             const updatePath = `pendingList[${index}].avatar`;
             this.setData({
               [updatePath]: res.url
             });
-            console.log('更新待联系用户头像成功:', userId, res.url);
           }
         } else {
           console.warn('获取临时头像URL失败:', res.message);

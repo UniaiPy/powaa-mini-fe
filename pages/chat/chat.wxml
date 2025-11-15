@@ -35,10 +35,6 @@
               {{pendingList.length}}
             </view>
           </view>
-          <!-- 调试按钮 - 仅在开发环境显示 -->
-          <view class="px-2" wx:if="{{!isImInitialized}}" bindtap="checkTUIKitStatus">
-            <text class="text-xs text-blue-500">刷新</text>
-          </view>
         </view>
         <!-- 联系人内容 -->
         <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'contacts'}}">
