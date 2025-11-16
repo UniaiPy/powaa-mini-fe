@@ -233,7 +233,7 @@
       <view class="plus-btn" id="plusBtn" bindtap="showPlusMenu">
         <text class="fa fa-plus"></text>
       </view>
-      <input type="text" class="input-field" id="messageInput" placeholder="输入消息..." value="{{inputValue}}" bindinput="onInput" bindfocus="onInputFocus" bindblur="onInputBlur"></input>
+      <input type="text" class="input-field" id="messageInput" placeholder="输入消息..." value="{{inputValue}}" bindinput="onInput" bindfocus="onInputFocus" bindblur="onInputBlur" bindconfirm="sendMessage"></input>
       <view class="send-btn" id="sendBtn" bindtap="sendMessage">
         <text class="fa fa-paper-plane"></text>
       </view>

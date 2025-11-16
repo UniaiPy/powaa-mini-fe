@@ -283,8 +283,21 @@ Page({
   processConversationList: function(conversationList) {
     console.log('开始处理会话列表，数量:', conversationList.length);
     
+    // 先过滤掉AI分身的会话
+    const filteredConversationList = conversationList.filter(conversation => {
+      const userProfile = conversation.userProfile || {};
+      const userId = userProfile.userID;
+      
+      // 过滤掉AI分身的会话
+      if (userId && (userId === 'AI分身')) {
+        console.log('过滤掉AI分身会话:', userId);
+        return false;
+      }
+      return true;
+    });
+    
     // 处理会话列表数据
-    const contactsList = conversationList.map((conversation, index) => {
+    const contactsList = filteredConversationList.map((conversation, index) => {
       console.log('处理会话:', conversation);
       
       // 只处理C2C类型会话
@@ -292,6 +305,7 @@ Page({
         console.log('跳过非C2C会话:', conversation.type);
         return null;
       }
+      
       // 用户信息
       const userProfile = conversation.userProfile || {};
 

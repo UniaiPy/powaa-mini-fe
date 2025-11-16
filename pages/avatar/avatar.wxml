@@ -15,60 +15,167 @@
     </view>
   </custom-navigation-bar>
   <!-- 聊天容器 -->
-  <view class="content-with-fixed-nav flex-1 p-6 space-y-6" style="padding-bottom: 80px;" bindtap="onBackgroundTap">
-    <view class="chat-container" id="chatContainer">
-      <!-- 初始AI消息 -->
-      <view class="flex items-start gap-3">
-        <view class="avatar-circle">
-          <image src="/images/ai.png" mode="aspectFill"></image>
-        </view>
-        <view class="message ai-message">
-          你好，我是小瓦，你的AI分身！我会根据你对我的要求、个人信息、行为记录等，为你创造专属的AI分身，代表你对外介绍、沟通。多跟我说一些话吧，我可以更好的代表你！
-        </view>
-      </view>
-      <!-- 用户消息示例 -->
-      <view class="flex items-start gap-3 justify-end">
-        <view class="message user-message">你好小瓦！我想创建一个设计师形象。</view>
-        <view class="avatar-circle user-avatar">
-          <image src="/images/ai.png" mode="aspectFill"></image>
-        </view>
-      </view>
-      <!-- AI回复 -->
-      <view class="flex items-start gap-3">
-        <view class="avatar-circle">
-          <image src="/images/ai.png" mode="aspectFill"></image>
-        </view>
-        <view class="message ai-message">好的！能告诉我你的设计专长和常用工具吗？</view>
-      </view>
-      <!-- 用户消息示例 -->
-      <view class="flex items-start gap-3 justify-end">
-        <view class="message user-message">我主要用Figma做UI设计，希望AI分身能在商务场合代表我。</view>
-        <view class="avatar-circle cursor-pointer" bindtap="goToProfile">
-          <image src="/images/ai.png" mode="aspectFill"></image>
-        </view>
-      </view>
-      <!-- AI回复 -->
-      <view class="flex items-start gap-3">
-        <view class="avatar-circle">
-          <image src="/images/ai.png" mode="aspectFill"></image>
-        </view>
-        <view class="message ai-message">明白了！我会根据你的专业背景来塑造AI分身形象。</view>
-      </view>
+  <scroll-view class="chat-container" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true" bindtap="hideAllMenus" refresher-enabled="{{true}}" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onPullDownRefresh" bindrefresherrestore="onPullDownRefreshComplete">
+    <!-- 加载状态 -->
+    <view class="loading-container" wx:if="{{loading}}">
+      <text class="loading-text">加载中...</text>
     </view>
-  </view>
+    <!-- 错误状态 -->
+    <view class="error-container" wx:if="{{error}}">
+      <text class="error-text">{{error}}</text>
+      <button class="retry-btn" bindtap="loadHistoryMessages">重试</button>
+    </view>
+    <!-- 消息列表 -->
+    <block wx:for="{{messages}}" wx:key="id">
+      <!-- 时间分隔符 -->
+      <view class="time-separator" wx:if="{{item.showTimeSeparator}}">
+        <text class="time-text">{{item.time}}</text>
+      </view>
+      <view class="message-wrapper {{item.type === 'user' ? 'justify-end' : ''}}" id="message-{{item.id}}">
+        <!-- AI消息 -->
+        <block wx:if="{{item.type === 'ai'}}">
+          <view class="avatar-circle other-avatar">
+            <image src="/images/ai.png" mode="aspectFill"></image>
+          </view>
+          <view class="message other-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
+            <!-- 文本消息 -->
+            <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
+              <text>{{item.content}}</text>
+            </block>
+            <!-- 图片消息 -->
+            <block wx:elif="{{item.messageType === 'image'}}">
+              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
+            </block>
+            <!-- 文件消息 -->
+            <block wx:elif="{{item.messageType === 'file'}}">
+              <view class="message-file message-type-file">
+                <text class="fa fa-file-o file-icon"></text>
+                <view class="file-info">
+                  <text class="file-name">{{item.fileName}}</text>
+                  <text class="file-size">{{item.fileSize}}字节</text>
+                </view>
+              </view>
+            </block>
+            <!-- 位置消息 -->
+            <block wx:elif="{{item.messageType === 'location'}}">
+              <view class="message-location">
+                <text class="fa fa-map-marker location-icon"></text>
+                <text class="location-text">{{item.location.address}}</text>
+              </view>
+            </block>
+            <!-- 表情消息 -->
+            <block wx:elif="{{item.messageType === 'face'}}">
+              <view class="message-face">
+                <text>{{item.faceData}}</text>
+              </view>
+            </block>
+            <!-- 语音消息 -->
+            <block wx:elif="{{item.messageType === 'audio'}}">
+              <view class="message-audio" bindtap="playAudio" data-message="{{item}}">
+                <text class="fa fa-play-circle audio-icon"></text>
+                <text class="audio-duration">{{item.duration}}s</text>
+              </view>
+            </block>
+            <!-- 视频消息 -->
+            <block wx:elif="{{item.messageType === 'video'}}">
+              <view class="message-video">
+                <video src="{{item.videoUrl}}" controls="true" class="video-player"></video>
+              </view>
+            </block>
+            <!-- 系统消息 -->
+            <block wx:elif="{{item.messageType === 'system'}}">
+              <view class="message-system">
+                <text>{{item.content}}</text>
+              </view>
+            </block>
+            <!-- 撤回消息 -->
+            <block wx:elif="{{item.isRevoked}}">
+              <view class="message-revoked">
+                <text>{{item.content}}</text>
+              </view>
+            </block>
+          </view>
+        </block>
+        <!-- 用户消息 -->
+        <block wx:else>
+          <view class="message user-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
+            <!-- 文本消息 -->
+            <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
+              <text>{{item.content}}</text>
+            </block>
+            <!-- 图片消息 -->
+            <block wx:elif="{{item.messageType === 'image'}}">
+              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
+            </block>
+            <!-- 文件消息 -->
+            <block wx:elif="{{item.messageType === 'file'}}">
+              <view class="message-file message-type-file">
+                <text class="fa fa-file-o file-icon"></text>
+                <view class="file-info">
+                  <text class="file-name">{{item.fileName}}</text>
+                  <text class="file-size">{{item.fileSize}}字节</text>
+                </view>
+              </view>
+            </block>
+            <!-- 位置消息 -->
+            <block wx:elif="{{item.messageType === 'location'}}">
+              <view class="message-location">
+                <text class="fa fa-map-marker location-icon"></text>
+                <text class="location-text">{{item.location.address}}</text>
+              </view>
+            </block>
+            <!-- 表情消息 -->
+            <block wx:elif="{{item.messageType === 'face'}}">
+              <view class="message-face">
+                <text>{{item.faceData}}</text>
+              </view>
+            </block>
+            <!-- 语音消息 -->
+            <block wx:elif="{{item.messageType === 'audio'}}">
+              <view class="message-audio" bindtap="playAudio" data-message="{{item}}">
+                <text class="fa fa-play-circle audio-icon"></text>
+                <text class="audio-duration">{{item.duration}}s</text>
+              </view>
+            </block>
+            <!-- 视频消息 -->
+            <block wx:elif="{{item.messageType === 'video'}}">
+              <view class="message-video">
+                <video src="{{item.videoUrl}}" controls="true" class="video-player"></video>
+              </view>
+            </block>
+            <!-- 撤回消息 -->
+            <block wx:elif="{{item.isRevoked}}">
+              <view class="message-revoked">
+                <text>{{item.content}}</text>
+              </view>
+            </block>
+            <!-- 发送失败标识 -->
+            <view wx:if="{{item.sendFailed}}" class="send-failed-indicator">
+              <text class="fa fa-exclamation-circle"></text>
+            </view>
+          </view>
+          <view class="avatar-circle user-avatar cursor-pointer" bindtap="goToProfile">
+            <image src="{{item.avatar}}" mode="aspectFill"></image>
+          </view>
+        </block>
+      </view>
+    </block>
+    <!-- 底部占位 -->
+    <view class="bottom-space"></view>
+  </scroll-view>
   <!-- 输入区域 -->
   <view class="input-area">
     <view class="input-container">
       <view class="plus-btn" bindtap="showPlusMenu">
-        <i class="fa fa-plus"></i>
+        <text class="fa fa-plus"></text>
       </view>
-      <input type="text" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." />
+      <input type="text" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." bindconfirm="sendMessage" />
       <!-- <view class="hold-to-talk-btn" wx:if="{{isVoiceMode}}" bindtouchstart="startRecording" bindtouchend="stopRecording">
-        <i class="fas fa-microphone"></i>
+        <text class="fa fa-microphone"></text>
         <text>按住说话</text>
       </view> -->
       <view class="send-btn" bindtap="sendMessage">
-        <i class="fa fa-paper-plane"></i>
+        <text class="fa fa-paper-plane"></text>
       </view>
     </view>
   </view>
@@ -77,25 +184,25 @@
     <view class="function-grid">
       <view class="function-item" bindtap="onFunctionItemClick" data-type="image">
         <view class="function-icon image">
-          <i class="fa fa-image"></i>
+          <text class="fa fa-image"></text>
         </view>
         <view class="function-label">图片</view>
       </view>
       <view class="function-item" bindtap="onFunctionItemClick" data-type="file">
         <view class="function-icon file">
-          <i class="fa fa-file"></i>
+          <text class="fa fa-file"></text>
         </view>
         <view class="function-label">文件</view>
       </view>
       <view class="function-item" bindtap="onFunctionItemClick" data-type="location">
         <view class="function-icon location">
-          <i class="fa fa-map-marker"></i>
+          <text class="fa fa-map-marker"></text>
         </view>
         <view class="function-label">位置</view>
       </view>
       <view class="function-item" bindtap="onFunctionItemClick" data-type="emoji">
         <view class="function-icon emoji">
-          <i class="fa fa-smile-o"></i>
+          <text class="fa fa-smile-o"></text>
         </view>
         <view class="function-label">表情</view>
       </view>
@@ -109,7 +216,7 @@
     </view>
   </view>
   <!-- AI分身开关菜单 -->
-  <view class="ai-menu {{showAIMenu ? 'show' : ''}}" data-menu="ai-menu">
+  <view class="ai-menu {{showAIMenu ? 'show' : ''}}" data-menu="ai-menu" catchtap="preventDefault">
     <view class="ai-toggle-container">
       <view class="ai-label">{{aiOnline ? 'AI分身已上线' : 'AI分身已下线'}}</view>
       <view class="ai-toggle-switch">
@@ -140,6 +247,20 @@
         <view class="model-name">Claude 3</view>
       </view>
       <view class="model-status"></view>
+    </view>
+  </view>
+  <!-- 表情选择器 -->
+  <view class="emoji-picker {{showEmojiPicker ? 'show' : ''}}" wx:if="{{showEmojiPicker}}" catchtap="preventDefault">
+    <view class="emoji-picker-header">
+      <text class="emoji-picker-title">选择表情</text>
+      <view class="emoji-picker-close" bindtap="hideEmojiPicker">
+        <text class="fa fa-times"></text>
+      </view>
+    </view>
+    <view class="emoji-grid">
+      <view class="emoji-item" wx:for="{{emojiList}}" wx:key="index" bindtap="onEmojiSelect" data-emoji="{{item}}" data-index="{{index}}">
+        <text>{{item}}</text>
+      </view>
     </view>
   </view>
 </view>
