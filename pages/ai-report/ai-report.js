@@ -38,7 +38,8 @@ Page({
         const ctx = canvas.getContext('2d');
         
         // 设置Canvas尺寸和分辨率
-        const dpr = wx.getSystemInfoSync().pixelRatio || 1;
+        const windowInfo = wx.getWindowInfo();
+        const dpr = windowInfo.pixelRatio || 1;
         const { width, height } = res[0];
         
         // 设置Canvas的实际宽高（解决压缩问题）

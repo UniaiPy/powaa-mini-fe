@@ -4,8 +4,6 @@
  * 支持获取私有图片临时访问URL
  */
 
-const app = getApp();
-
 /**
  * 通用文件上传方法
  * @param {Object} options - 上传配置
@@ -316,11 +314,181 @@ function getImageUrl(options) {
   return getSignedUrl(options);
 }
 
+/**
+ * 创建IM文件消息（使用测试验证成功的微信格式）
+ * @param {Object} options - 配置参数
+ * @param {string} options.to - 接收者ID
+ * @param {string} options.conversationType - 会话类型，默认'C2C'
+ * @param {Object} options.file - 文件对象（来自wx.chooseMessageFile的返回）
+ * @returns {Object} - 返回创建的文件消息对象
+ */
+function createIMFileMessage(options) {
+  const {
+    to,
+    conversationType = 'C2C',
+    file
+  } = options;
+
+  if (!wx.$TUIKit || !wx.TencentCloudChat) {
+    throw new Error('IM未初始化，无法创建文件消息');
+  }
+
+  if (!to) {
+    throw new Error('接收者ID不能为空');
+  }
+
+  if (!file) {
+    throw new Error('文件对象不能为空');
+  }
+
+  // 使用测试验证成功的微信格式
+  const wxFile = {
+    type: 'file',
+    tempFiles: [{
+      tempFilePath: file.path,
+      name: file.name,
+      size: file.size
+    }]
+  };
+
+  const message = wx.$TUIKit.createFileMessage({
+    to: to,
+    conversationType: wx.TencentCloudChat.TYPES.CONV_C2C,
+    payload: {
+      file: wxFile
+    }
+  });
+
+  console.log('✅ 使用微信格式创建文件消息成功:', message);
+  return message;
+}
+
+/**
+ * 发送文件消息到IM
+ * @param {Object} options - 配置参数
+ * @param {string} options.to - 接收者ID
+ * @param {Object} options.file - 文件对象（来自wx.chooseMessageFile的返回）
+ * @param {boolean} [options.showLoading=true] - 是否显示加载提示
+ * @returns {Promise} - 返回Promise对象
+ */
+function sendFileMessage(options) {
+  const {
+    to,
+    file,
+    showLoading = true
+  } = options;
+
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 显示加载提示
+      if (showLoading) {
+        wx.showLoading({
+          title: '发送文件中...',
+        });
+      }
+
+      // 创建文件消息
+      const message = createIMFileMessage({
+        to: to,
+        file: file
+      });
+
+      // 创建会话ID
+      const conversationID = `C2C${to}`;
+
+      // 发送消息
+      const result = await wx.$TUIKit.sendMessage(message, {
+        conversationID: conversationID
+      });
+
+      console.log('✅ 文件消息发送成功:', result);
+      resolve({
+        success: true,
+        message: result,
+        data: {
+          conversationID: conversationID,
+          messageID: result.data.messageID,
+          file: {
+            name: file.name,
+            size: file.size
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ 文件消息发送失败:', error);
+      reject(error);
+    } finally {
+      // 隐藏加载提示
+      if (showLoading) {
+        wx.hideLoading();
+      }
+    }
+  });
+}
+
+/**
+ * 选择文件并发送到IM
+ * @param {Object} options - 配置参数
+ * @param {string} options.to - 接收者ID
+ * @param {number} [options.count=1] - 选择文件数量限制
+ * @param {string} [options.type='file'] - 文件类型
+ * @returns {Promise} - 返回Promise对象
+ */
+function chooseAndSendFile(options) {
+  const {
+    to,
+    count = 1,
+    type = 'file'
+  } = options;
+
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 选择文件
+      const chooseResult = await wx.chooseMessageFile({
+        count: count,
+        type: type
+      });
+
+      if (!chooseResult.tempFiles || chooseResult.tempFiles.length === 0) {
+        reject(new Error('未选择文件'));
+        return;
+      }
+
+      const file = chooseResult.tempFiles[0];
+      console.log('📁 选择文件成功:', {
+        name: file.name,
+        size: file.size,
+        path: file.path
+      });
+
+      // 发送文件消息
+      const sendResult = await sendFileMessage({
+        to: to,
+        file: file
+      });
+
+      resolve({
+        success: true,
+        file: file,
+        message: sendResult
+      });
+
+    } catch (error) {
+      console.error('❌ 选择并发送文件失败:', error);
+      reject(error);
+    }
+  });
+}
+
 module.exports = {
   uploadFile,
   uploadImage,
   uploadGenericFile,
   compressAndUploadImage,
   getSignedUrl,
-  getImageUrl
+  getImageUrl,
+  createIMFileMessage,
+  sendFileMessage,
+  chooseAndSendFile
 };

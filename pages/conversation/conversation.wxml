@@ -5,10 +5,10 @@
     <view class="user-info-bar">
       <view class="user-info flex-1">
         <view class="flex items-center">
-          <text id="userName" class="user-name text-base font-bold text-gray-900">{{chatInfo.name}}</text>
-          <text class="user-nickname ml-2 text-sm text-gray-500">{{chatInfo.nickname || ''}}</text>
-          <view class="user-status ml-2 flex items-center">
-          </view>
+          <text id="userName" class="user-name text-base font-bold text-gray-900">
+            {{chatInfo.name || chatInfo.nick || chatInfo.nickname || ''}}
+          </text>
+          <view class="user-status ml-2 flex items-center"></view>
         </view>
       </view>
       <view id="moreOptionsBtn" class="more-options-btn" bindtap="toggleMoreOptions">
@@ -40,48 +40,50 @@
       <text class="fa fa-share-alt text-gray-500 w-5"></text>
       <text class="ml-2 text-gray-700 text-sm">分享名片</text>
     </view>
-    <view class="option-item" bindtap="blockUser">
-      <text class="fa fa-ban text-gray-500 w-5"></text>
-      <text class="ml-2 text-gray-700 text-sm">屏蔽用户</text>
-    </view>
-    <view class="option-item" bindtap="reportUser">
+    <!-- <view class="option-item" bindtap="reportUser">
       <text class="fa fa-flag text-gray-500 w-5"></text>
       <text class="ml-2 text-gray-700 text-sm">举报用户</text>
+    </view> -->
+    <view class="option-item" bindtap="{{isUserBlocked ? 'unblockUser' : 'blockUser'}}">
+      <text class="fa fa-ban text-gray-500 w-5"></text>
+      <text class="ml-2 text-gray-700 text-sm">{{isUserBlocked ? '解除屏蔽' : '屏蔽用户'}}</text>
     </view>
   </view>
   <!-- 聊天容器 -->
-  <scroll-view class="chat-container" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true" bindtap="hideAllMenus">
+  <scroll-view class="chat-container" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true" bindtap="hideAllMenus" refresher-enabled="{{true}}" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onPullDownRefresh" bindrefresherrestore="onPullDownRefreshComplete">
     <!-- 加载状态 -->
     <view class="loading-container" wx:if="{{loading}}">
       <text class="loading-text">加载中...</text>
     </view>
-    
     <!-- 错误状态 -->
     <view class="error-container" wx:if="{{error}}">
       <text class="error-text">{{error}}</text>
       <button class="retry-btn" bindtap="loadHistoryMessages">重试</button>
     </view>
-    
     <!-- 消息列表 -->
     <block wx:for="{{messages}}" wx:key="id">
+      <!-- 时间分隔符 -->
+      <view class="time-separator" wx:if="{{item.showTimeSeparator}}">
+        <text class="time-text">{{item.time}}</text>
+      </view>
       <view class="message-wrapper {{item.type === 'user' ? 'justify-end' : ''}}" id="message-{{item.id}}">
         <!-- 对方消息 -->
         <block wx:if="{{item.type === 'other'}}">
           <view class="avatar-circle other-avatar" bindtap="navigateToPreview">
             <image src="{{item.avatar}}" mode="aspectFill"></image>
           </view>
-          <view class="message other-message" bindlongpress="onMessageLongPress" data-message="{{item}}">
+          <view class="message other-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
             <!-- 文本消息 -->
             <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
               <text>{{item.content}}</text>
             </block>
             <!-- 图片消息 -->
             <block wx:elif="{{item.messageType === 'image'}}">
-              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
+              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
             </block>
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
-              <view class="message-file">
+              <view class="message-file message-type-file">
                 <text class="fa fa-file-o file-icon"></text>
                 <view class="file-info">
                   <text class="file-name">{{item.fileName}}</text>
@@ -127,27 +129,22 @@
                 <text>{{item.content}}</text>
               </view>
             </block>
-            <view class="message-time">{{item.time}}</view>
           </view>
         </block>
-        
         <!-- 用户消息 -->
         <block wx:else>
-          <view class="avatar-circle user-avatar">
-            <image src="{{item.avatar}}" mode="aspectFill"></image>
-          </view>
-          <view class="message user-message" bindlongpress="onMessageLongPress" data-message="{{item}}">
+          <view class="message user-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
             <!-- 文本消息 -->
             <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
               <text>{{item.content}}</text>
             </block>
             <!-- 图片消息 -->
             <block wx:elif="{{item.messageType === 'image'}}">
-              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
+              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
             </block>
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
-              <view class="message-file">
+              <view class="message-file message-type-file">
                 <text class="fa fa-file-o file-icon"></text>
                 <view class="file-info">
                   <text class="file-name">{{item.fileName}}</text>
@@ -187,18 +184,18 @@
                 <text>{{item.content}}</text>
               </view>
             </block>
-            <view class="message-time">{{item.time}}</view>
+          </view>
+          <view class="avatar-circle user-avatar">
+            <image src="{{item.avatar}}" mode="aspectFill"></image>
           </view>
         </block>
       </view>
     </block>
-    
     <!-- 底部占位 -->
     <view class="bottom-space"></view>
   </scroll-view>
-  
   <!-- 表情选择器 -->
-  <view class="emoji-picker {{showEmojiPicker ? 'show' : ''}}" wx:if="{{showEmojiPicker}}">
+  <view class="emoji-picker {{showEmojiPicker ? 'show' : ''}}" wx:if="{{showEmojiPicker}}" catchtap="preventDefault">
     <view class="emoji-picker-header">
       <text class="emoji-picker-title">选择表情</text>
       <view class="emoji-picker-close" bindtap="hideEmojiPicker">
@@ -206,12 +203,11 @@
       </view>
     </view>
     <view class="emoji-grid">
-      <view class="emoji-item" wx:for="{{emojiList}}" wx:key="index" bindtap="onEmojiSelect" data-emoji="{{item}}">
+      <view class="emoji-item" wx:for="{{emojiList}}" wx:key="index" bindtap="onEmojiSelect" data-emoji="{{item}}" data-index="{{index}}">
         <text>{{item}}</text>
       </view>
     </view>
   </view>
-
   <!-- 消息操作菜单 -->
   <view class="message-action-menu {{showMessageMenu ? 'show' : ''}}" wx:if="{{showMessageMenu}}" style="left: {{menuPosition.left}}px; top: {{menuPosition.top}}px;">
     <view class="action-item" bindtap="copyMessage" data-message="{{selectedMessage}}">
@@ -231,7 +227,6 @@
       <text>删除</text>
     </view>
   </view>
-  
   <!-- 输入区域 -->
   <view class="input-area">
     <view class="input-container">

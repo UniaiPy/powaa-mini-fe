@@ -260,12 +260,15 @@ Component({
       }
     },
     handleTouchEnd() {
-      if (this.data.num < -wx.getSystemInfoSync().windowWidth / 5) {
+      const windowInfo = wx.getWindowInfo();
+      const windowWidth = windowInfo.windowWidth;
+      
+      if (this.data.num < -windowWidth / 5) {
         this.setData({
-          xScale: -wx.getSystemInfoSync().windowWidth,
+          xScale: -windowWidth,
         });
       }
-      if (this.data.num >= -wx.getSystemInfoSync().windowWidth / 5 && this.data.num < 0) {
+      if (this.data.num >= -windowWidth / 5 && this.data.num < 0) {
         this.setData({
           xScale: 0,
         });

@@ -1,8 +1,18 @@
 // 获取系统信息，顶部导航位置大小信息等
 
 let getSystem = () => {
-  const systemInfo = wx.getSystemInfoSync(),
+  // 使用新的API替代已弃用的wx.getSystemInfoSync
+  const windowInfo = wx.getWindowInfo(),
+    deviceInfo = wx.getDeviceInfo(),
+    appBaseInfo = wx.getAppBaseInfo(),
     menu = wx.getMenuButtonBoundingClientRect();
+  
+  // 合并系统信息
+  const systemInfo = {
+    ...windowInfo,
+    ...deviceInfo,
+    ...appBaseInfo
+  };
 
   let formatStyle = (areaInfo) => {
     let styles = []

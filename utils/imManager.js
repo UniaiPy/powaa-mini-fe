@@ -1,6 +1,7 @@
 // utils/imManager.js
 // IM统一管理器 - 解决页面间状态同步问题
 
+// 从TUIKit中导入TencentCloudChat
 import TencentCloudChat from '@tencentcloud/chat';
 // 兼容CommonJS模块的导入
 if (typeof TencentCloudChat === 'object' && TencentCloudChat.default) {
@@ -9,12 +10,23 @@ if (typeof TencentCloudChat === 'object' && TencentCloudChat.default) {
 
 // 导入上传插件
 import TIMUploadPlugin from 'tim-upload-plugin';
+import COS_CONFIG from '../config/cos.js';
+
+// 导入微信小程序COS上传插件
+import COS from 'cos-wx-sdk-v5';
 
 // 导入敏感词过滤插件（可选）
 import TIMProfanityFilterPlugin from 'tim-profanity-filter-plugin';
 
 // 导入用户隐私设置工具
 import userPrivacySettings from './userPrivacySettings.js';
+
+console.log('📦 依赖检查:', {
+  TencentCloudChat: !!TencentCloudChat,
+  TIMUploadPlugin: !!TIMUploadPlugin,
+  TIMProfanityFilterPlugin: !!TIMProfanityFilterPlugin,
+  COS: !!COS
+});
 
 class IMManager {
   constructor() {
@@ -91,6 +103,37 @@ class IMManager {
         console.log('✅ 上传插件注册成功');
       } catch (pluginError) {
         console.warn('⚠️ 上传插件注册失败:', pluginError);
+      }
+      
+      // 注册COS上传插件（可选，用于自定义文件存储）
+      // 注意：如果不配置COS，文件上传将自动使用tim-upload-plugin的默认存储
+      try {
+        // 检查是否有完整的COS配置
+        const hasValidCosConfig = COS_CONFIG && 
+          COS_CONFIG.SecretId && 
+          COS_CONFIG.SecretKey && 
+          COS_CONFIG.SecretId !== 'your_secret_id_here' &&
+          COS_CONFIG.SecretKey !== 'your_secret_key_here';
+          
+        if (hasValidCosConfig) {
+          // 初始化COS插件配置
+          if (COS && typeof COS.init === 'function') {
+            COS.init({
+              SecretId: COS_CONFIG.SecretId,
+              SecretKey: COS_CONFIG.SecretKey,
+              Region: COS_CONFIG.Region,
+              Domain: COS_CONFIG.Domain
+            });
+            console.log('✅ COS插件初始化成功');
+          }
+          
+          wx.$TUIKit.registerPlugin({'cos-wx-sdk-v5': COS});
+          console.log('✅ COS上传插件注册成功');
+        } else {
+          console.log('ℹ️ 未配置有效的COS参数，将使用IM默认上传服务');
+        }
+      } catch (cosError) {
+        console.warn('⚠️ COS上传插件注册失败，将使用IM默认上传服务:', cosError);
       }
       
       // 注册敏感词过滤插件（可选）
@@ -188,30 +231,31 @@ class IMManager {
     // 如果TUIKit实例存在，尝试获取实际状态
     if (wx.$TUIKit) {
       try {
-        // 检查TUIKit登录状态
-        if (wx.$TUIKit.getLoginStatus) {
-          const tUIKitStatus = wx.$TUIKit.getLoginStatus();
-          status.tUIKitLoginStatus = tUIKitStatus;
-          status.tUIKitStatusText = this._getLoginStatusText(tUIKitStatus);
-          
-          // 如果TUIKit显示已登录但imManager.isLoggedIn为false，同步更新
-          if (tUIKitStatus === wx.TencentCloudChat.TYPES.LOGIN_STATUS_SUCCESS && !this.isLoggedIn) {
-            console.log('🔄 检测到TUIKit已登录，同步更新imManager状态');
-            this.isLoggedIn = true;
-            status.isLoggedIn = true;
-          }
-        }
-        
-        // 尝试获取用户资料作为额外检查
+        // 检查TUIKit登录状态 - 使用更安全的方法
         try {
-          const userProfile = wx.$TUIKit.getMyProfile();
-          if (userProfile && userProfile.data) {
+          // 尝试通过getMyProfile来判断登录状态
+          const profile = wx.$TUIKit.getMyProfile();
+          if (profile && profile.code === 0 && profile.data) {
+            status.tUIKitLoginStatus = wx.TencentCloudChat.TYPES.LOGIN_STATUS_SUCCESS;
+            status.tUIKitStatusText = '登录成功';
             status.canGetProfile = true;
-            status.profileUserID = userProfile.data.userID;
+            status.profileUserID = profile.data.userID;
+            
+            // 如果TUIKit显示已登录但imManager.isLoggedIn为false，同步更新
+            if (!this.isLoggedIn) {
+              console.log('🔄 检测到TUIKit已登录，同步更新imManager状态');
+              this.isLoggedIn = true;
+              status.isLoggedIn = true;
+            }
           } else {
+            status.tUIKitLoginStatus = wx.TencentCloudChat.TYPES.LOGIN_STATUS_LOGOUT;
+            status.tUIKitStatusText = '未登录';
             status.canGetProfile = false;
           }
         } catch (profileError) {
+          // 如果getMyProfile失败，说明未登录
+          status.tUIKitLoginStatus = wx.TencentCloudChat.TYPES.LOGIN_STATUS_LOGOUT;
+          status.tUIKitStatusText = '未登录';
           status.canGetProfile = false;
           status.profileError = profileError.message;
         }
@@ -228,17 +272,6 @@ class IMManager {
     
     console.log('IM状态检查:', status);
     return status;
-  }
-  
-  // 获取登录状态文本
-  _getLoginStatusText(status) {
-    const statusMap = {
-      [wx.TencentCloudChat.TYPES.LOGIN_STATUS_SUCCESS]: '登录成功',
-      [wx.TencentCloudChat.TYPES.LOGIN_STATUS_LOGINING]: '登录中',
-      [wx.TencentCloudChat.TYPES.LOGIN_STATUS_LOGOUT]: '未登录',
-      [wx.TencentCloudChat.TYPES.LOGIN_STATUS_UNKNOWN]: '未知状态'
-    };
-    return statusMap[status] || '未知状态';
   }
   
   // 等待登录完成

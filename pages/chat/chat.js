@@ -573,8 +573,8 @@ Page({
       if (EVENT.FRIEND_LIST_UPDATED) {
         try {
           wx.$TUIKit.on(EVENT.FRIEND_LIST_UPDATED, (event) => {
-            console.log('=== 👥 好友列表更新事件 ===');
-            console.log('事件数据:', JSON.stringify(event, null, 2));
+            // console.log('=== 👥 好友列表更新事件 ===');
+            // console.log('事件数据:', JSON.stringify(event, null, 2));
             
             // 刷新会话列表
             this.loadConversationList();
@@ -939,6 +939,22 @@ Page({
     console.log('跳转到会话页面，用户信息:', user);
     console.log('生成的会话ID:', conversationID);
     
+    // 如果有未读消息，标记为已读
+    if (user.unread > 0 && conversationID && this.data.isImInitialized && wx.$TUIKit) {
+      console.log('标记会话为已读，清零未读数:', conversationID);
+      wx.$TUIKit.setMessageRead({ conversationID: conversationID })
+        .then(() => {
+          console.log('会话已标记为已读');
+          // 更新本地数据，立即清零未读数
+          this.updateContactUnreadCount(conversationID, 0);
+        })
+        .catch((error) => {
+          console.error('标记会话为已读失败:', error);
+          // 即使标记失败，也更新本地数据以提供更好的用户体验
+          this.updateContactUnreadCount(conversationID, 0);
+        });
+    }
+    
     // 构建跳转URL，包含用户信息和会话ID
     let url = `/pages/conversation/conversation`;
     if (conversationID) {
@@ -947,6 +963,23 @@ Page({
     
     wx.navigateTo({
       url: url
+    });
+  },
+
+  // 更新联系人未读数
+  updateContactUnreadCount: function(conversationID, unreadCount) {
+    const updatedContactsList = this.data.contactsList.map(contact => {
+      if (contact.id === conversationID) {
+        return {
+          ...contact,
+          unread: unreadCount
+        };
+      }
+      return contact;
+    });
+    
+    this.setData({
+      contactsList: updatedContactsList
     });
   },
 
