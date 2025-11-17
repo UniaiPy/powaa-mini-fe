@@ -202,6 +202,7 @@ Page({
           fileName: messageInfo.fileName,
           fileSize: messageInfo.fileSize,
           fileUrl: messageInfo.fileUrl,
+          fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
           // 位置相关字段
           location: messageInfo.location,
           // 语音相关字段
@@ -251,6 +252,7 @@ Page({
         fileName: messageInfo.fileName,
         fileSize: messageInfo.fileSize,
         fileUrl: messageInfo.fileUrl,
+        fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
         // 位置相关字段
         location: messageInfo.location,
         // 语音相关字段
@@ -567,6 +569,7 @@ Page({
         fileName: messageInfo.fileName,
         fileSize: messageInfo.fileSize,
         fileUrl: messageInfo.fileUrl,
+        fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
         // 位置相关字段
         location: messageInfo.location,
         // 语音相关字段
@@ -636,7 +639,17 @@ Page({
         messageInfo.messageType = 'file';
         messageInfo.fileName = message.payload.fileName || '';
         messageInfo.fileSize = this.formatFileSize(message.payload.fileSize || 0);
-        messageInfo.fileUrl = message.payload.url || '';
+        // 修复文件URL获取逻辑，优先使用url字段
+        messageInfo.fileUrl = message.payload.url || message.payload.fileUrl || '';
+        // 添加调试日志
+        console.log('文件消息详情:', {
+          fileName: messageInfo.fileName,
+          fileUrl: messageInfo.fileUrl,
+          fileTypeInfo: messageInfo.fileTypeInfo,
+          payload: message.payload
+        });
+        // 添加文件类型信息
+        messageInfo.fileTypeInfo = this.getFileTypeInfo(messageInfo.fileName);
         break;
         
       case wx.TencentCloudChat.TYPES.MSG_FACE:
@@ -1277,6 +1290,7 @@ Page({
    * 删除消息
    */
   async deleteMessage(message) {
+    console.log('删除消息:', message);
     try {
       if (!message || !message.ID) {
         console.error('无效的消息对象');
@@ -1812,8 +1826,6 @@ Page({
         count: 1,
         type: 'all' // 支持所有文件类型，与官方示例一致
       });
-      
-      console.log('文件选择成功，数量:', res.tempFiles.length);
       await this.sendFileMessage(res);
       this.hideAllMenus();
     } catch (error) {
@@ -1911,9 +1923,19 @@ Page({
         messageObj: message,
         messageType: 'file',
         fileName: file.tempFiles[0].name,
-        fileSize: file.tempFiles[0].size,
-        fileUrl: file.tempFiles[0].path || '' // 添加文件URL
+        fileSize: this.formatFileSize(file.tempFiles[0].size),
+        fileUrl: imResponse.data.message.payload.url, // 修复文件URL获取
+        fileTypeInfo: this.getFileTypeInfo(file.tempFiles[0].name) // 添加文件类型信息
       };
+      
+        // 添加调试日志
+        console.log('新文件消息创建:', {
+          fileName: newMessage.fileName,
+          fileUrl: newMessage.fileUrl,
+          fileTypeInfo: newMessage.fileTypeInfo,
+          imResponse: imResponse.data,
+          messagePayload: message.payload
+        });
       
       const updatedMessages = [...this.data.messages, newMessage];
       this.setData({
@@ -2136,6 +2158,72 @@ Page({
         icon: 'error'
       });
     }
+  },
+
+  /**
+   * 获取文件类型信息
+   */
+  getFileTypeInfo(fileName) {
+    const extension = this.getFileExtension(fileName);
+    console.log('extension', extension);
+    // 文档类型
+    const documentTypes = ['doc', 'docx', 'txt', 'pdf', 'rtf'];
+    // 表格类型
+    const spreadsheetTypes = ['xls', 'xlsx', 'csv'];
+    // 演示文稿类型
+    const presentationTypes = ['ppt', 'pptx'];
+    // 图片类型
+    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    // 音频类型
+    const audioTypes = ['mp3', 'wav', 'aac', 'flac', 'ogg'];
+    // 视频类型
+    const videoTypes = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv'];
+    // 压缩包类型
+    const archiveTypes = ['zip', 'rar', '7z', 'tar', 'gz'];
+    
+    let icon = 'fa-file-o';
+    let color = '#6b7280';
+    let bgColor = '#f3f4f6';
+    
+    if (documentTypes.includes(extension)) {
+      icon = 'fa-file-text-o';
+      color = '#3b82f6';
+      bgColor = '#eff6ff';
+    } else if (spreadsheetTypes.includes(extension)) {
+      icon = 'fa-file-excel-o';
+      color = '#10b981';
+      bgColor = '#ecfdf5';
+    } else if (presentationTypes.includes(extension)) {
+      icon = 'fa-file-powerpoint-o';
+      color = '#f59e0b';
+      bgColor = '#fffbeb';
+    } else if (imageTypes.includes(extension)) {
+      icon = 'fa-file-image-o';
+      color = '#8b5cf6';
+      bgColor = '#f3e8ff';
+    } else if (audioTypes.includes(extension)) {
+      icon = 'fa-file-audio-o';
+      color = '#ef4444';
+      bgColor = '#fef2f2';
+    } else if (videoTypes.includes(extension)) {
+      icon = 'fa-file-video-o';
+      color = '#06b6d4';
+      bgColor = '#ecfeff';
+    } else if (archiveTypes.includes(extension)) {
+      icon = 'fa-file-archive-o';
+      color = '#f97316';
+      bgColor = '#fff7ed';
+    } else if (extension === 'pdf') {
+      icon = 'fa-file-pdf-o';
+      color = '#dc2626';
+      bgColor = '#fef2f2';
+    }
+    
+    return {
+      icon,
+      color,
+      bgColor
+    };
   },
 
   /**

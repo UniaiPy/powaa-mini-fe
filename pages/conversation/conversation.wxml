@@ -84,7 +84,9 @@
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
               <view class="message-file message-type-file" bindtap="previewFile" data-message="{{item}}">
-                <text class="fa fa-file-o file-icon"></text>
+                <view class="file-icon" style="color: {{item.fileTypeInfo.color}}; background: {{item.fileTypeInfo.bgColor}};">
+                  <text class="fa {{item.fileTypeInfo.icon}}"></text>
+                </view>
                 <view class="file-info">
                   <text class="file-name">{{item.fileName}}</text>
                   <text class="file-size">{{item.fileSize}}</text>
@@ -145,7 +147,9 @@
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
               <view class="message-file message-type-file" bindtap="previewFile" data-message="{{item}}">
-                <text class="fa fa-file-o file-icon"></text>
+                <view class="file-icon" style="color: {{item.fileTypeInfo.color}}; background: {{item.fileTypeInfo.bgColor}};">
+                  <text class="fa {{item.fileTypeInfo.icon}}"></text>
+                </view>
                 <view class="file-info">
                   <text class="file-name">{{item.fileName}}</text>
                   <text class="file-size">{{item.fileSize}}</text>

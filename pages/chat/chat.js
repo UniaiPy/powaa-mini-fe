@@ -681,6 +681,7 @@ Page({
     
     // 如果是相对路径，需要获取临时URL
     this.getTempAvatarUrl(avatarUrl, type, userId, index);
+    
     // 立即返回默认头像，异步获取临时URL后会更新
     return '/images/ai.png';
   },
