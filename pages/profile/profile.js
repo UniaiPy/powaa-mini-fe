@@ -814,7 +814,7 @@ Page({
           }
           // 保存到全局
           app.globalData.userInfo.phone_number = this.data.editContactPhone
-          
+          wx.setStorageSync('userInfo', app.globalData.userInfo)
           this.setData({
             contactInfo: updatedContactInfo,
             showContactModal: false

@@ -83,11 +83,11 @@
             </block>
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
-              <view class="message-file message-type-file">
+              <view class="message-file message-type-file" bindtap="previewFile" data-message="{{item}}">
                 <text class="fa fa-file-o file-icon"></text>
                 <view class="file-info">
                   <text class="file-name">{{item.fileName}}</text>
-                  <text class="file-size">{{item.fileSize}}字节</text>
+                  <text class="file-size">{{item.fileSize}}</text>
                 </view>
               </view>
             </block>
@@ -144,11 +144,11 @@
             </block>
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
-              <view class="message-file message-type-file">
+              <view class="message-file message-type-file" bindtap="previewFile" data-message="{{item}}">
                 <text class="fa fa-file-o file-icon"></text>
                 <view class="file-info">
                   <text class="file-name">{{item.fileName}}</text>
-                  <text class="file-size">{{item.fileSize}}字节</text>
+                  <text class="file-size">{{item.fileSize}}</text>
                 </view>
               </view>
             </block>

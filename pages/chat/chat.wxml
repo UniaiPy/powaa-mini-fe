@@ -44,7 +44,7 @@
               <view class="chat-card" bindtap="navigateToConversation" data-user="{{item}}">
                 <view class="flex items-center">
                   <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
-                    <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
+                    <image src="{{item.avatar}}" class="w-full h-full object-cover rounded-full"></image>
                   </view>
                   <view class="flex-1">
                     <view class="flex items-center justify-between mb-2">
