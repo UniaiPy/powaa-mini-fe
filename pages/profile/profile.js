@@ -353,6 +353,12 @@ Page({
       avatar_url: tempAvatarKey || updateData.avatarUrl || ''
     })
     
+    // 同步更新IM中的用户信息
+    this.syncProfileToIM({
+      nickname: tempNickname,
+      avatarUrl: tempAvatarUrl || updateData.avatarUrl
+    })
+    
     this.setData({
       showProfileAuthModal: false
     })
@@ -375,6 +381,52 @@ Page({
     })
   },
   
+  /**
+   * 同步用户信息到IM
+   */
+  syncProfileToIM(profileData) {
+    try {
+      // 检查IM是否已初始化
+      if (!wx.$TUIKit) {
+        console.log('IM未初始化，跳过同步到IM')
+        return
+      }
+
+      // 准备IM更新数据
+      const imUpdateData = {}
+      
+      if (profileData.nickname) {
+        imUpdateData.nick = profileData.nickname
+      }
+      
+      if (profileData.avatarUrl) {
+        imUpdateData.avatar = profileData.avatarUrl
+      }
+      
+      if (profileData.selfSignature) {
+        imUpdateData.selfSignature = profileData.selfSignature
+      }
+
+      // 如果有数据需要更新，则调用IM接口
+      if (Object.keys(imUpdateData).length > 0) {
+        console.log('开始同步用户信息到IM:', imUpdateData)
+        
+        wx.$TUIKit.updateMyProfile(imUpdateData)
+          .then((response) => {
+            console.log('IM用户信息同步成功:', response)
+          })
+          .catch((error) => {
+            console.error('IM用户信息同步失败:', error)
+            // 不显示错误提示给用户，因为不影响主要功能
+          })
+      } else {
+        console.log('没有需要同步到IM的数据')
+      }
+    } catch (error) {
+      console.error('同步用户信息到IM时发生错误:', error)
+    }
+  },
+
   /**
    * 将微信信息保存到服务器
    */
@@ -664,6 +716,11 @@ Page({
             showProfileModal: false
           })
           
+          // 同步更新IM中的个人简介
+          this.syncProfileToIM({
+            selfSignature: intro
+          })
+          
           wx.showToast({
             title: '保存成功',
             icon: 'success'
@@ -755,6 +812,8 @@ Page({
             wechat: this.data.editContactWechat,
             address: this.data.editContactAddress
           }
+          // 保存到全局
+          app.globalData.userInfo.phone_number = this.data.editContactPhone
           
           this.setData({
             contactInfo: updatedContactInfo,
