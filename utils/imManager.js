@@ -10,10 +10,6 @@ if (typeof TencentCloudChat === 'object' && TencentCloudChat.default) {
 
 // 导入上传插件
 import TIMUploadPlugin from 'tim-upload-plugin';
-import COS_CONFIG from '../config/cos.js';
-
-// 导入微信小程序COS上传插件
-import COS from 'cos-wx-sdk-v5';
 
 // 导入敏感词过滤插件（可选）
 import TIMProfanityFilterPlugin from 'tim-profanity-filter-plugin';
@@ -24,8 +20,7 @@ import userPrivacySettings from './userPrivacySettings.js';
 console.log('📦 依赖检查:', {
   TencentCloudChat: !!TencentCloudChat,
   TIMUploadPlugin: !!TIMUploadPlugin,
-  TIMProfanityFilterPlugin: !!TIMProfanityFilterPlugin,
-  COS: !!COS
+  TIMProfanityFilterPlugin: !!TIMProfanityFilterPlugin
 });
 
 class IMManager {
@@ -103,37 +98,6 @@ class IMManager {
         console.log('✅ 上传插件注册成功');
       } catch (pluginError) {
         console.warn('⚠️ 上传插件注册失败:', pluginError);
-      }
-      
-      // 注册COS上传插件（可选，用于自定义文件存储）
-      // 注意：如果不配置COS，文件上传将自动使用tim-upload-plugin的默认存储
-      try {
-        // 检查是否有完整的COS配置
-        const hasValidCosConfig = COS_CONFIG && 
-          COS_CONFIG.SecretId && 
-          COS_CONFIG.SecretKey && 
-          COS_CONFIG.SecretId !== 'your_secret_id_here' &&
-          COS_CONFIG.SecretKey !== 'your_secret_key_here';
-          
-        if (hasValidCosConfig) {
-          // 初始化COS插件配置
-          if (COS && typeof COS.init === 'function') {
-            COS.init({
-              SecretId: COS_CONFIG.SecretId,
-              SecretKey: COS_CONFIG.SecretKey,
-              Region: COS_CONFIG.Region,
-              Domain: COS_CONFIG.Domain
-            });
-            console.log('✅ COS插件初始化成功');
-          }
-          
-          wx.$TUIKit.registerPlugin({'cos-wx-sdk-v5': COS});
-          console.log('✅ COS上传插件注册成功');
-        } else {
-          console.log('ℹ️ 未配置有效的COS参数，将使用IM默认上传服务');
-        }
-      } catch (cosError) {
-        console.warn('⚠️ COS上传插件注册失败，将使用IM默认上传服务:', cosError);
       }
       
       // 注册敏感词过滤插件（可选）
