@@ -50,10 +50,14 @@ Page({
     menuPosition: { left: 0, top: 0 },
     // 下拉刷新状态
     refreshing: false,
-    // 滚动到指定消息
-    scrollIntoView: ''
+ },
+  /**
+   * 生命周期函数--监听页面初次渲染完成
+   */
+  onReady() {
+    // 页面渲染完成后，滚动到底部
+    this.scrollToBottom()
   },
-
   /**
    * 生命周期函数--监听页面加载
    */
@@ -74,7 +78,9 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    // 页面显示时可以刷新数据
+    
+     // 页面显示时，滚动到底部
+    this.scrollToBottom();
   },
 
   /**
@@ -366,6 +372,7 @@ Page({
         fileName: messageInfo.fileName,
         fileSize: messageInfo.fileSize,
         fileUrl: messageInfo.fileUrl,
+        fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
         // 位置相关字段
         location: messageInfo.location,
         // 语音相关字段
@@ -517,6 +524,7 @@ Page({
           fileName: messageInfo.fileName,
           fileSize: messageInfo.fileSize,
           fileUrl: messageInfo.fileUrl,
+          fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
           // 位置相关字段
           location: messageInfo.location,
           // 语音相关字段
@@ -562,6 +570,7 @@ Page({
         fileName: messageInfo.fileName,
         fileSize: messageInfo.fileSize,
         fileUrl: messageInfo.fileUrl,
+        fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
         location: messageInfo.location,
         duration: messageInfo.duration,
         audioUrl: messageInfo.audioUrl,
@@ -675,7 +684,9 @@ Page({
         messageInfo.messageType = 'file';
         messageInfo.fileName = message.payload.fileName || '';
         messageInfo.fileSize = this.formatFileSize(message.payload.fileSize || 0);
-        messageInfo.fileUrl = message.payload.url || '';
+        // 修复文件URL获取逻辑，优先使用url字段，其次使用fileUrl字段
+        messageInfo.fileUrl = message.payload.url || message.payload.fileUrl || '';
+        messageInfo.fileTypeInfo = this.getFileTypeInfo(messageInfo.fileName); // 添加文件类型信息
         break;
         
       case wx.TencentCloudChat.TYPES.MSG_FACE:
@@ -907,7 +918,7 @@ Page({
         this.takePhoto();
         break;
       case 'file':
-        this.chooseFile();
+        this.selectFile();
         break;
       case 'location':
         this.chooseLocation();
@@ -1195,20 +1206,58 @@ Page({
   /**
    * 选择文件
    */
-  chooseFile() {
-    wx.chooseMessageFile({
-      count: 1,
-      type: 'file',
-      success: (res) => {
-        const tempFiles = res.tempFiles;
-        if (tempFiles.length > 0) {
-          this.sendFileMessage(tempFiles[0]);
-        }
-      },
-      fail: (error) => {
-        console.error('选择文件失败:', error);
+  /**
+   * 选择文件
+   */
+  async selectFile() {
+    try {
+      // 检查IM状态
+      if (!wx.$TUIKit) {
+        console.error('TUIKit未初始化');
+        wx.showToast({
+          title: 'IM未初始化，请稍后重试',
+          icon: 'error'
+        });
+        return;
       }
-    });
+      
+      // 检查IM登录状态 - 使用imManager的状态检查
+      const imStatus = imManager.checkIMStatus();
+      console.log('当前IM状态:', imStatus);
+      
+      if (!imStatus.isLoggedIn) {
+        console.error('IM未登录');
+        wx.showToast({
+          title: 'IM未登录，请稍后重试',
+          icon: 'error'
+        });
+        return;
+      }
+      
+      // 使用腾讯官方推荐的方式选择文件
+      const res = await wx.chooseMessageFile({
+        count: 1,
+        type: 'all' // 支持所有文件类型，与官方示例一致
+      });
+      await this.sendFileMessage(res);
+      this.hideAllMenus();
+    } catch (error) {
+      console.error('选择文件失败:', error);
+      
+      // 根据错误类型给出不同提示
+      let errorMessage = '选择文件失败';
+      if (error.errMsg && error.errMsg.includes('auth deny')) {
+        errorMessage = '请允许访问文件';
+      } else if (error.errMsg && error.errMsg.includes('cancel')) {
+        console.log('用户取消选择文件');
+        return; // 用户取消，不显示错误提示
+      }
+      
+      wx.showToast({
+        title: errorMessage,
+        icon: 'error'
+      });
+    }
   },
 
   /**
@@ -1216,13 +1265,12 @@ Page({
    */
   async sendFileMessage(file) {
     try {
-      const targetUserID = this.extractUserIDFromConversationID(this.data.conversationID) || this.data.chatInfo.id || this.data.chatInfo.name;      
+      const targetUserID = this.extractUserIDFromConversationID(this.data.conversationID) || this.data.chatInfo.id || this.data.chatInfo.name;
       console.log('准备发送文件消息:', { targetUserID, file: file.name, size: file.size, path: file.path });
       
-      // 使用imManager检查IM状态
-      const imStatus = imManager.checkIMStatus();
-      if (!imStatus.isLoggedIn) {
-        throw new Error('IM未登录，当前状态: ' + JSON.stringify(imStatus));
+      // 检查IM状态
+      if (!wx.$TUIKit) {
+        throw new Error('IM未初始化');
       }
       
       // 检查文件大小并显示友好的提示
@@ -1230,7 +1278,6 @@ Page({
       if (file.size > maxSize) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
         const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
-        
         wx.showModal({
           title: '文件过大',
           content: `文件大小为 ${sizeMB}MB，超过了 ${maxSizeMB}MB 的限制，请选择较小的文件。`,
@@ -1240,65 +1287,23 @@ Page({
         return;
       }
       
-      // 创建临时消息
-      const tempMessage = {
-        id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'user',
-        content: '[文件]',
-        messageType: 'file',
-        time: formatTime(getCurrentTimestamp()),
-        timeRaw: getCurrentTimestamp(),
-        showTimeSeparator: shouldShowTimeSeparator(
-          getCurrentTimestamp(), 
-          this.data.messages.length > 0 ? 
-          this.data.messages[this.data.messages.length - 1].timeRaw : 0
-        ),
-        avatar: this.getOwnAvatarUrl(),
-        fileName: file.name,
-        fileSize: this.formatFileSize(file.size),
-        fileUrl: file.path,
-        status: 'sending',
-        progress: 0
-      };
-
-      // 乐观更新
-      const updatedMessages = [...this.data.messages, tempMessage];
-      this.setData({
-        messages: updatedMessages
-      });
-
-      // 滚动到底部
-      setTimeout(() => {
-        this.scrollToBottom();
-      }, 100);
-
-      // 将原始文件对象包装成SDK期望的微信格式
-      const wxFile = {
-        type: 'file',
-        tempFiles: [{
-          tempFilePath: file.path,
-          name: file.name,
-          size: file.size
-        }]
-      };
-
+      // 检查登录状态
+      const imStatus = imManager.checkIMStatus();
+      if (!imStatus.isLoggedIn) {
+        throw new Error('IM未登录，当前状态: ' + JSON.stringify(imStatus));
+      }
+      
       // 创建文件消息 - 使用正确的文件格式
       const message = wx.$TUIKit.createFileMessage({ 
-        to: targetUserID,
-        conversationType: wx.TencentCloudChat.TYPES.CONV_C2C,
-        payload: {
-          file: wxFile
-        },
+        to: targetUserID, 
+        conversationType: wx.TencentCloudChat.TYPES.CONV_C2C, 
+        payload: { file: file }, // 使用包装后的微信格式文件对象
         onProgress: (event) => {
-          console.log('文件上传进度:', event);
-          const { loaded, total } = event;
-          const progress = Math.round((loaded / total) * 100);
-          
-          // 更新消息进度
-          this.updateMessageProgress(tempMessage.id, progress);
-        }
+          const percent = Math.round((event.loaded / event.total) * 100);
+          console.log(`文件上传进度: ${percent}%`);
+        } 
       });
-
+      
       console.log('文件消息创建成功:', message);
       
       // 发送消息
@@ -1312,53 +1317,77 @@ Page({
         });
       }
       
-      // 更新消息状态
-      const finalMessages = this.data.messages.map(msg => 
-        msg.id === tempMessage.id ? { 
-          ...msg, 
-          id: imResponse.data.message.ID,
-          status: 'sent',
-          messageObj: imResponse.data.message,
-          fileUrl: imResponse.data.message.payload.url,
-          progress: 100
-        } : msg
-      );
-
-      this.setData({
-        messages: finalMessages
+      // 添加到本地消息列表
+      const newMessage = {
+        id: message.ID,
+        type: 'user',
+        content: '[文件]',
+        time: formatTime(getCurrentTimestamp()),
+        timeRaw: getCurrentTimestamp(),
+        showTimeSeparator: shouldShowTimeSeparator(
+          getCurrentTimestamp(), 
+          this.data.messages.length > 0 ? 
+          this.data.messages[this.data.messages.length - 1].timeRaw : 0
+        ),
+        avatar: this.getOwnAvatarUrl(),
+        messageObj: message,
+        messageType: 'file',
+        fileName: file.tempFiles[0].name,
+        fileSize: this.formatFileSize(file.tempFiles[0].size),
+        fileUrl: imResponse.data.message.payload.url, // 修复文件URL获取
+        fileTypeInfo: this.getFileTypeInfo(file.tempFiles[0].name) // 添加文件类型信息
+      };
+      
+      // 添加调试日志
+      console.log('新文件消息创建:', {
+        fileName: newMessage.fileName,
+        fileUrl: newMessage.fileUrl,
+        fileTypeInfo: newMessage.fileTypeInfo,
+        imResponse: imResponse.data,
+        messagePayload: message.payload
       });
-
+      
+      const updatedMessages = [...this.data.messages, newMessage];
+      this.setData({
+        messages: updatedMessages
+      });
+      
+      this.scrollToBottom();
+      
     } catch (error) {
-      console.error('发送文件失败:', error);
+      console.error('发送文件消息失败:', error);
       
-      // 更新消息状态为失败
-      const failedMessages = this.data.messages.map(msg => 
-        msg.id.startsWith('temp_') && msg.status === 'sending' ? { 
-          ...msg, 
-          status: 'failed'
-        } : msg
-      );
+      // 提供更友好的错误处理
+      let errorMessage = '发送文件失败，请重试';
+      let showDetail = false;
       
-      this.setData({
-        messages: failedMessages
-      });
-      
-      // 显示错误提示
-      let errorMessage = '发送文件失败';
-      if (error.message && error.message.includes('size')) {
-        errorMessage = '文件大小超出限制';
-      } else if (error.message && error.message.includes('format')) {
-        errorMessage = '文件格式不支持';
-      } else if (error.message && error.message.includes('network')) {
-        errorMessage = '网络连接异常';
-      } else if (error.message && error.message.includes('20011')) {
-        errorMessage = '需要先添加好友';
+      if (error.message) {
+        if (error.message.includes('network')) {
+          errorMessage = '网络连接失败，请检查网络后重试';
+        } else if (error.message.includes('20011')) {
+          errorMessage = '需要先添加对方为好友才能发送文件';
+        } else if (error.message.includes('2400')) {
+          errorMessage = '文件上传失败，可能是文件格式不支持或网络问题';
+          showDetail = true;
+        } else if (error.message.includes('未初始化') || error.message.includes('未登录')) {
+          errorMessage = 'IM服务未就绪，请稍后重试';
+        }
       }
       
-      wx.showToast({
-        title: errorMessage,
-        icon: 'error'
-      });
+      if (showDetail) {
+        wx.showModal({
+          title: '文件发送失败',
+          content: `${errorMessage}\n\n详细信息：${error.message}`,
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      } else {
+        wx.showToast({
+          title: errorMessage,
+          icon: 'error',
+          duration: 3000
+        });
+      }
     }
   },
 
@@ -1931,7 +1960,7 @@ Page({
       }
       
       // 检查IM登录状态
-      const imStatus = this.checkIMStatus();
+      const imStatus = imManager.checkIMStatus();
       console.log('当前IM状态:', imStatus);
       
       if (!imStatus.isLoggedIn) {
@@ -1945,27 +1974,28 @@ Page({
       
       // 使用腾讯官方推荐的方式选择文件
       const res = await wx.chooseMessageFile({
-        count: 10,
+        count: 1,
         type: 'all' // 支持所有文件类型，与官方示例一致
       });
       
       console.log('文件选择成功，数量:', res.tempFiles.length);
       
-      // 逐个发送文件
-      for (let i = 0; i < res.tempFiles.length; i++) {
-        const tempFile = res.tempFiles[i];
-        console.log(`\n=== 处理第${i + 1}个文件 ===`);
-        console.log('文件详细信息:', {
-          name: tempFile.name,
-          path: tempFile.path,
-          size: tempFile.size,
-          type: tempFile.type,
-          time: tempFile.time
-        });
+      await this.sendFileMessage(res);
+      // // 逐个发送文件
+      // for (let i = 0; i < res.tempFiles.length; i++) {
+      //   const tempFile = res.tempFiles[i];
+      //   console.log(`\n=== 处理第${i + 1}个文件 ===`);
+      //   console.log('文件详细信息:', {
+      //     name: tempFile.name,
+      //     path: tempFile.path,
+      //     size: tempFile.size,
+      //     type: tempFile.type,
+      //     time: tempFile.time
+      //   });
         
-        // 直接传递文件对象，符合官方示例
-        await this.sendFileMessage(tempFile);
-      }
+      //   // 直接传递文件对象，符合官方示例
+        
+      // }
       
       this.hideAllMenus();
     } catch (error) {
@@ -2260,15 +2290,23 @@ Page({
    * 滚动到底部
    */
   scrollToBottom() {
-    wx.createSelectorQuery().select('.chat-container').boundingClientRect((rect) => {
-      if (rect) {
-        // 滚动到底部
-        wx.pageScrollTo({
-          scrollTop: rect.height,
-          duration: 300
+    setTimeout(() => {
+      // 使用scroll-into-view方式滚动到最后一条消息
+      const messages = this.data.messages;
+      if (messages && messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        this.setData({
+          scrollIntoView: `message-${lastMessage.id}`
         });
+        
+        // 清空scrollIntoView，避免影响后续滚动
+        setTimeout(() => {
+          this.setData({
+            scrollIntoView: ''
+          });
+        }, 300);
       }
-    }).exec();
+    }, 100)
   },
 
   /**
@@ -2320,6 +2358,97 @@ Page({
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+
+  /**
+   * 获取文件扩展名
+   */
+  getFileExtension(filename) {
+    if (!filename) return '';
+    const lastDotIndex = filename.lastIndexOf('.');
+    return lastDotIndex > -1 ? filename.substring(lastDotIndex + 1).toLowerCase() : '';
+  },
+
+  /**
+   * 获取文件类型信息
+   */
+  getFileTypeInfo(fileName) {
+    const extension = this.getFileExtension(fileName);
+    console.log('extension', extension);
+    // 文档类型
+    const documentTypes = ['doc', 'docx', 'txt', 'pdf', 'rtf'];
+    // 表格类型
+    const spreadsheetTypes = ['xls', 'xlsx', 'csv'];
+    // 演示文稿类型
+    const presentationTypes = ['ppt', 'pptx'];
+    // 图片类型
+    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    // 音频类型
+    const audioTypes = ['mp3', 'wav', 'aac', 'flac', 'ogg'];
+    // 视频类型
+    const videoTypes = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv'];
+    // 压缩包类型
+    const archiveTypes = ['zip', 'rar', '7z', 'tar', 'gz'];
+    
+    let icon = 'fa-file-o';
+    let color = '#6b7280';
+    let bgColor = '#f3f4f6';
+    
+    if (documentTypes.includes(extension)) {
+      icon = 'fa-file-text-o';
+      color = '#3b82f6';
+      bgColor = '#eff6ff';
+    } else if (spreadsheetTypes.includes(extension)) {
+      icon = 'fa-file-excel-o';
+      color = '#10b981';
+      bgColor = '#ecfdf5';
+    } else if (presentationTypes.includes(extension)) {
+      icon = 'fa-file-powerpoint-o';
+      color = '#f59e0b';
+      bgColor = '#fffbeb';
+    } else if (imageTypes.includes(extension)) {
+      icon = 'fa-file-image-o';
+      color = '#8b5cf6';
+      bgColor = '#f3e8ff';
+    } else if (audioTypes.includes(extension)) {
+      icon = 'fa-file-audio-o';
+      color = '#ef4444';
+      bgColor = '#fef2f2';
+    } else if (videoTypes.includes(extension)) {
+      icon = 'fa-file-video-o';
+      color = '#06b6d4';
+      bgColor = '#ecfeff';
+    } else if (archiveTypes.includes(extension)) {
+      icon = 'fa-file-archive-o';
+      color = '#f97316';
+      bgColor = '#fff7ed';
+    } else if (extension === 'pdf') {
+      icon = 'fa-file-pdf-o';
+      color = '#dc2626';
+      bgColor = '#fef2f2';
+    }
+    
+    return {
+      icon,
+      color,
+      bgColor
+    };
+  },
+
+  /**
+   * 判断是否为图片文件
+   */
+  isImageFile(extension) {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    return imageExtensions.includes(extension);
+  },
+
+  /**
+   * 判断是否为文本文件
+   */
+  isTextFile(extension) {
+    const textExtensions = ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'log', 'csv'];
+    return textExtensions.includes(extension);
   },
 
   /**
@@ -2451,6 +2580,216 @@ Page({
           title: '下载文件失败',
           icon: 'none'
         });
+      }
+    });
+  },
+
+  /**
+   * 预览文件
+   */
+  async previewFile(e) {
+    try {
+      const message = e.currentTarget.dataset.message;
+      console.log('预览文件消息:', message);
+      
+      if (!message) {
+        console.error('未获取到消息数据');
+        wx.showToast({
+          title: '文件信息获取失败',
+          icon: 'error'
+        });
+        return;
+      }
+      
+      const { fileName, fileUrl } = message;
+      
+      if (!fileUrl) {
+        console.error('文件URL为空:', message);
+        wx.showToast({
+          title: '文件链接无效',
+          icon: 'error'
+        });
+        return;
+      }
+      
+      console.log('准备预览文件:', { fileName, fileUrl });
+      
+      // 显示加载提示
+      wx.showLoading({
+        title: '正在打开文件...',
+        mask: true
+      });
+      
+      // 检查文件类型，决定如何处理
+      const extension = this.getFileExtension(fileName);
+      const isImageFile = this.isImageFile(extension);
+      const isTextFile = this.isTextFile(extension);
+      
+      if (isImageFile) {
+        // 图片文件直接预览
+        wx.hideLoading();
+        wx.previewImage({
+          urls: [fileUrl],
+          current: fileUrl,
+          fail: (error) => {
+            console.error('图片预览失败:', error);
+            wx.showToast({
+              title: '图片预览失败',
+              icon: 'error'
+            });
+          }
+        });
+      } else if (isTextFile) {
+        // 文本文件下载后查看内容
+        try {
+          const downloadResult = await wx.downloadFile({
+            url: fileUrl,
+            success: (res) => {
+              if (res.statusCode === 200) {
+                // 读取文件内容
+                wx.getFileSystemManager().readFile({
+                  filePath: res.tempFilePath,
+                  encoding: 'utf8',
+                  success: (readResult) => {
+                    wx.hideLoading();
+                    // 显示文本内容
+                    wx.showModal({
+                      title: fileName,
+                      content: readResult.data.length > 500 ? 
+                        readResult.data.substring(0, 500) + '...' : 
+                        readResult.data,
+                      showCancel: true,
+                      cancelText: '关闭',
+                      confirmText: readResult.data.length > 500 ? '查看全部' : '确定',
+                      success: (modalRes) => {
+                        if (modalRes.confirm && readResult.data.length > 500) {
+                          // 如果内容很长，可以尝试用其他方式显示
+                          this.showLongTextContent(fileName, readResult.data);
+                        }
+                      }
+                    });
+                  },
+                  fail: (readError) => {
+                    wx.hideLoading();
+                    console.error('读取文件失败:', readError);
+                    wx.showToast({
+                      title: '文件读取失败',
+                      icon: 'error'
+                    });
+                  }
+                });
+              } else {
+                wx.hideLoading();
+                wx.showToast({
+                  title: '文件下载失败',
+                  icon: 'error'
+                });
+              }
+            },
+            fail: (error) => {
+              wx.hideLoading();
+              console.error('文件下载失败:', error);
+              wx.showToast({
+                title: '文件下载失败',
+                icon: 'error'
+              });
+            }
+          });
+        } catch (downloadError) {
+          wx.hideLoading();
+          console.error('下载文件异常:', downloadError);
+          wx.showToast({
+            title: '文件下载异常',
+            icon: 'error'
+          });
+        }
+      } else {
+        // 其他类型文件尝试用系统程序打开
+        try {
+          const downloadResult = await wx.downloadFile({
+            url: fileUrl,
+            success: (res) => {
+              wx.hideLoading();
+              if (res.statusCode === 200) {
+                // 使用系统程序打开文件
+                wx.openDocument({
+                  filePath: res.tempFilePath,
+                  showMenu: true,
+                  success: () => {
+                    console.log('文件打开成功');
+                  },
+                  fail: (error) => {
+                    console.error('文件打开失败:', error);
+                    wx.showModal({
+                      title: '无法打开文件',
+                      content: `文件 "${fileName}" 无法在当前环境中打开，请尝试在其他应用中打开。`,
+                      showCancel: false,
+                      confirmText: '知道了'
+                    });
+                  }
+                });
+              } else {
+                wx.showToast({
+                  title: '文件下载失败',
+                  icon: 'error'
+                });
+              }
+            },
+            fail: (error) => {
+              wx.hideLoading();
+              console.error('文件下载失败:', error);
+              wx.showToast({
+                title: '文件下载失败',
+                icon: 'error'
+              });
+            }
+          });
+        } catch (error) {
+          wx.hideLoading();
+          console.error('处理文件异常:', error);
+          wx.showToast({
+            title: '文件处理异常',
+            icon: 'error'
+          });
+        }
+      }
+      
+    } catch (error) {
+      wx.hideLoading();
+      console.error('预览文件失败:', error);
+      wx.showToast({
+        title: '预览文件失败',
+        icon: 'error'
+      });
+    }
+  },
+
+  /**
+   * 显示长文本内容
+   */
+  showLongTextContent(fileName, content) {
+    // 可以考虑跳转到新页面显示完整内容
+    // 或者使用其他方式展示
+    console.log('显示长文本内容:', fileName, content.length);
+    
+    wx.showModal({
+      title: '提示',
+      content: '文件内容过长，建议下载后查看',
+      showCancel: true,
+      cancelText: '取消',
+      confirmText: '下载文件',
+      success: (res) => {
+        if (res.confirm) {
+          // 触发下载
+          this.downloadFile({ 
+            currentTarget: { 
+              dataset: { 
+                url: this.data.currentFileUrl, 
+                filename: fileName 
+              } 
+            } 
+          });
+        }
       }
     });
   },

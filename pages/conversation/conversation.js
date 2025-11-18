@@ -48,6 +48,9 @@ Page({
     menuPosition: { left: 0, top: 0 },
     // 下拉刷新状态
     refreshing: false,
+    // 分页相关字段
+    nextReqMessageID: '',
+    isCompleted: false,
     // 调试模式标志
     isDebugMode: true,
     // 用户是否已被屏蔽
@@ -433,10 +436,14 @@ Page({
    * 下拉刷新处理
    */
   async onPullDownRefresh() {
-    console.log('下拉刷新，加载更多历史消息');
+    console.log('=== 下拉刷新触发 ===');
+    console.log('当前刷新状态:', this.data.refreshing);
+    console.log('是否已完成加载:', this.data.isCompleted);
+    console.log('会话ID:', this.data.conversationID);
+    console.log('nextReqMessageID:', this.data.nextReqMessageID);
     
     try {
-      // 设置刷新状态
+      // 设置刷新状态 - 这里会触发 refresher 动画
       this.setData({
         refreshing: true
       });
@@ -451,7 +458,8 @@ Page({
         icon: 'error'
       });
     } finally {
-      // 结束刷新状态
+      // 结束刷新状态 - 停止 refresher 动画
+      console.log('下拉刷新结束，设置refreshing为false');
       this.setData({
         refreshing: false
       });
@@ -472,9 +480,18 @@ Page({
    * 加载更多历史消息
    */
   async loadMoreMessages() {
+    console.log('=== 开始加载更多历史消息 ===');
+    console.log('isCompleted:', this.data.isCompleted);
+    console.log('conversationID:', this.data.conversationID);
+    console.log('nextReqMessageID:', this.data.nextReqMessageID);
+    
     try {
       if (this.data.isCompleted || !this.data.conversationID) {
-        console.log('没有更多消息或没有会话ID');
+        console.log('没有更多消息或没有会话ID，停止加载');
+        wx.showToast({
+          title: '没有更多历史消息',
+          icon: 'none'
+        });
         return;
       }
 
@@ -488,13 +505,18 @@ Page({
         nextReqMessageID: this.data.nextReqMessageID
       };
 
+      console.log('请求参数:', messageListOptions);
       const messageListRes = await wx.$TUIKit.getMessageList(messageListOptions);
-      console.log('更多历史消息:', messageListRes);
+      console.log('更多历史消息响应:', messageListRes);
 
       const { code, data } = messageListRes;
       
       if (code === 0 && data) {
         const { messageList, nextReqMessageID, isCompleted } = data;
+        
+        console.log('获取到消息数量:', messageList?.length || 0);
+        console.log('新的nextReqMessageID:', nextReqMessageID);
+        console.log('是否加载完成:', isCompleted);
         
         // 格式化新消息 - 检查TUIKit返回的消息顺序
         const formattedMessages = this.formatMessages(messageList);
@@ -508,11 +530,25 @@ Page({
           isCompleted: isCompleted || false
         });
 
-        console.log(`加载了更多 ${formattedMessages.length} 条消息`);
+        console.log(`加载了更多 ${formattedMessages.length} 条消息，当前总消息数: ${updatedMessages.length}`);
+        
+        if (isCompleted) {
+          console.log('已加载全部历史消息');
+        }
+      } else {
+        console.error('获取历史消息失败:', code, data);
+        wx.showToast({
+          title: '加载失败',
+          icon: 'error'
+        });
       }
       
     } catch (error) {
       console.error('加载更多消息失败:', error);
+      wx.showToast({
+        title: '加载失败',
+        icon: 'error'
+      });
     } finally {
       wx.hideLoading();
     }
@@ -642,12 +678,12 @@ Page({
         // 修复文件URL获取逻辑，优先使用url字段
         messageInfo.fileUrl = message.payload.url || message.payload.fileUrl || '';
         // 添加调试日志
-        console.log('文件消息详情:', {
-          fileName: messageInfo.fileName,
-          fileUrl: messageInfo.fileUrl,
-          fileTypeInfo: messageInfo.fileTypeInfo,
-          payload: message.payload
-        });
+        // console.log('文件消息详情:', {
+        //   fileName: messageInfo.fileName,
+        //   fileUrl: messageInfo.fileUrl,
+        //   fileTypeInfo: messageInfo.fileTypeInfo,
+        //   payload: message.payload
+        // });
         // 添加文件类型信息
         messageInfo.fileTypeInfo = this.getFileTypeInfo(messageInfo.fileName);
         break;
@@ -1879,16 +1915,6 @@ Page({
         throw new Error('IM未登录，当前状态: ' + JSON.stringify(imStatus));
       }
       
-      // 将原始文件对象包装成SDK期望的微信格式
-      // const wxFile = {
-      //   type: 'file',
-      //   tempFiles: [{
-      //     tempFilePath: file.path,
-      //     name: file.name,
-      //     size: file.size
-      //   }]
-      // };
-      
       // 创建文件消息 - 使用正确的文件格式
       const message = wx.$TUIKit.createFileMessage({ 
         to: targetUserID, 
@@ -1928,14 +1954,14 @@ Page({
         fileTypeInfo: this.getFileTypeInfo(file.tempFiles[0].name) // 添加文件类型信息
       };
       
-        // 添加调试日志
-        console.log('新文件消息创建:', {
-          fileName: newMessage.fileName,
-          fileUrl: newMessage.fileUrl,
-          fileTypeInfo: newMessage.fileTypeInfo,
-          imResponse: imResponse.data,
-          messagePayload: message.payload
-        });
+      // 添加调试日志
+      console.log('新文件消息创建:', {
+        fileName: newMessage.fileName,
+        fileUrl: newMessage.fileUrl,
+        fileTypeInfo: newMessage.fileTypeInfo,
+        imResponse: imResponse.data,
+        messagePayload: message.payload
+      });
       
       const updatedMessages = [...this.data.messages, newMessage];
       this.setData({
@@ -2908,15 +2934,6 @@ Page({
       }
     })
     this.hideAllMenus()
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-    // 下拉加载历史消息
-    console.log('下拉加载历史消息')
-    wx.stopPullDownRefresh()
   },
 
   /**

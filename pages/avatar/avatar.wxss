@@ -974,59 +974,6 @@
   border-radius: 0 !important;
 }
 
-/* 文件消息样式 - 完全移除背景、边框、倒角和阴影 */
-.message-file {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  outline: none;
-}
-
-/* 包含文件的消息容器 - 移除消息容器的样式 */
-.message-file-container {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-}
-
-.file-icon {
-  font-size: 20px;
-  color: #6b7280;
-  flex-shrink: 0;
-}
-
-.file-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.file-name {
-  font-size: 14px;
-  color: #374151;
-  font-weight: 500;
-  word-break: break-all;
-}
-
-.file-size {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.user-message .file-name {
-  color: white;
-}
-
-.user-message .file-size {
-  color: rgba(255, 255, 255, 0.7);
-}
 
 .message-location {
   display: flex;
@@ -1106,5 +1053,74 @@
 
 /* 底部占位 */
 .bottom-space {
-  height: 120rpx;
+  height: 100px;
+}
+
+/* 文件消息样式 - 参考微信样式 */
+.message-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  outline: none;
+  min-width: 200px;
+  max-width: 280px;
+  transition: all 0.2s ease;
+}
+
+.message-file:active {
+  background: #f9fafb;
+  transform: scale(0.98);
+}
+
+/* 包含文件的消息容器 - 保持消息容器的原有样式 */
+.message-file-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.file-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 15px;
+  color: #111827;
+  font-weight: 500;
+  word-break: break-all;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.file-size {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.2;
 }

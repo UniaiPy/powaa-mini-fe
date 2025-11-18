@@ -319,8 +319,9 @@ Page({
         id: conversation.conversationID,
         userId: userProfile.userID,
         name: userProfile.nick,
-        avatar: this.processAvatarUrl(userProfile.avatar, 1, userProfile.userID, index),
-        lastMessage:  lastMessage.payload?.text || lastMessage.nick,
+        avatar: this.processAvatarUrl(userProfile.avatar),
+        originalAvatar: userProfile.avatar, // 保存原始头像地址
+        lastMessage:  lastMessage.messageForShow || lastMessage.payload?.text,
         time: time,
         unread: conversation.unreadCount || 0
       };
@@ -332,6 +333,9 @@ Page({
     
     this.setData({
       contactsList: contactsList
+    }, () => {
+      // 数据设置完成后，批量获取头像URL
+      this.batchGetAvatarUrls(contactsList, 1);
     });
   },
   
@@ -355,7 +359,6 @@ Page({
         }
       }
 
-      console.log('📡 调用TUIKit获取好友申请列表...');
       const friendApplicationList = await wx.$TUIKit.getFriendApplicationList();
       console.log('📬 好友申请列表原始数据:', JSON.stringify(friendApplicationList, null, 2));
 
@@ -387,14 +390,7 @@ Page({
         if (!Array.isArray(applications)) {
           throw new Error('申请列表不是数组格式');
         }
-        
         console.log('📋 申请列表总数:', applications.length);
-        
-        // 调试：打印所有可用的TYPES常量
-        console.log('🔍 TUIKit TYPES常量调试:');
-        console.log('- wx.TencentCloudChat.TYPES:', wx.TencentCloudChat.TYPES);
-        console.log('- SNS_APPLICATION_SENT_TO_ME:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME);
-        console.log('- SNS_APPLICATION_SENT_FROM_ME:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_FROM_ME);
         
         // 详细分析申请类型
         const sentToMeApps = applications.filter(app => {
@@ -420,27 +416,21 @@ Page({
           return isSentFromMe;
         });
         
-        console.log('📊 申请类型分析:');
-        console.log('- 收到的申请数量:', sentToMeApps.length);
-        console.log('- 发送的申请数量:', sentFromMeApps.length);
-        console.log('- SNS_APPLICATION_SENT_TO_ME 常量值:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME);
-        console.log('- SNS_APPLICATION_SENT_FROM_ME 常量值:', wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_FROM_ME);
-
         // 打印每个申请的详细信息
-        applications.forEach((app, index) => {
-          console.log(`申请${index + 1}详情:`, {
-            userID: app.userID,
-            nickname: app.nickname,
-            nick: app.nick, // 注意：可能是 nick 而不是 nickname
-            type: app.type,
-            addTime: app.addTime,
-            time: app.time, // 注意：可能是 time 而不是 addTime
-            addSource: app.addSource,
-            source: app.source, // 注意：可能是 source 而不是 addSource
-            wording: app.wording,
-            status: app.status
-          });
-        });
+        // applications.forEach((app, index) => {
+        //   console.log(`申请${index + 1}详情:`, {
+        //     userID: app.userID,
+        //     nickname: app.nickname,
+        //     nick: app.nick, // 注意：可能是 nick 而不是 nickname
+        //     type: app.type,
+        //     addTime: app.addTime,
+        //     time: app.time, // 注意：可能是 time 而不是 addTime
+        //     addSource: app.addSource,
+        //     source: app.source, // 注意：可能是 source 而不是 addSource
+        //     wording: app.wording,
+        //     status: app.status
+        //   });
+        // });
 
         // 只显示收到的好友申请（别人发给当前用户的）
         const pendingList = sentToMeApps
@@ -461,7 +451,8 @@ Page({
             return {
               id: app.userID,
               name: app.nick || app.nickname || app.userID,
-              avatar: this.processAvatarUrl(app.avatar, 2, app.userID, index),
+              avatar: this.processAvatarUrl(app.avatar),
+              originalAvatar: app.avatar, // 保存原始头像地址
               message: app.wording,
               time: time,
               requestId: app.userID, // 使用userID作为requestId
@@ -470,33 +461,36 @@ Page({
             };
           });
 
-        console.log('🎯 最终待处理的好友申请列表:', pendingList);
-        console.log('📝 设置到页面的pendingList:', pendingList.length, '条记录');
+        // console.log('🎯 最终待处理的好友申请列表:', pendingList);
+        // console.log('📝 设置到页面的pendingList:', pendingList.length, '条记录');
         
-        // 添加更详细的调试信息
-        console.log('🔍 调试信息 - pendingList详情:');
-        pendingList.forEach((item, index) => {
-          console.log(`待处理申请${index + 1}:`, {
-            id: item.id,
-            name: item.name,
-            message: item.message,
-            time: item.time,
-            requestId: item.requestId,
-            type: item.type,
-            addSource: item.addSource
-          });
-        });
+        // // 添加更详细的调试信息
+        // console.log('🔍 调试信息 - pendingList详情:');
+        // pendingList.forEach((item, index) => {
+        //   console.log(`待处理申请${index + 1}:`, {
+        //     id: item.id,
+        //     name: item.name,
+        //     message: item.message,
+        //     time: item.time,
+        //     requestId: item.requestId,
+        //     type: item.type,
+        //     addSource: item.addSource
+        //   });
+        // });
         
-        console.log('🔍 调试信息 - 页面状态检查:');
-        console.log('- 当前activeSection:', this.data.activeSection);
-        console.log('- 当前pendingList长度:', this.data.pendingList.length);
-        console.log('- 即将设置的pendingList长度:', pendingList.length);
+        // console.log('🔍 调试信息 - 页面状态检查:');
+        // console.log('- 当前activeSection:', this.data.activeSection);
+        // console.log('- 当前pendingList长度:', this.data.pendingList.length);
+        // console.log('- 即将设置的pendingList长度:', pendingList.length);
 
         this.setData({
           pendingList: pendingList
         }, () => {
           console.log('✅ pendingList已设置到页面，当前长度:', this.data.pendingList.length);
           console.log('📋 页面pendingList内容:', this.data.pendingList);
+          
+          // 数据设置完成后，批量获取头像URL
+          this.batchGetAvatarUrls(pendingList, 2);
           
           // 如果有待处理的好友请求，自动切换到待联系标签
           if (pendingList.length > 0 && this.data.activeSection === 'contacts') {
@@ -667,26 +661,102 @@ Page({
     });
   },
   
-  // 处理头像URL，确保在小程序中可以正常显示
-  processAvatarUrl: function(avatarUrl, type, userId, index) {
-    const app = getApp();
+  // 处理头像URL，确保在小程序中可以正常显示（优化版本）
+  processAvatarUrl: function(avatarUrl) {
     if (!avatarUrl) {
       return '/images/ai.png';
     }
     
-    // 如果是其他外部URL，直接返回
+    // 如果是外部URL，直接返回
     if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
       return avatarUrl;
     }
     
-    // 如果是相对路径，需要获取临时URL
-    this.getTempAvatarUrl(avatarUrl, type, userId, index);
-    
-    // 立即返回默认头像，异步获取临时URL后会更新
+    // 如果是相对路径，返回临时头像路径
+    // 批量处理会在后续统一获取预签名URL并更新
     return '/images/ai.png';
   },
 
-  // 获取临时头像URL
+  // 批量获取头像预签名URL（优化性能）
+  batchGetAvatarUrls: function(userList, type) {
+    const app = getApp();
+    
+    // 收集所有需要获取临时URL的头像
+    const avatarRequests = [];
+    userList.forEach((user, index) => {
+      // 使用originalAvatar字段来获取原始头像地址
+      const originalAvatar = user.originalAvatar || user.avatar;
+      if (originalAvatar && !originalAvatar.startsWith('http://')
+         && !originalAvatar.startsWith('https://')
+         && originalAvatar !== '/images/ai.png') {
+        avatarRequests.push({
+          key: originalAvatar,
+          index: index,
+          userId: user.id || user.userId
+        });
+      }
+    });
+    
+    if (avatarRequests.length === 0) {
+      return Promise.resolve();
+    }
+    
+    console.log(`批量获取${avatarRequests.length}个头像的预签名URL`);
+    
+    // 批量请求预签名URL
+    return new Promise((resolve, reject) => {
+      app.request({
+        url: '/api/upload/batch-signed-urls',
+        method: 'POST',
+        data: {
+          files: avatarRequests.map(req => ({
+            key: req.key,
+            expires: 3600 // 1小时有效期
+          }))
+        },
+        success: (res) => {
+          if (res.success && res.urls) {
+            // 批量更新头像URL
+            res.urls.forEach((urlInfo, index) => {
+              const originalRequest = avatarRequests[index];
+              if (urlInfo.url && originalRequest) {
+                const updatePath = type === 1 
+                  ? `contactsList[${originalRequest.index}].avatar`
+                  : `pendingList[${originalRequest.index}].avatar`;
+                
+                this.setData({
+                  [updatePath]: urlInfo.url
+                });
+              }
+            });
+            console.log(`成功更新${res.urls.length}个头像URL`);
+            resolve();
+          } else {
+            console.warn('批量获取头像URL失败:', res.message);
+            // 降级处理：逐个获取
+            this.fallbackToIndividualRequests(avatarRequests, type);
+            resolve();
+          }
+        },
+        fail: (error) => {
+          console.error('批量获取头像URL请求失败:', error);
+          // 降级处理：逐个获取
+          this.fallbackToIndividualRequests(avatarRequests, type);
+          resolve();
+        }
+      });
+    });
+  },
+
+  // 降级处理：逐个获取头像URL（保持向后兼容）
+  fallbackToIndividualRequests: function(avatarRequests, type) {
+    console.log('降级处理：逐个获取头像URL');
+    avatarRequests.forEach(request => {
+      this.getTempAvatarUrl(request.key, type, request.userId, request.index);
+    });
+  },
+
+  // 获取临时头像URL（保留原方法用于降级处理）
   getTempAvatarUrl: function(avatarKey, type, userId, index) {
     const app = getApp();
     
@@ -801,14 +871,6 @@ Page({
       // 如果没有初始化，则重新检查TUIKit状态
       this.checkTUIKitStatus();
     }
-    
-    // 调试：检查当前页面状态
-    console.log('🔍 页面状态检查:', {
-      isImInitialized: this.data.isImInitialized,
-      activeSection: this.data.activeSection,
-      pendingListLength: this.data.pendingList.length,
-      contactsListLength: this.data.contactsList.length
-    });
   },
 
   /**

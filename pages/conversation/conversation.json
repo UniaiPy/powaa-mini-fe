@@ -4,7 +4,7 @@
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
   "backgroundColor": "#f9fafb",
-  "enablePullDownRefresh": true,
+  "enablePullDownRefresh": false,
   "disableScroll": false,
   "usingComponents": {
      "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar"
