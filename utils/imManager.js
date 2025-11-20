@@ -310,6 +310,44 @@ class IMManager {
     }
   }
   
+  // 重新登录（用于被踢出后自动重新登录）
+  async relogin() {
+    try {
+      console.log('🔄 开始重新登录...');
+      
+      // 检查是否有保存的配置
+      if (!this.config.userID || !this.config.userSig || !this.config.SDKAppID) {
+        throw new Error('重新登录失败：缺少登录配置信息');
+      }
+      
+      // 清理当前状态但不清理配置
+      this.isLoggedIn = false;
+      this.loginPromise = null;
+      
+      // 清理旧实例
+      this._clearInstance();
+      
+      // 重新初始化
+      await this._performInitialization(
+        this.config.userID,
+        this.config.userSig,
+        this.config.SDKAppID
+      );
+      
+      console.log('✅ 重新登录完成');
+      this._notifyListeners('RELOGIN_SUCCESS', { 
+        userID: this.config.userID,
+        SDKAppID: this.config.SDKAppID
+      });
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('❌ 重新登录失败:', error);
+      this._notifyListeners('RELOGIN_ERROR', error);
+      throw error;
+    }
+  }
+  
   // ==================== 事件管理 ====================
   
   // 添加事件监听器
@@ -451,7 +489,22 @@ class IMManager {
       if (validateEventName('SDK_NOT_READY')) {
         wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_NOT_READY, (event) => {
           console.log('⚠️ IM SDK未准备就绪:', event);
+          
+          // 更新状态为未登录
+          this.isLoggedIn = false;
+          
+          console.log('✅ 更新状态：isLoggedIn = false (SDK_NOT_READY)');
+          
+          // 通知所有监听器
           this._notifyListeners('SDK_NOT_READY', event);
+          
+          // 通知登录状态变化
+          this._notifyListeners('LOGIN_STATUS_CHANGED', {
+            isLoggedIn: false,
+            isInitialized: this.isInitialized,
+            reason: 'SDK_NOT_READY',
+            event: event
+          });
         });
         console.log('✅ 已设置SDK_NOT_READY事件监听');
       }
@@ -459,8 +512,24 @@ class IMManager {
       // 监听KICKED_OUT事件 - 确认存在
       if (validateEventName('KICKED_OUT')) {
         wx.$TUIKit.on(wx.TencentCloudChat.EVENT.KICKED_OUT, (event) => {
-          console.log('🚫 被踢出登录:', event);
+          console.log('🚫 用户被踢出登录:', event);
+          
+          // 更新状态为未登录
+          this.isLoggedIn = false;
+          this.isInitialized = false;
+          
+          console.log('✅ 更新状态：isLoggedIn = false, isInitialized = false');
+          
+          // 通知所有监听器
           this._notifyListeners('KICKED_OUT', event);
+          
+          // 通知登录状态变化
+          this._notifyListeners('LOGIN_STATUS_CHANGED', {
+            isLoggedIn: false,
+            isInitialized: false,
+            reason: 'KICKED_OUT',
+            event: event
+          });
         });
         console.log('✅ 已设置KICKED_OUT事件监听');
       }

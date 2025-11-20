@@ -137,13 +137,29 @@
           <block wx:elif="{{searchResults.length > 0}}">
             <block wx:for="{{searchResults}}" wx:key="id">
               <view class="search-result-item" bindtap="navigateToConversation" data-user="{{item}}">
-                <view class="flex items-center">
+                <view class="flex items-start">
                   <view class="w-20 h-20 rounded-full overflow-hidden mr-4">
                     <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
                   </view>
                   <view class="flex-1">
-                    <view class="search-result-name">{{item.name}}</view>
-                    <view class="search-result-message">{{item.lastMessage}}</view>
+                    <view class="flex items-center justify-between mb-2">
+                      <view class="search-result-name">{{item.name}}</view>
+                      <view class="search-result-count" wx:if="{{item.matchedMessages && item.matchedMessages.length > 1}}">
+                        {{item.matchedMessages.length}}条匹配
+                      </view>
+                    </view>
+                    <!-- 显示匹配的消息 -->
+                    <block wx:if="{{item.matchedMessages && item.matchedMessages.length > 0}}">
+                      <block wx:for="{{item.matchedMessages}}" wx:key="messageID" wx:for-item="msg">
+                        <view class="matched-message">
+                          <text class="message-text">{{msg.payload.text}}</text>
+                          <text class="message-time">{{msg._createTime}}</text>
+                        </view>
+                      </block>
+                    </block>
+                    <block wx:else>
+                      <view class="search-result-message">{{item.lastMessage}}</view>
+                    </block>
                   </view>
                 </view>
               </view>

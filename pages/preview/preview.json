@@ -1,11 +1,7 @@
 {
-  "navigationBarTitleText": "预览",
+  "navigationBarTitleText": "名片预览",
   "navigationBarBackgroundColor": "#ffffff",
   "navigationBarTextStyle": "black",
-  "navigationStyle": "custom",
-  "usingComponents": {
-     "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar"
-  },
   "enablePullDownRefresh": false,
   "disableScroll": false,
   "backgroundColor": "#f7f7f7",

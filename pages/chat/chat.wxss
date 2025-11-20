@@ -700,6 +700,47 @@ page {
   white-space: nowrap;
 }
 
+/* 搜索结果匹配数量 */
+.search-result-count {
+  background-color: #8b5cf6;
+  color: white;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  font-weight: 500;
+  min-width: 60rpx;
+  text-align: center;
+}
+
+/* 匹配的消息容器 */
+.matched-message {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12rpx;
+  padding: 12rpx;
+  background-color: #f8fafc;
+  border-radius: 12rpx;
+  border-left: 4rpx solid #8b5cf6;
+}
+
+.matched-message:last-child {
+  margin-bottom: 0;
+}
+
+.message-text {
+  color: #374151;
+  font-size: 26rpx;
+  line-height: 1.4;
+  margin-bottom: 6rpx;
+  word-break: break-all;
+}
+
+.message-time {
+  color: #9ca3af;
+  font-size: 22rpx;
+  align-self: flex-end;
+}
+
 /* 图标样式 */
 .icon-search::before {
   content: "🔍";

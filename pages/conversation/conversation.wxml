@@ -4,10 +4,10 @@
   <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
     <view class="user-info-bar">
       <view class="user-info flex-1">
-        <view class="flex items-center">
-          <text id="userName" class="user-name text-base font-bold text-gray-900">
+        <view class="flex items-center justify-center">
+          <view id="userName" class="user-name text-base font-bold text-gray-900">
             {{chatInfo.name || chatInfo.nick || chatInfo.nickname || ''}}
-          </text>
+          </view>
           <view class="user-status ml-2 flex items-center"></view>
         </view>
       </view>

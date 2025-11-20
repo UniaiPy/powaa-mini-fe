@@ -185,6 +185,61 @@ Page({
     } catch (error) {
       console.error('设置IM事件监听失败:', error);
     }
+    
+    // 监听imManager的事件
+    try {
+      // 监听登录状态变化
+      imManager.addEventListener('LOGIN_STATUS_CHANGED', (data) => {
+        console.log('🔄 检测到登录状态变化:', data);
+        
+        if (!data.isLoggedIn) {
+          console.log('⚠️ 用户被踢出或连接断开');
+          
+          // 显示提示
+          if (data.reason === 'KICKED_OUT') {
+            wx.showToast({
+              title: '账号在其他设备登录',
+              icon: 'none',
+              duration: 3000
+            });
+          } else if (data.reason === 'SDK_NOT_READY') {
+            wx.showToast({
+              title: 'IM连接断开',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+          
+          // 延迟后重新初始化
+          setTimeout(() => {
+            this.reinitializeIM();
+          }, 2000);
+        }
+      });
+      
+      // 监听被踢出事件
+      imManager.addEventListener('KICKED_OUT', (event) => {
+        console.log('🚫 收到被踢出事件:', event);
+        wx.showToast({
+          title: '账号在其他设备登录，正在重新连接...',
+          icon: 'none',
+          duration: 3000
+        });
+      });
+      
+      // 监听SDK_NOT_READY事件
+      imManager.addEventListener('SDK_NOT_READY', (event) => {
+        console.log('⚠️ 收到SDK_NOT_READY事件:', event);
+        wx.showToast({
+          title: 'IM连接断开，正在重新连接...',
+          icon: 'none',
+          duration: 2000
+        });
+      });
+      
+    } catch (error) {
+      console.error('设置imManager事件监听失败:', error);
+    }
   },
   
   // 会话列表更新回调
@@ -255,10 +310,23 @@ Page({
           
           // 根据错误类型显示不同的提示
           let errorMessage = '加载会话失败';
+          let needReinit = false;
+          
           if (error.message && error.message.includes('等待IM登录超时')) {
             errorMessage = 'IM初始化超时';
+            needReinit = true;
           } else if (error.message && error.message.includes('TUIKit实例不可用')) {
             errorMessage = 'IM服务不可用';
+            needReinit = true;
+          } else if (error.message && error.message.includes('sdk not ready')) {
+            errorMessage = 'IM连接断开，正在重新连接...';
+            needReinit = true;
+          } else if (error.message && error.message.includes('用户多实例登录被踢出')) {
+            errorMessage = '账号在其他设备登录，正在重新连接...';
+            needReinit = true;
+          } else if (error.code === 3003) {
+            errorMessage = 'IM连接异常，正在重新连接...';
+            needReinit = true;
           }
           
           wx.showToast({
@@ -266,6 +334,14 @@ Page({
             icon: 'none',
             duration: 2000
           });
+          
+          // 如果需要重新初始化，延迟后重试
+          if (needReinit) {
+            console.log('🔄 检测到连接问题，准备重新初始化IM...');
+            setTimeout(() => {
+              this.reinitializeIM();
+            }, 2000);
+          }
         });
       
     } catch (error) {
@@ -277,6 +353,29 @@ Page({
     } finally {
       wx.hideLoading();
     }
+  },
+  
+  // 重新初始化IM
+  reinitializeIM: function() {
+    console.log('🔄 开始重新初始化IM...');
+    
+    // 重置状态
+    this.setData({
+      isImInitialized: false
+    });
+    
+    // 调用imManager的重新登录方法
+    imManager.relogin().then(() => {
+      console.log('✅ 重新登录成功，重新检查TUIKit状态');
+      // 重新检查TUIKit状态
+      this.checkTUIKitStatus();
+    }).catch((error) => {
+      console.error('❌ 重新登录失败:', error);
+      wx.showToast({
+        title: '重新登录失败，请重试',
+        icon: 'none'
+      });
+    });
   },
   
   // 处理会话列表数据的独立方法
@@ -889,7 +988,31 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
-    // 页面卸载时的操作
+    // 清理imManager事件监听器
+    try {
+      if (imManager && imManager.removeEventListener) {
+        // 移除所有imManager事件监听器
+        imManager.removeEventListener('LOGIN_STATUS_CHANGED', this.onLoginStatusChanged);
+        imManager.removeEventListener('KICKED_OUT', this.onKickedOut);
+        imManager.removeEventListener('SDK_NOT_READY', this.onSDKNotReady);
+      }
+    } catch (error) {
+      console.error('清理imManager事件监听器失败:', error);
+    }
+    
+    // 清理TUIKit事件监听器
+    try {
+      if (wx.$TUIKit) {
+        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.SDK_READY);
+        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED);
+        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED);
+        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_LIST_UPDATED);
+      }
+    } catch (error) {
+      console.error('清理TUIKit事件监听器失败:', error);
+    }
+    
+    console.log('🧹 页面卸载，事件监听器已清理');
   },
 
   /**
@@ -978,7 +1101,190 @@ Page({
       return;
     }
 
-    // 合并联系人列表和待联系列表进行搜索
+    // 显示加载状态
+    wx.showLoading({
+      title: '搜索中...',
+    });
+
+    // 如果IM已初始化，使用云端消息搜索
+    if (this.data.isImInitialized && wx.$TUIKit) {
+      this.searchCloudMessages(searchText)
+        .then(messageResults => {
+          // 同时搜索联系人姓名
+          const contactResults = this.searchContacts(searchText, contactsList, pendingList);
+          
+          // 合并搜索结果
+          const allResults = this.mergeSearchResults(contactResults, messageResults);
+          
+          this.setData({
+            searchResults: allResults,
+            showSearchResults: true
+          });
+        })
+        .catch(error => {
+          console.error('云端消息搜索失败:', error);
+          // 降级到本地搜索
+          this.performLocalSearch(searchText, contactsList, pendingList);
+        })
+        .finally(() => {
+          wx.hideLoading();
+        });
+    } else {
+      // IM未初始化，使用本地搜索
+      this.performLocalSearch(searchText, contactsList, pendingList);
+      wx.hideLoading();
+    }
+  },
+
+  // 云端消息搜索
+  searchCloudMessages: function(searchText) {
+    return new Promise((resolve, reject) => {
+      // 检查是否有searchCloudMessages API
+      if (typeof wx.$TUIKit.searchCloudMessages !== 'function') {
+        console.warn('searchCloudMessages API不存在，尝试使用其他搜索方法');
+        // 尝试使用getMessageList搜索每个会话的消息
+        this.searchAllConversations(searchText)
+          .then(resolve)
+          .catch(reject);
+        return;
+      }
+
+      wx.$TUIKit.searchCloudMessages({
+        keywordList: [searchText],
+        conversationType: wx.$TUIKit.TYPES.CONV_C2C, // 搜索C2C会话
+        pageSize: 20,
+        cursor: ''
+      }).then(response => {
+        console.log('云端消息搜索结果:', response);
+        const messageResults = this.processCloudSearchResults(response.data || []);
+        resolve(messageResults);
+      }).catch(error => {
+        console.error('云端消息搜索失败:', error);
+        reject(error);
+      });
+    });
+  },
+
+  // 搜索所有会话中的消息（降级方案）
+  searchAllConversations: async function(searchText) {
+    const allMessageResults = [];
+    const { contactsList } = this.data;
+    
+    // 限制搜索的会话数量，避免请求过多
+    const maxConversations = Math.min(contactsList.length, 10);
+    
+    for (let i = 0; i < maxConversations; i++) {
+      const contact = contactsList[i];
+      try {
+        const messages = await this.searchConversationMessages(contact.id, searchText);
+        allMessageResults.push(...messages);
+      } catch (error) {
+        console.error(`搜索会话 ${contact.id} 失败:`, error);
+      }
+    }
+    
+    return allMessageResults;
+  },
+
+  // �搜索单个会话的消息
+  searchConversationMessages: function(conversationID, searchText) {
+    return new Promise((resolve, reject) => {
+      wx.$TUIKit.getMessageList({
+        conversationID: conversationID,
+        count: 20, // 获取最近20条消息进行搜索
+        cursor: ''
+      }).then(response => {
+        const messages = response.data.messageList || [];
+        const matchedMessages = messages.filter(msg => 
+          msg.payload && msg.payload.text && 
+          msg.payload.text.toLowerCase().includes(searchText.toLowerCase())
+        );
+        
+        // 为匹配的消息添加会话信息
+        const results = matchedMessages.map(msg => ({
+          ...msg,
+          conversationID: conversationID,
+          matchType: 'message',
+          contactName: this.getContactName(conversationID)
+        }));
+        
+        resolve(results);
+      }).catch(reject);
+    });
+  },
+
+  // 处理云端搜索结果
+  processCloudSearchResults: function(searchResults) {
+    return searchResults.map(result => ({
+      ...result,
+      matchType: 'message',
+      contactName: this.getContactName(result.conversationID)
+    }));
+  },
+
+  // 获取联系人名称
+  getContactName: function(conversationID) {
+    const contact = this.data.contactsList.find(c => c.id === conversationID);
+    return contact ? contact.name : '未知用户';
+  },
+
+  // 搜索联系人
+  searchContacts: function(searchText, contactsList, pendingList) {
+    const allUsers = [...contactsList, ...pendingList.map(item => ({
+      ...item,
+      lastMessage: item.message,
+      unread: 0
+    }))];
+
+    return allUsers.filter(user => 
+      user.name.toLowerCase().includes(searchText.toLowerCase())
+    ).map(user => ({
+      ...user,
+      matchType: 'contact'
+    }));
+  },
+
+  // 合并搜索结果
+  mergeSearchResults: function(contactResults, messageResults) {
+    // 创建一个映射，按会话ID分组消息
+    const messageMap = {};
+    messageResults.forEach(msg => {
+      if (!messageMap[msg.conversationID]) {
+        messageMap[msg.conversationID] = [];
+      }
+      messageMap[msg.conversationID].push(msg);
+    });
+
+    // 为联系人结果添加匹配的消息
+    const mergedResults = contactResults.map(contact => {
+      const matchedMessages = messageMap[contact.id] || [];
+      return {
+        ...contact,
+        matchedMessages: matchedMessages,
+        totalMatches: matchedMessages.length
+      };
+    });
+
+    // 添加只有消息匹配的联系人（不在联系人列表中的）
+    Object.keys(messageMap).forEach(conversationID => {
+      if (!mergedResults.find(result => result.id === conversationID)) {
+        mergedResults.push({
+          id: conversationID,
+          name: this.getContactName(conversationID),
+          matchType: 'message_only',
+          matchedMessages: messageMap[conversationID],
+          totalMatches: messageMap[conversationID].length,
+          unread: 0
+        });
+      }
+    });
+
+    // 按匹配数量排序
+    return mergedResults.sort((a, b) => b.totalMatches - a.totalMatches);
+  },
+
+  // 本地搜索（降级方案）
+  performLocalSearch: function(searchText, contactsList, pendingList) {
     const allUsers = [...contactsList, ...pendingList.map(item => ({
       ...item,
       lastMessage: item.message,
@@ -1008,7 +1314,12 @@ Page({
 
   // 导航到聊天会话页
   navigateToConversation: function(e) {
-    const user = e.currentTarget.dataset.user;
+    let user = e.currentTarget.dataset.user;
+    console.log('原始用户数据:', e);
+    // 如果是搜索结果，需要使用originalUser数据
+    if (user.originalUser) {
+      user = user.originalUser;
+    }
     
     // 创建会话ID（C2C类型）
     const conversationID = user.id || '';

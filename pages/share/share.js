@@ -103,15 +103,36 @@ Page({
     
   },
 
+  // /**
+  //  * 用户点击右上角分享
+  //  */
+  // onShareAppMessage: function () {
+  //   return {
+  //     title: '我的AI分身名片',
+  //     path: this.data.previewUrl,
+  //     imageUrl: '/images/ai.png' // 使用存在的图片作为分享封面
+  //   };
+  // },
   /**
    * 用户点击右上角分享
    */
-  onShareAppMessage: function () {
+  onShareAppMessage() {
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
     return {
-      title: '我的AI分身名片',
-      path: this.data.previewUrl,
-      imageUrl: '/images/ai.png' // 使用存在的图片作为分享封面
-    };
+      title: `${app.globalData.userInfo.nickname}的AI名片`,
+      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      imageUrl: '/images/ai.png'
+    }
+  },
+  onShareTimeline() {
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
+    return {
+      title: `${app.globalData.userInfo.nickname}的AI名片`,
+      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      imageUrl: '/images/ai.png'
+    }
   },
 
   /**
@@ -122,35 +143,25 @@ Page({
     const socialId = e.currentTarget.dataset.id;
     console.log('点击分享平台:', platform, socialId);
     // 处理微信相关分享（分享预览页面）
-    if (['wechat', 'wechat-group', 'moments'].includes(platform)) {
-      if (platform === 'moments') {
-        // 朋友圈分享
-        wx.showShareImageMenu({
-          path: '/images/share-cover.png',
-          success: () => {
-            this.showToast('分享到朋友圈成功');
-          },
-          fail: (err) => {
-            console.error('朋友圈分享失败:', err);
-            this.showToast('分享失败');
-          }
-        });
-      } else {
-        // 微信好友和群聊分享
-        wx.showShareMenu({
-          withShareTicket: true,
-          menus: ['shareAppMessage'],
-          success: () => {
-            console.log('显示分享菜单成功');
-            // 注意：showShareMenu只是显示分享菜单，用户实际分享操作会触发onShareAppMessage
-            // 这里不应该显示"分享成功"，因为用户可能取消分享
-          },
-          fail: (err) => {
-            console.error('显示分享菜单失败:', err);
-            this.showToast('无法打开分享菜单');
-          }
-        });
-      }
+    
+    if (platform === 'moments') {
+      // 朋友圈分享
+      // 弹窗提示点击右上角分享到朋友圈
+      wx.showToast({
+        title: '点击右上角···分享到朋友圈',
+        icon: 'none'
+      })
+      // wx.showShareImageMenu({
+      //   path: '/images/share-cover.png',
+      //   success: () => {
+      //     this.showToast('分享到朋友圈成功');
+      //   },
+      //   fail: (err) => {
+      //     console.error('朋友圈分享失败:', err);
+      //     this.showToast('分享失败');
+      //   }
+      // });
+      
     } else if (socialId) {
       // 处理用户自定义社交媒体（复制链接）
       const socialItem = this.data.userSocialMedia.find(item => item.id === socialId);

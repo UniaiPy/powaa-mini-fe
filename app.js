@@ -6,7 +6,8 @@ App({
   globalData: {
     userInfo: null,
     token: null,
-    baseUrl: 'http://127.0.0.1:5001', // 后端API基础地址 https://api.powaaaicard.com
+    // baseUrl: 'http://127.0.0.1:5001',
+    baseUrl: 'http://api.powaa.cn',
     unreadCount: 0,
     useMockData: false, // 关闭模拟数据，使用真实后端
     // TUIKit相关配置

@@ -21,11 +21,21 @@ Page({
     }
   },
 
-  onLoad: function() {
+  onLoad: function(options) {
     // 初始化时更新未读消息数量
     this.updateUnreadCount();
     // 加载官方信息
     this.loadOfficialInfo();
+    
+    // 检查是否有指定要展开的部分
+    if (options.section) {
+      // 延迟展开，确保内容已经加载
+      setTimeout(() => {
+        this.setData({
+          [`isOpen.${options.section}`]: true
+        });
+      }, 500);
+    }
   },
 
   // 加载官方信息

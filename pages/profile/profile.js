@@ -1258,7 +1258,6 @@ Page({
       url: `/pages/preview/preview?type=profile&userId=${userId}`
     })
   },
-
   /**
    * 打开分享
    */
@@ -1276,8 +1275,17 @@ Page({
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/pages/preview/preview?type=profile&userId=${userId}`
-      // imageUrl: '/images/ai.png'
+      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      imageUrl: '/images/ai.png'
+    }
+  },
+  onShareTimeline() {
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
+    return {
+      title: `${this.data.userInfo.name}的AI名片`,
+      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      imageUrl: '/images/ai.png'
     }
   }
 })

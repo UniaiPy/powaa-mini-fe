@@ -54,16 +54,11 @@
 
 /* 网格布局 */
 .grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
-.gap-2 {
-  gap: 12px;
-  /* 计算每个元素宽度：33.333%减去间距的影响 */
-  margin-left: -4px;
-  /* 补偿间距，确保一行正好放三个 */
-}
 
 /* 分享平台样式 */
 .share-platform {
@@ -76,7 +71,10 @@
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 20rpx;
-  padding: 40rpx;
+  padding: 30rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .share-platform:active {

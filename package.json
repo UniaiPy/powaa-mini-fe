@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/UniaiPy/powaa-mini-fe#readme",
   "dependencies": {
-    "@tencentcloud/chat-uikit-wechat": "^2.4.4"
+    "@tencentcloud/chat-uikit-wechat": "^2.4.4",
+    "cos-wx-sdk-v5": "^1.8.0"
   }
 }

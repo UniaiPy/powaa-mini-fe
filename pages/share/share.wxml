@@ -20,39 +20,39 @@
         </view>
         <view class="section-content" id="shareMethodContent">
           <!-- 微信相关分享方式 -->
-          <view class="grid gap-2 mb-3 mt-3">
+          <view class="grid mb-4 mt-4">
             <!-- 微信好友 -->
-            <view class="share-platform rounded-xl p-3 text-center" data-platform="wechat" bindtap="onSharePlatformTap">
+            <button class="share-platform rounded-xl p-3 text-center" open-type="share">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
                 <text class="fa fa-weixin text-xl text-green-600"></text>
               </view>
-              <text class="text-xs font-medium text-gray-700">微信好友</text>
-            </view>
+              <text class="text-xs text-gray-700">微信好友</text>
+            </button>
             <!-- 微信群 -->
-            <view class="share-platform rounded-xl p-3 text-center" data-platform="wechat-group" bindtap="onSharePlatformTap">
+            <button class="share-platform rounded-xl p-3 text-center" open-type="share">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
                 <text class="fa fa-users text-xl text-green-600"></text>
               </view>
-              <text class="text-xs font-medium text-gray-700">微信群</text>
-            </view>
+              <text class="text-xs text-gray-700">微信群</text>
+            </button>
             <!-- 朋友圈 -->
-            <view class="share-platform rounded-xl p-3 text-center" data-platform="moments" bindtap="onSharePlatformTap">
+            <button class="share-platform rounded-xl p-3 text-center" data-platform="moments" bindtap="onSharePlatformTap">
               <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
                 <text class="fa fa-globe text-xl text-green-600"></text>
               </view>
-              <text class="text-xs font-medium">朋友圈</text>
-            </view>
+              <text class="text-xs text-gray-700">朋友圈</text>
+            </button>
           </view>
           <!-- 社交媒体分享方式 - 每行三列 -->
           <block wx:if="{{userSocialMedia.length > 0}}">
-            <view class="grid gap-2 mb-6">
-              <view wx:for="{{userSocialMedia}}" wx:key="id" class="share-platform rounded-xl p-3 text-center" data-platform="social" data-id="{{item.id}}" bindtap="onSharePlatformTap">
+            <view class="grid mb-6">
+              <button wx:for="{{userSocialMedia}}" wx:key="id" class="share-platform rounded-xl p-3 text-center" data-platform="social" data-id="{{item.id}}" bindtap="onSharePlatformTap">
                 <view class="w-10 h-10 flex items-center justify-center mx-auto mb-2">
                   <image wx:if="{{item.icon}}" src="{{item.icon}}" class="social-icon" style="width: 24px; height: 24px;" mode="aspectFit"></image>
                   <text wx:else class="fa fa-link text-xl text-blue-500"></text>
                 </view>
-                <text class="text-xs font-medium">{{item.name}}</text>
-              </view>
+                <text class="text-xs text-gray-700">{{item.name}}</text>
+              </button>
             </view>
           </block>
         </view>

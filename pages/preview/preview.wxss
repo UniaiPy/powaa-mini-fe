@@ -15,7 +15,8 @@
 .fixed-nav {
   position: relative;
 }
-.share-btn{
+
+.share-btn {
   position: absolute;
   right: 10px;
   width: 32px;
@@ -24,21 +25,51 @@
   align-items: center;
   justify-content: center;
   font-size: 30rpx;
+  border: none;
+  background-color: transparent;
+  outline: none;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.share-btn2 {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+}
+
+
+.share-btn2 button {
+  width: 300rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
 }
 
 /* 内容区域 - 考虑固定导航栏的高度 */
 .content-with-fixed-nav {
   position: relative;
 }
-.bottom-btns{
+
+.bottom-btns {
   position: fixed;
-  bottom:0;
-  left:10px;
-  right:10px;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
 }
+
+.bg-white {
+  background-color: white;
+}
+
 /* 内容卡片 */
 .content-card {
-  background-color: white;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   overflow: hidden;
@@ -71,6 +102,7 @@
 .text-center {
   text-align: center;
 }
+
 .font-semibold {
   font-weight: 600;
 }
@@ -206,9 +238,11 @@
 .bg-black {
   background-color: #000000;
 }
-.bg-black-50{
+
+.bg-black-50 {
   background-color: rgba(0, 0, 0, 0.4);
 }
+
 .bg-opacity-50 {
   opacity: 0.5;
 }
@@ -237,13 +271,21 @@
   padding-left: 12px;
   padding-right: 12px;
 }
+
+.px-4 {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
 .py-15 {
   padding-top: 6px;
   padding-bottom: 6px;
 }
+
 .p-2 {
   padding: 8px;
 }
+
 .w-full {
   width: 100%;
 }
@@ -271,6 +313,7 @@
 .h-8 {
   height: 15rpx;
 }
+
 .w-9 {
   width: 30rpx;
 }
@@ -337,7 +380,11 @@
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
 }
-.p-3{padding: .75rem;}
+
+.p-3 {
+  padding: .75rem;
+}
+
 .text-base {
   font-size: 1rem;
 }
@@ -457,13 +504,13 @@
     max-width: 768px;
     margin: 0 auto;
   }
-  
+
   .fixed-nav {
     max-width: 768px;
     left: 50%;
     transform: translateX(-50%);
   }
-  
+
   .bottom-nav {
     max-width: 768px;
     left: 50%;

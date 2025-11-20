@@ -104,14 +104,7 @@ Page({
     });
   },
 
-  /**
-   * 打开分享功能
-   */
-  openShare: function() {
-    wx.navigateTo({
-      url: '/pages/share/share'
-    });
-  },
+ 
 
   /**
    * 显示匹配度说明
@@ -502,5 +495,34 @@ Page({
         this.showToast('复制失败');
       }
     })
+  },
+   /**
+   * 打开分享
+   */
+  openShare() {
+    wx.navigateTo({
+      url: '/pages/share/share'
+    })
+  },
+  /**
+   * 用户点击右上角分享
+   */
+  onShareAppMessage() {
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
+    return {
+      title: `${this.data.userInfo.name}的AI名片`,
+      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      imageUrl: '/images/ai.png'
+    }
+  },
+  onShareTimeline() {
+    const app = getApp()
+    const userId = app.globalData.userInfo.id;
+    return {
+      title: `${this.data.userInfo.name}的AI名片`,
+      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      imageUrl: '/images/ai.png'
+    }
   }
 })

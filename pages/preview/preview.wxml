@@ -1,16 +1,16 @@
 <!-- pages/preview/preview.wxml -->
 <view class="page-container">
   <!-- 顶部导航 -->
-  <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
+  <!-- <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
     <view class="fixed-nav flex items-center justify-center gap-2 w-full">
-      <view class="text-base font-bold text-gray-900">预览</view>
-      <view class="cursor-pointer share-btn" bindtap="openShare">
+      <view class="text-base font-bold text-gray-900">名片预览</view>
+      <button class="cursor-pointer share-btn" open-type="share">
         <text class="fa fa-share text-black text-xl"></text>
-      </view>
+      </button>
     </view>
-  </custom-navigation-bar>
+  </custom-navigation-bar> -->
   <!-- 主内容 -->
-  <view class="content-with-fixed-nav flex-1 content-card rounded-t-3xl px-4 py-3 space-y-4 relative">
+  <view class="content-with-fixed-nav flex-1 content-card px-3 py-3 space-y-4 relative">
     <view class="bg-white rounded-lg overflow-hidden shadow-sm">
       <!-- 悬浮按钮 - 仅当不是查看自己的名片时显示 -->
       <view class="bottom-btns bottom-20 left-0 right-0 z-30 px-4 pb-2 floating-button" wx:if="{{!isOwnProfile}}">
@@ -36,9 +36,7 @@
       </view>
       <view class="text-center mb-3 bg-white">
         <view class="flex items-center justify-center gap-2">
-          <view class="text-lg font-semibold text-gray-900 user-name">
-            {{userInfo.name}}
-          </view>
+          <view class="text-lg font-semibold text-gray-900 user-name">{{userInfo.name}}</view>
           <view class="flex items-center gap-1">
             <text class="text-sm text-gray-500">·</text>
             <text class="text-sm text-gray-500">AI分身</text>
@@ -163,5 +161,11 @@
       <text class="iconfont icon-check-circle mr-2"></text>
       {{toastMessage}}
     </view>
+  </view>
+  <view class="share-btn2">
+    <button class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="openShare">
+      <text class="fa fa-paper-plane mr-4"></text>
+      分享名片
+    </button>
   </view>
 </view>

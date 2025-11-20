@@ -168,14 +168,14 @@ Page({
   // 打开用户协议
   openUserTerms: function() {
     wx.navigateTo({
-      url: '/pages/terms/terms'
+      url: '/pages/about/about?section=terms'
     })
   },
 
   // 打开隐私政策
   openPrivacyPolicy: function() {
     wx.navigateTo({
-      url: '/pages/privacy/privacy'
+      url: '/pages/about/about?section=privacy'
     })
   }
 })

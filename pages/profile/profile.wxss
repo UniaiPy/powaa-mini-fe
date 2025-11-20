@@ -21,6 +21,34 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.share-btn {
+  border: none;
+  background-color: transparent;
+  outline: none;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.share-btn2 {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+}
+
+
+.share-btn2 button {
+  width: 300rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+}
+
 .fixed-nav .left-half {
   position: absolute;
   left: 50%;
@@ -28,7 +56,7 @@
 }
 
 .content-with-fixed-nav {
-  padding-top: 44px;
+  padding: 44px 0 120px 0;
 }
 
 /* 头像样式 */
@@ -124,6 +152,7 @@
   max-height: 80vh;
   overflow-y: auto;
 }
+
 .bottom-modal {
   margin-left: 5%;
 }
@@ -307,8 +336,8 @@
 }
 
 .py-3 {
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 .p-2 {

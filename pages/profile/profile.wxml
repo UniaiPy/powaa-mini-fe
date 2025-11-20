@@ -15,9 +15,9 @@
         <view class="text-xl text-black cursor-pointer" bindtap="openPreview">
           <text class="fa fa-eye"></text>
         </view>
-        <view class="text-xl text-black cursor-pointer ml-7" bindtap="openShare">
+        <button class="share-btn text-xl text-black cursor-pointer ml-7" bindtap="openShare">
           <text class="fa fa-share"></text>
-        </view>
+        </button>
       </view>
     </view>
   </custom-navigation-bar>
@@ -83,97 +83,97 @@
         </view>
       </view>
     </view>
-    <!-- 个人资料 -->
-    <view class="bg-white p-4 border-b border-gray-100">
-      <view class="flex items-center justify-between mb-3">
-        <view class="text-sm font-semibold text-gray-700">
-          个人资料
-          <text class="text-purple-600 ml-1">*</text>
-        </view>
-        <view class="flex items-center space-x-2">
-          <view class="text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="showInfoEditModal">
-            <text class="fa fa-edit mr-1.5"></text>
-            编辑
+    <view class="p-2">
+      <!-- 个人资料 -->
+      <view class="bg-white p-4 border-b border-gray-100">
+        <view class="flex items-center justify-between mb-3">
+          <view class="text-sm font-semibold text-gray-700">
+            个人资料
+            <text class="text-purple-600 ml-1">*</text>
           </view>
-        </view>
-      </view>
-      <text class="text-sm text-gray-700" style="line-height: 1.6;">{{userInfo.description}}</text>
-    </view>
-    <!-- 联系信息 -->
-    <view class="bg-white p-4 border-b border-gray-100">
-      <view class="flex items-center justify-between">
-        <view class="text-sm font-semibold text-gray-700 flex items-center">
-          联系信息
-          <text class="text-purple-600 ml-1">*</text>
-        </view>
-        <view class="flex items-center space-x-2">
-          <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showContactEditModal">
-            <text class="fa fa-edit mr-1.5"></text>
-            编辑
-          </view>
-        </view>
-      </view>
-      <view class="mt-3">
-        <view class="space-y-3 text-sm text-gray-600">
-          <view class="flex items-center space-item">
-            <text class="fa fa-phone text-blue-600 mr-3 w-8"></text>
-            <text>{{contactInfo.phone}}</text>
-          </view>
-          <view class="flex items-center space-item">
-            <text class="fa fa-wechat text-green-600 mr-3 w-8"></text>
-            <text>{{contactInfo.wechat}}</text>
-          </view>
-          <view class="flex items-center">
-            <text class="fa fa-map-marker text-blue-600 mr-3 w-8"></text>
-            <text>{{contactInfo.address}}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-    <!-- 社交媒体 -->
-    <view class="bg-white p-4 border-b border-gray-100">
-      <view class="flex items-center justify-between">
-        <view class="text-sm font-semibold text-gray-700 flex items-center">对外媒体</view>
-        <view class="flex items-center space-x-2">
-          <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showSocialMediaEditModal">
-            <text class="fa fa-plus mr-1.5"></text>
-            添加
-          </view>
-        </view>
-      </view>
-      <view class="mt-3">
-        <view class="space-y-1 text-sm text-gray-600" wx:if="{{socialMediaList.length > 0}}">
-          <view class="flex items-center justify-between py-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
-            <view class="flex items-center">
-              <!-- <text class="fa fa-{{item.icon}} {{item.iconColor}} mr-3"></text> -->
-              <text class="mr-5">{{item.name}}</text>
-              <text class="text-gray-500">@{{item.username}}</text>
-            </view>
-            <view class="flex items-center">
-              <view class="mr-3 text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="copySocialMedia" data-url="{{item.url}}">
-                <!-- <text class="fa fa-plus mr-1.5"></text> -->
-                复制链接
-              </view>
-              <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="editSocialMedia" data-id="{{item.id}}">
-                <text class="fa fa-edit mr-1.5"></text>
-                编辑
-              </view>
+          <view class="flex items-center space-x-2">
+            <view class="text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="showInfoEditModal">
+              <text class="fa fa-edit mr-1.5"></text>
+              编辑
             </view>
           </view>
         </view>
-        <view class="text-center text-gray-400 py-4" wx:else>暂无媒体信息，点击添加</view>
+        <text class="text-sm text-gray-700" style="line-height: 1.6;">
+          {{userInfo.description}}
+        </text>
+      </view>
+      <!-- 联系信息 -->
+      <view class="bg-white p-4 border-b border-gray-100">
+        <view class="flex items-center justify-between">
+          <view class="text-sm font-semibold text-gray-700 flex items-center">
+            联系信息
+            <text class="text-purple-600 ml-1">*</text>
+          </view>
+          <view class="flex items-center space-x-2">
+            <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showContactEditModal">
+              <text class="fa fa-edit mr-1.5"></text>
+              编辑
+            </view>
+          </view>
+        </view>
+        <view class="mt-3">
+          <view class="space-y-3 text-sm text-gray-600">
+            <view class="flex items-center space-item">
+              <text class="fa fa-phone text-blue-600 mr-3 w-8"></text>
+              <text>{{contactInfo.phone}}</text>
+            </view>
+            <view class="flex items-center space-item">
+              <text class="fa fa-wechat text-green-600 mr-3 w-8"></text>
+              <text>{{contactInfo.wechat}}</text>
+            </view>
+            <view class="flex items-center">
+              <text class="fa fa-map-marker text-blue-600 mr-3 w-8"></text>
+              <text>{{contactInfo.address}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <!-- 社交媒体 -->
+      <view class="bg-white p-4 border-b border-gray-100">
+        <view class="flex items-center justify-between">
+          <view class="text-sm font-semibold text-gray-700 flex items-center">对外媒体</view>
+          <view class="flex items-center space-x-2">
+            <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showSocialMediaEditModal">
+              <text class="fa fa-plus mr-1.5"></text>
+              添加
+            </view>
+          </view>
+        </view>
+        <view class="mt-3">
+          <view class="space-y-1 text-sm text-gray-600" wx:if="{{socialMediaList.length > 0}}">
+            <view class="flex items-center justify-between py-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
+              <view class="flex items-center">
+                <!-- <text class="fa fa-{{item.icon}} {{item.iconColor}} mr-3"></text> -->
+                <text class="mr-5">{{item.name}}</text>
+                <text class="text-gray-500">@{{item.username}}</text>
+              </view>
+              <view class="flex items-center">
+                <view class="mr-3 text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="copySocialMedia" data-url="{{item.url}}">
+                  <!-- <text class="fa fa-plus mr-1.5"></text> -->
+                  复制链接
+                </view>
+                <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="editSocialMedia" data-id="{{item.id}}">
+                  <text class="fa fa-edit mr-1.5"></text>
+                  编辑
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="text-center text-gray-400 py-4" wx:else>暂无媒体信息，点击添加</view>
+        </view>
       </view>
     </view>
     <!-- 悬浮分享按钮 -->
-    <view class="px-4 pb-2 mt-6">
-      <view class="max-w-md mx-auto">
-        <view class="flex">
-          <view class="w-full btn-brand-purple py-3 rounded-xl text-base font-bold shadow-lg flex items-center justify-center" bindtap="openShare">
-            <text class="fa fa-share mr-2"></text>
-            分享名片
-          </view>
-        </view>
-      </view>
+    <view class="share-btn2">
+      <button class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="openShare">
+        <text class="fa fa-paper-plane mr-4"></text>
+        分享名片
+      </button>
     </view>
   </view>
   <!-- 个人资料编辑模态框 -->
