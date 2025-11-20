@@ -378,7 +378,8 @@ App({
           const { userID, userSig, SDKAppID } = config
           this.saveIMConfig(userID, userSig, SDKAppID)
           
-          // 使用新的IM管理器
+          // 使用新的IM管理器 - 强制踢出其他设备
+          console.log('🚪 强制踢出其他设备，初始化IM...')
           return imManager.initialize(userID, userSig, SDKAppID)
         } else {
           throw new Error('IM配置参数不完整')
@@ -389,7 +390,7 @@ App({
     }).then(() => {
       // 更新globalData状态以保持兼容性
       this.globalData.isTUIKitInitialized = true
-      console.log('IM初始化完成')
+      console.log('IM初始化完成，已强制踢出其他设备')
     }).catch(error => {
       console.error('获取IM配置失败:', error)
       throw error

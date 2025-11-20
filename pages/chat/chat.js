@@ -34,7 +34,7 @@ Page({
       console.error('用户未登录');
       // 跳转到登录页面
       setTimeout(() => {
-        wx.navigateTo({
+        wx.reLaunch({
           url: '/pages/login/login'
         });
       }, 1500);
@@ -83,7 +83,7 @@ Page({
         icon: 'none'
       });
       setTimeout(() => {
-        wx.navigateTo({
+        wx.reLaunch({
           url: '/pages/login/login'
         });
       }, 1500);
@@ -103,7 +103,7 @@ Page({
         icon: 'none'
       });
       setTimeout(() => {
-        wx.navigateTo({
+        wx.reLaunch({
           url: '/pages/login/login'
         });
       }, 1500);
@@ -140,7 +140,7 @@ Page({
             icon: 'none'
           });
           setTimeout(() => {
-            wx.navigateTo({
+            wx.reLaunch({
               url: '/pages/login/login'
             });
           }, 1500);
@@ -151,7 +151,7 @@ Page({
           });
           // 初始化失败时跳转到登录页面
           setTimeout(() => {
-            wx.navigateTo({
+            wx.reLaunch({
               url: '/pages/login/login'
             });
           }, 1500);
@@ -186,7 +186,7 @@ Page({
       console.error('设置IM事件监听失败:', error);
     }
     
-    // 监听imManager的事件
+      // 监听imManager的事件
     try {
       // 监听登录状态变化
       imManager.addEventListener('LOGIN_STATUS_CHANGED', (data) => {
@@ -195,36 +195,37 @@ Page({
         if (!data.isLoggedIn) {
           console.log('⚠️ 用户被踢出或连接断开');
           
-          // 显示提示
+          // 显示更明确的提示信息
           if (data.reason === 'KICKED_OUT') {
-            wx.showToast({
-              title: '账号在其他设备登录',
-              icon: 'none',
-              duration: 3000
+            wx.showModal({
+              title: '登录提示',
+              content: '您的账号已在其他设备登录，当前设备已自动下线。如需继续使用，请重新登录。',
+              showCancel: false,
+              confirmText: '我知道了',
+              success: () => {
+                // 清理本地状态并跳转到登录页
+                this.handleKickedOut();
+              }
             });
           } else if (data.reason === 'SDK_NOT_READY') {
             wx.showToast({
-              title: 'IM连接断开',
+              title: 'IM连接断开，正在重新连接...',
               icon: 'none',
               duration: 2000
             });
+            
+            // 延迟后重新初始化
+            setTimeout(() => {
+              this.reinitializeIM();
+            }, 2000);
           }
-          
-          // 延迟后重新初始化
-          setTimeout(() => {
-            this.reinitializeIM();
-          }, 2000);
         }
       });
       
       // 监听被踢出事件
       imManager.addEventListener('KICKED_OUT', (event) => {
         console.log('🚫 收到被踢出事件:', event);
-        wx.showToast({
-          title: '账号在其他设备登录，正在重新连接...',
-          icon: 'none',
-          duration: 3000
-        });
+        // 这个事件会被LOGIN_STATUS_CHANGED处理，这里只记录日志
       });
       
       // 监听SDK_NOT_READY事件
@@ -1752,5 +1753,34 @@ Page({
         icon: 'none'
       });
     });
+  },
+
+  // 处理被踢出登录
+  handleKickedOut: function() {
+    console.log('🚪 处理用户被踢出登录');
+    
+    // 清理本地状态
+    try {
+      const app = getApp();
+      if (app && app.logout) {
+        app.logout();
+      }
+    } catch (error) {
+      console.error('清理登录状态失败:', error);
+    }
+    
+    // 清理IM状态
+    try {
+      imManager.logout();
+    } catch (error) {
+      console.error('清理IM状态失败:', error);
+    }
+    
+    // 跳转到登录页面
+    setTimeout(() => {
+      wx.reLaunch({
+        url: '/pages/login/login'
+      });
+    }, 500);
   }
 })

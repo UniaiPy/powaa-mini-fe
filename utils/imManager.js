@@ -124,14 +124,14 @@ class IMManager {
       // 等待一小段时间确保事件监听器设置完成
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // 登录IM
-      console.log('🔐 开始登录IM...');
+      // 登录IM - 强制踢出其他设备
+      console.log('🔐 开始登录IM（强制踢出模式）...');
       await wx.$TUIKit.login({
         userID: userID,
         userSig: userSig
       });
       
-      console.log('IM登录方法调用成功');
+      console.log('IM登录方法调用成功，已踢出其他设备');
       
       // 更新状态
       this.isInitialized = true;

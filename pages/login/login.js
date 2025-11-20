@@ -20,12 +20,31 @@ Page({
 
   // 检查登录状态
   checkLoginStatus: function() {
-    const token = wx.getStorageSync('token')
-    if (token) {
-      // 已登录，跳转到聊天页面
-      wx.switchTab({
-        url: '/pages/chat/chat'
-      })
+    // 使用app.js的统一登录状态检查
+    const isLoggedIn = app.isLoggedIn()
+    
+    if (isLoggedIn) {
+      // 额外检查用户信息完整性
+      const userInfo = app.globalData.userInfo
+      const isUserInfoComplete = userInfo && 
+                                userInfo.nickname && 
+                                userInfo.phone_number;
+      
+      if (isUserInfoComplete) {
+        // 已登录且信息完整，跳转到聊天页面
+        console.log('用户已登录且信息完整，跳转到聊天页面')
+        wx.switchTab({
+          url: '/pages/chat/chat'
+        })
+      } else {
+        // 已登录但信息不完整，跳转到个人资料页面
+        console.log('用户已登录但信息不完整，跳转到个人资料页面')
+        wx.switchTab({
+          url: '/pages/profile/profile'
+        })
+      }
+    } else {
+      console.log('用户未登录，停留在登录页面')
     }
   },
 
