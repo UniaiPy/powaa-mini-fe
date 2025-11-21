@@ -356,7 +356,8 @@ Page({
     // 同步更新IM中的用户信息
     this.syncProfileToIM({
       nickname: tempNickname,
-      avatarUrl: tempAvatarUrl || updateData.avatarUrl
+      avatarUrl: tempAvatarUrl || updateData.avatarUrl,
+      tempAvatarKey: tempAvatarKey || ''
     })
     
     this.setData({
@@ -399,8 +400,8 @@ Page({
         imUpdateData.nick = profileData.nickname
       }
       
-      if (profileData.avatarUrl) {
-        imUpdateData.avatar = profileData.avatarUrl
+      if (profileData.tempAvatarKey) {
+        imUpdateData.avatar = profileData.tempAvatarKey
       }
       
       if (profileData.selfSignature) {

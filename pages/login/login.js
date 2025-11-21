@@ -105,7 +105,7 @@ Page({
                 }, 1500)
               } else {
                 // 老用户，直接跳转到聊天页面
-                 console.log('新用户')
+                 console.log('老用户')
                 wx.switchTab({
                   url: '/pages/chat/chat'
                 })

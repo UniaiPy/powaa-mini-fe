@@ -74,7 +74,7 @@ Page({
       title: '初始化IM中...',
     });
     
-    // 检查是否有必要的用户信息
+    // // 检查是否有必要的用户信息
     if (!app.globalData.userInfo || !app.globalData.userInfo.userId) {
       console.error('缺少必要的用户信息');
       wx.hideLoading();
