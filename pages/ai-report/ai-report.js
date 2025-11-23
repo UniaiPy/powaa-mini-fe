@@ -5,25 +5,109 @@ Page({
    */
   data: {
     reportTime: '',
-    unreadCount: 0
+    unreadCount: 0,
+    // 报告数据
+    reportData: null,
+    isLoading: true,
+    error: null
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    this.setReportTime();
-    this.updateUnreadCount();
+    // 从后端获取AI报告数据
+    this.fetchAIReportData();
   },
 
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
   onReady: function () {
-    // 延迟初始化雷达图，确保Canvas已经渲染完成
-    setTimeout(() => {
+    // 当数据加载完成后再初始化雷达图
+    if (this.data.reportData && !this.data.isLoading) {
       this.initializeRadarChart();
-    }, 300);
+    }
+  },
+
+  /**
+   * 从后端获取AI报告数据
+   */
+  fetchAIReportData: function() {
+    const that = this;
+    const app = getApp();
+    
+    wx.showLoading({
+      title: '加载报告中...',
+    });
+
+    app.request({
+      url: '/api/ai-avatars', // 使用相对路径，app会自动拼接baseUrl
+      method: 'GET',
+      success: function(res) {
+        console.log('AI报告数据获取成功:', res);
+        that.setData({
+          reportData: res,
+          reportTime: res.reportTime || that.formatCurrentTime(),
+          isLoading: false
+        });
+        // 数据加载完成后初始化雷达图
+        that.initializeRadarChart();
+      },
+      fail: function(error) {
+        console.error('获取AI报告失败:', error);
+        that.handleReportError('获取报告数据失败');
+      },
+      complete: function() {
+        wx.hideLoading();
+      }
+    });
+  },
+
+  /**
+   * 处理报告加载错误
+   */
+  handleReportError: function(errorMsg) {
+    this.setData({
+      error: errorMsg,
+      isLoading: false,
+      reportTime: this.formatCurrentTime(),
+      // 使用默认数据，确保页面能够显示，与后端格式保持一致
+      reportData: {
+        personality_labels: ['开放性', '尽责性', '外向性', '亲和性', '情绪稳定性', '参与度', '社交动机', '质量导向', '情感共鸣'],
+        personality_scores: [50, 50, 50, 50, 50, 50, 50, 50, 50],
+        personality_traits: [
+          {name: '开放性', description: 'AI分析中...', score: 50},
+          {name: '尽责性', description: 'AI分析中...', score: 50},
+          {name: '外向性', description: 'AI分析中...', score: 50},
+          {name: '亲和性', description: 'AI分析中...', score: 50},
+          {name: '情绪稳定性', description: 'AI分析中...', score: 50},
+          {name: '参与度', description: 'AI分析中...', score: 50},
+          {name: '社交动机', description: 'AI分析中...', score: 50},
+          {name: '质量导向', description: 'AI分析中...', score: 50},
+          {name: '情感共鸣', description: 'AI分析中...', score: 50}
+        ],
+        analysis_sources: [
+          {title: '分析处理中', description: '系统正在收集和分析您的AI分身数据'}
+        ]
+      }
+    });
+    // 仍然尝试绘制雷达图，使用默认数据
+    this.initializeRadarChart();
+  },
+
+  /**
+   * 格式化当前时间
+   */
+  formatCurrentTime: function() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   },
 
   /**
@@ -49,9 +133,13 @@ Page({
         // 设置绘制比例
         ctx.scale(dpr, dpr);
         
-        // 雷达图数据
-        const labels = ['开放性', '尽责性', '外向性', '宜人性', '情绪稳定', '连接动因', '表达风格', '互动偏好', '成长导向'];
-        const data = [89, 92, 85, 88, 91, 83, 87, 79, 86];
+        // 雷达图数据 - 使用后端返回的标签和数据
+        const labels = this.data.reportData && this.data.reportData.personality_labels 
+          ? this.data.reportData.personality_labels 
+          : ['开放性', '尽责性', '外向性', '亲和性', '情绪稳定性', '参与度', '社交动机', '质量导向', '情感共鸣'];
+        const data = this.data.reportData && this.data.reportData.personality_scores 
+          ? this.data.reportData.personality_scores 
+          : [50, 50, 50, 50, 50, 50, 50, 50, 50];
         const colors = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#06B6D4', '#10B981'];
         
         const centerX = width / 2;
@@ -69,7 +157,11 @@ Page({
    * 绘制雷达图
    */
   drawRadarChart: function (ctx, centerX, centerY, radius, labels, data, colors) {
-    const angleStep = (2 * Math.PI) / labels.length;
+    // 优先使用后端数据标签，如果没有则使用与initializeRadarChart一致的默认标签
+    const personalityLabels = this.data.reportData && this.data.reportData.personality_labels 
+      ? this.data.reportData.personality_labels 
+      : (labels && labels.length > 0 ? labels : ['开放性', '尽责性', '外向性', '亲和性', '情绪稳定性', '参与度', '社交动机', '质量导向', '情感共鸣']);
+    const angleStep = (2 * Math.PI) / personalityLabels.length;
     const levels = 4; // 网格层数
 
     // 绘制背景网格
@@ -159,32 +251,17 @@ Page({
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#374151';
     
-    for (let i = 0; i < labels.length; i++) {
+    for (let i = 0; i < personalityLabels.length; i++) {
       const angle = -Math.PI / 2 + i * angleStep;
       const labelRadius = radius + 20;
       const x = centerX + Math.cos(angle) * labelRadius;
       const y = centerY + Math.sin(angle) * labelRadius;
       
-      ctx.fillText(labels[i], x, y);
+      ctx.fillText(personalityLabels[i], x, y);
     }
   },
 
-  /**
-   * 设置报告生成时间
-   */
-  setReportTime: function () {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    
-    const timeString = `${year}-${month}-${day} ${hours}:${minutes}`;
-    this.setData({
-      reportTime: timeString
-    });
-  },
+  // 设置报告生成时间的方法已被formatCurrentTime替代
 
   /**
    * 更新未读消息数量
