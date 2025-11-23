@@ -11,7 +11,10 @@ Page({
     showChatModal: false,     // 是否显示聊天弹窗
     showToast: false,         // 是否显示提示
     toastMessage: '',         // 提示消息
-    greetingMessage: '你好，很高兴认识你！' // 打招呼消息
+    greetingMessage: '你好，很高兴认识你！', // 打招呼消息
+    matchDegreeContent: '',   // 匹配度说明内容
+    isLoadingMatchDegree: false, // 是否正在加载匹配度说明
+    matchDegreeCache: {}      // 匹配度缓存
   },
 
   /**
@@ -109,18 +112,253 @@ Page({
   /**
    * 显示匹配度说明
    */
+  /**
+   * 显示匹配度说明
+   * 点击时调用匹配度分析接口，使用流式输出
+   */
   showMatchDegree: function() {
+    const app = getApp();
+    const userId = String(app.globalData.userInfo?.id || '');
+    const targetUserId = String(this.data.userId || '');
+    
+    if (!userId || !targetUserId) {
+      this.showToast('用户信息不完整');
+      return;
+    }
+    
+    // 生成缓存键
+    const cacheKey = `${userId}_${targetUserId}`;
+    
+    // 检查是否有缓存数据且未过期
+    const cachedData = this.getCachedMatchDegree(cacheKey);
+    if (cachedData) {
+      this.setData({
+        showMatchDegreeModal: true,
+        matchDegreeContent: cachedData.content
+      });
+      return;
+    }
+    
+    // 设置初始状态
     this.setData({
-      showMatchDegreeModal: true
+      showMatchDegreeModal: true,
+      matchDegreeContent: '',
+      isLoadingMatchDegree: true
     });
+    
+    // 调用匹配度分析接口
+    this.fetchMatchDegree(userId, targetUserId, cacheKey);
+  },
+  
+  /**
+   * 获取匹配度分析结果
+   * 使用SSE流式获取数据
+   */
+  fetchMatchDegree: function(userId, targetUserId, cacheKey) {
+    const app = getApp();
+    const baseUrl = 'http://ai.powaa.cn';
+    const url = `${baseUrl}/ai/match/compare`;
+    let content = '';
+    let isDone = false;
+    let pollCount = 0;
+    const maxPollCount = 200; // 最大轮询次数，防止无限循环
+    
+    const requestData = {
+      userId: userId,
+      targetUserId: targetUserId
+    };
+    
+    // 优化的SSE模拟轮询函数
+    const mockSSE = () => {
+      // 防止无限轮询
+      if (isDone || pollCount >= maxPollCount) {
+        console.log('轮询结束，状态:', isDone ? '完成' : '达到最大轮询次数');
+        // 如果达到最大轮询次数但还未完成，强制停止加载状态
+        if (pollCount >= maxPollCount) {
+          this.setData({ isLoadingMatchDegree: false });
+          // 如果获取到了部分内容，保存缓存
+          if (content) {
+            this.cacheMatchDegree(cacheKey, content);
+          } else {
+            // 如果没有任何内容，显示默认文本
+            const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
+            this.setData({ matchDegreeContent: defaultContent });
+          }
+        }
+        return;
+      }
+      
+      pollCount++;
+      console.log(`第${pollCount}次轮询请求`);
+      
+      wx.request({
+        url: url,
+        method: 'POST',
+        data: requestData,
+        header: {
+          'content-type': 'application/json',
+          'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : '',
+          'Accept': 'text/event-stream' // 添加SSE接受头
+        },
+        success: (res) => {
+          console.log(`第${pollCount}次轮询响应:`, res);
+          
+          // 处理不同类型的响应格式
+          if (res.data) {
+            // 1. 尝试直接作为JSON对象处理
+            if (typeof res.data === 'object') {
+              handleResponseData(res.data);
+            }
+            // 2. 尝试作为字符串处理
+            else if (typeof res.data === 'string') {
+              // 先尝试直接解析为JSON
+              try {
+                const jsonData = JSON.parse(res.data);
+                handleResponseData(jsonData);
+              } catch (e) {
+                // 如果不是纯JSON，按SSE格式处理
+                const lines = res.data.split('\n');
+                lines.forEach(line => {
+                  // 跳过空行
+                  if (!line.trim()) return;
+                  
+                  // 标准SSE格式处理
+                  if (line.startsWith('data:')) {
+                    const dataStr = line.substring(5).trim();
+                    try {
+                      const data = JSON.parse(dataStr);
+                      handleResponseData(data);
+                    } catch (e) {
+                      console.error('解析SSE data行失败:', e, '行内容:', line);
+                    }
+                  }
+                  // 非标准格式，尝试直接解析整行
+                  else {
+                    try {
+                      const data = JSON.parse(line);
+                      handleResponseData(data);
+                    } catch (e) {
+                      // 如果都解析失败，记录但不中断
+                      console.error('解析非标准行失败:', e, '行内容:', line);
+                    }
+                  }
+                });
+              }
+            }
+          }
+        },
+        fail: (error) => {
+          console.error(`第${pollCount}次轮询失败:`, error);
+          // 请求失败时也继续轮询几次，可能是网络波动
+          if (pollCount < maxPollCount / 2) {
+            setTimeout(mockSSE, 500); // 失败时延长间隔
+          } else {
+            // 失败次数过多，停止轮询
+            isDone = true;
+            this.setData({ isLoadingMatchDegree: false });
+            this.showToast('获取匹配度说明失败，请稍后重试');
+          }
+        },
+        complete: () => {
+          // 只有在未完成时才继续轮询
+          if (!isDone && pollCount < maxPollCount) {
+            setTimeout(mockSSE, 200); // 调整轮询间隔
+          }
+        }
+      });
+    };
+    
+    // 统一处理响应数据的函数
+    const handleResponseData = (data) => {
+      console.log('处理响应数据:', data);
+      
+      // 检查是否有content字段
+      if (data.content && typeof data.content === 'string') {
+        content += data.content;
+        this.setData({ matchDegreeContent: content });
+      }
+      // 检查是否有complete或done标志
+      if (data.done || data.complete || data.finished) {
+        isDone = true;
+        this.setData({ isLoadingMatchDegree: false });
+        // 保存缓存
+        if (content) {
+          this.cacheMatchDegree(cacheKey, content);
+        }
+      }
+    };
+    
+    // 启动轮询
+    mockSSE();
+  },
+  
+  /**
+   * 缓存匹配度结果
+   */
+  cacheMatchDegree: function(cacheKey, content) {
+    try {
+      const cacheData = {
+        content: content,
+        timestamp: Date.now()
+      };
+      
+      // 更新内存缓存
+      const cache = this.data.matchDegreeCache;
+      cache[cacheKey] = cacheData;
+      this.setData({ matchDegreeCache: cache });
+      
+      // 保存到本地存储
+      wx.setStorageSync('matchDegreeCache', cache);
+    } catch (e) {
+      console.error('缓存匹配度结果失败:', e);
+    }
+  },
+  
+  /**
+   * 获取缓存的匹配度结果
+   */
+  getCachedMatchDegree: function(cacheKey) {
+    try {
+      // 先从内存缓存获取
+      const memoryCache = this.data.matchDegreeCache;
+      if (memoryCache[cacheKey]) {
+        const cachedTime = memoryCache[cacheKey].timestamp;
+        // 缓存有效期为30分钟
+        if (Date.now() - cachedTime < 30 * 60 * 1000) {
+          return memoryCache[cacheKey];
+        }
+      }
+      
+      // 从本地存储获取
+      const storageCache = wx.getStorageSync('matchDegreeCache') || {};
+      if (storageCache[cacheKey]) {
+        const cachedTime = storageCache[cacheKey].timestamp;
+        // 缓存有效期为30分钟
+        if (Date.now() - cachedTime < 30 * 60 * 1000) {
+          // 更新内存缓存
+          const cache = this.data.matchDegreeCache;
+          cache[cacheKey] = storageCache[cacheKey];
+          this.setData({ matchDegreeCache: cache });
+          return storageCache[cacheKey];
+        }
+      }
+    } catch (e) {
+      console.error('获取缓存匹配度失败:', e);
+    }
+    return null;
   },
 
   /**
    * 关闭匹配度说明弹窗
    */
+  /**
+   * 关闭匹配度说明弹窗
+   */
   closeMatchDegree: function() {
     this.setData({
-      showMatchDegreeModal: false
+      showMatchDegreeModal: false,
+      isLoadingMatchDegree: false
+      // 保留matchDegreeContent以便下次快速显示缓存内容
     });
   },
 
