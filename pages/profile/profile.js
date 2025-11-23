@@ -164,7 +164,7 @@ Page({
           // 更新用户基本信息
           if (profileData.userInfo) {
             updateData.userInfo = {
-              name: profileData.userInfo.name || '用户',
+              name: profileData.userInfo.name || '请编辑您的用户名',
               aiStatus: profileData.userInfo.aiStatus || '在线',
               description: profileData.userInfo.description || ''
             }
@@ -342,6 +342,7 @@ Page({
     const app = getApp()
     if (app.globalData.userInfo) {
       app.globalData.userInfo.nickname = tempNickname || app.globalData.userInfo.nickname
+      wx.setStorageSync('userInfo', app.globalData.userInfo)
       if (updateData.avatarUrl) {
         app.globalData.userInfo.avatar_url = updateData.avatarUrl
       }
@@ -1252,7 +1253,11 @@ Page({
    * 打开预览
    */
   openPreview() {
-    const app = getApp()
+    const app = getApp();
+    // 用户名片信息不完整时，点击无效
+    if (!app.checkUserInfoComplete()) {
+      return
+    }
     const userId = app.globalData.userInfo.id;
     // const userId = 7;
     wx.navigateTo({
@@ -1263,6 +1268,11 @@ Page({
    * 打开分享
    */
   openShare() {
+    const app = getApp();
+    // 用户名片信息不完整时，点击无效
+    if (!app.checkUserInfoComplete()) {
+      return
+    }
     wx.navigateTo({
       url: '/pages/share/share'
     })
@@ -1272,7 +1282,11 @@ Page({
    * 用户点击右上角分享
    */
   onShareAppMessage() {
-    const app = getApp()
+    const app = getApp();
+    // 用户名片信息不完整时，点击无效
+    if (!app.checkUserInfoComplete()) {
+      return
+    }
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
@@ -1281,7 +1295,11 @@ Page({
     }
   },
   onShareTimeline() {
-    const app = getApp()
+    const app = getApp();
+    // 用户名片信息不完整时，点击无效
+    if (!app.checkUserInfoComplete()) {
+      return
+    }
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,

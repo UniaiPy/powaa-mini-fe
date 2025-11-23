@@ -14,7 +14,11 @@ Page({
     searchText: '',
     showSearchResults: false,
     searchResults: [],
-    isImInitialized: false // IM初始化状态
+    isImInitialized: false, // IM初始化状态
+    lastRefreshTime: 0, // 上次刷新时间
+    MIN_REFRESH_INTERVAL: 5000, // 最小刷新间隔（毫秒）
+    avatarUrlCache: {}, // 头像URL缓存
+    CACHE_EXPIRY_TIME: 30 * 60 * 1000 // 缓存过期时间（30分钟）
   },
 
   /**
@@ -62,6 +66,146 @@ Page({
       console.log('⏳ IM未完全初始化，开始初始化流程');
       // 主动触发IM初始化
       this.initIMWithManager();
+    }
+  },
+  
+  // 增量更新会话信息（避免频繁全量刷新）
+  refreshConversationUpdates: function() {
+    const app = getApp();
+    if (!app.globalData.isTUIKitInitialized || !wx.$TUIKit) {
+      return;
+    }
+    
+    console.log('🔄 执行会话增量更新');
+    
+    // 获取会话列表的增量更新
+    wx.$TUIKit.getConversationList({ count: 10, offset: 0 }, (imError, data) => {
+      if (imError) {
+        console.error('获取会话增量更新失败:', imError);
+        return;
+      }
+      
+      if (data.conversationList && data.conversationList.length > 0) {
+        // 只更新关键信息，如未读消息数、最新消息内容等
+        this._updateConversationLastMessageAndUnread(data.conversationList);
+      }
+    });
+    
+    // 检查是否有新的好友请求
+    this._checkForNewFriendRequests();
+  },
+  
+  // 更新会话列表中的最新消息和未读数
+  _updateConversationLastMessageAndUnread: function(newConversations) {
+    const contactsList = [...this.data.contactsList];
+    let hasUpdates = false;
+    
+    newConversations.forEach(newConv => {
+      // 只处理C2C类型会话
+      if (newConv.type === 1) { // C2C类型
+        const index = contactsList.findIndex(contact => {
+          return contact.id === newConv.userID;
+        });
+        
+        if (index !== -1) {
+          // 检查是否需要更新
+          const shouldUpdateUnread = contactsList[index].unreadCount !== newConv.unreadCount;
+          const shouldUpdateMessage = !contactsList[index].lastMessage || 
+                                     contactsList[index].lastMessage.msgTime !== newConv.lastMessage.msgTime ||
+                                     contactsList[index].lastMessage.msgID !== newConv.lastMessage.msgID;
+          
+          if (shouldUpdateUnread || shouldUpdateMessage) {
+            // 只更新变化的字段
+            if (shouldUpdateUnread) {
+              contactsList[index].unreadCount = newConv.unreadCount;
+              hasUpdates = true;
+            }
+            
+            if (shouldUpdateMessage) {
+              contactsList[index].lastMessage = newConv.lastMessage;
+              contactsList[index].lastMessageTime = newConv.lastMessage.msgTime;
+              hasUpdates = true;
+            }
+          }
+        }
+      }
+    });
+    
+    // 如果有更新，应用到数据中
+    if (hasUpdates) {
+      console.log('🔄 更新了会话信息');
+      this.setData({
+        contactsList
+      });
+    }
+  },
+  
+  // 检查是否有新的好友请求
+  _checkForNewFriendRequests: function() {
+    console.log('🔍 开始检查新的好友请求...');
+    
+    try {
+      // 检查TUIKit是否初始化
+      if (!wx.$TUIKit) {
+        console.log('📦 TUIKit未初始化，跳过新好友请求检查');
+        return;
+      }
+
+      // 使用TUIKit API获取好友申请列表，与loadFriendRequests保持一致
+      wx.$TUIKit.getFriendApplicationList().then((friendApplicationList) => {
+        console.log('📬 获取好友申请列表成功');
+
+        if (friendApplicationList.code === 0) {
+          // 解析数据结构，复用loadFriendRequests中的逻辑
+          let applications = [];
+          
+          if (friendApplicationList.data) {
+            if (Array.isArray(friendApplicationList.data)) {
+              applications = friendApplicationList.data;
+            } else if (friendApplicationList.data.friendApplicationList && Array.isArray(friendApplicationList.data.friendApplicationList)) {
+              applications = friendApplicationList.data.friendApplicationList;
+            } else if (friendApplicationList.data.applicationList && Array.isArray(friendApplicationList.data.applicationList)) {
+              applications = friendApplicationList.data.applicationList;
+            }
+          } else if (friendApplicationList.friendApplicationList && Array.isArray(friendApplicationList.friendApplicationList)) {
+            applications = friendApplicationList.friendApplicationList;
+          }
+          
+          // 只处理发送给我的申请
+          const sentToMeApps = applications.filter(app => {
+            const isSentToMe = app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME ||
+                              app.type === 'SNS_APPLICATION_SENT_TO_ME' ||
+                              app.type === 1; // 有可能是数字类型
+            return isSentToMe;
+          });
+          
+          // 检查是否有新的请求
+          const currentIds = new Set(this.data.pendingList.map(pending => pending.id));
+          const newRequestIds = new Set(sentToMeApps.map(app => app.userID).filter(id => id));
+          
+          // 找出新的请求ID
+          let hasNewRequests = false;
+          for (let id of newRequestIds) {
+            if (!currentIds.has(id)) {
+              hasNewRequests = true;
+              console.log('🔄 发现新的好友请求，ID:', id);
+              break;
+            }
+          }
+          
+          if (hasNewRequests) {
+            console.log('🔄 发现新的好友请求，刷新列表');
+            // 如果有新请求，重新加载好友请求列表
+            this.loadFriendRequests();
+          }
+        } else {
+          console.error('❌ 获取好友申请列表失败:', friendApplicationList);
+        }
+      }).catch((error) => {
+        console.error('❌ 检查新好友请求失败:', error);
+      });
+    } catch (error) {
+      console.error('❌ 检查新好友请求异常:', error);
     }
   },
   
@@ -780,25 +924,73 @@ Page({
   // 批量获取头像预签名URL（优化性能）
   batchGetAvatarUrls: function(userList, type) {
     const app = getApp();
+    const now = Date.now();
     
     // 收集所有需要获取临时URL的头像
     const avatarRequests = [];
+    const cachedRequests = [];
+    const expiredCache = [];
+    
     userList.forEach((user, index) => {
       // 使用originalAvatar字段来获取原始头像地址
       const originalAvatar = user.originalAvatar || user.avatar;
       if (originalAvatar && !originalAvatar.startsWith('http://')
          && !originalAvatar.startsWith('https://')
          && originalAvatar !== '/images/ai.png') {
-        avatarRequests.push({
-          key: originalAvatar,
-          index: index,
-          userId: user.id || user.userId
-        });
+        
+        // 检查缓存
+        const cachedItem = this.data.avatarUrlCache[originalAvatar];
+        if (cachedItem && (now - cachedItem.timestamp) < this.data.CACHE_EXPIRY_TIME) {
+          // 使用缓存
+          cachedRequests.push({
+            key: originalAvatar,
+            url: cachedItem.url,
+            index: index,
+            userId: user.id || user.userId
+          });
+        } else {
+          // 需要请求新URL
+          avatarRequests.push({
+            key: originalAvatar,
+            index: index,
+            userId: user.id || user.userId
+          });
+          // 记录过期缓存
+          if (cachedItem) {
+            expiredCache.push(originalAvatar);
+          }
+        }
       }
     });
     
+    // 先应用缓存的URL
+    if (cachedRequests.length > 0) {
+      console.log(`🖼️  使用缓存的头像URL: ${cachedRequests.length}个`);
+      cachedRequests.forEach(request => {
+        const updatePath = type === 1 
+          ? `contactsList[${request.index}].avatar`
+          : `pendingList[${request.index}].avatar`;
+        
+        this.setData({
+          [updatePath]: request.url
+        });
+      });
+    }
+    
+    // 如果所有请求都命中缓存，则直接返回
     if (avatarRequests.length === 0) {
       return Promise.resolve();
+    }
+    
+    // 清理过期缓存
+    if (expiredCache.length > 0) {
+      const updatedCache = { ...this.data.avatarUrlCache };
+      expiredCache.forEach(key => {
+        delete updatedCache[key];
+      });
+      this.setData({
+        avatarUrlCache: updatedCache
+      });
     }
     
     console.log(`批量获取${avatarRequests.length}个头像的预签名URL`);
@@ -816,6 +1008,10 @@ Page({
         },
         success: (res) => {
           if (res.success && res.urls) {
+            // 更新缓存
+            const updatedCache = { ...this.data.avatarUrlCache };
+            let updatedCount = 0;
+            
             // 批量更新头像URL
             res.urls.forEach((urlInfo, index) => {
               const originalRequest = avatarRequests[index];
@@ -827,9 +1023,22 @@ Page({
                 this.setData({
                   [updatePath]: urlInfo.url
                 });
+                
+                // 更新缓存
+                updatedCache[originalRequest.key] = {
+                  url: urlInfo.url,
+                  timestamp: now
+                };
+                updatedCount++;
               }
             });
-            console.log(`成功更新${res.urls.length}个头像URL`);
+            
+            // 应用缓存更新
+            this.setData({
+              avatarUrlCache: updatedCache
+            });
+            
+            console.log(`🖼️  成功更新并缓存${updatedCount}个头像URL`);
             resolve();
           } else {
             console.warn('批量获取头像URL失败:', res.message);
@@ -859,6 +1068,28 @@ Page({
   // 获取临时头像URL（保留原方法用于降级处理）
   getTempAvatarUrl: function(avatarKey, type, userId, index) {
     const app = getApp();
+    const now = Date.now();
+    
+    // 先检查缓存
+    const cachedItem = this.data.avatarUrlCache[avatarKey];
+    if (cachedItem && (now - cachedItem.timestamp) < this.data.CACHE_EXPIRY_TIME) {
+      // 使用缓存的URL
+      console.log(`🖼️  使用缓存的单个头像URL: ${avatarKey}`);
+      if (type == 1) {
+        // 更新联系人列表中指定用户的头像URL
+        const updatePath = `contactsList[${index}].avatar`;
+        this.setData({
+          [updatePath]: cachedItem.url
+        });
+      } else {
+        // 更新待联系列表中指定用户的头像URL
+        const updatePath = `pendingList[${index}].avatar`;
+        this.setData({
+          [updatePath]: cachedItem.url
+        });
+      }
+      return;
+    }
     
     // 调用后端接口获取临时访问URL
     app.request({
@@ -870,6 +1101,18 @@ Page({
       },
       success: (res) => {
         if (res.success && res.url) {
+          // 更新缓存
+          const updatedCache = { ...this.data.avatarUrlCache };
+          updatedCache[avatarKey] = {
+            url: res.url,
+            timestamp: now
+          };
+          this.setData({
+            avatarUrlCache: updatedCache
+          });
+          
+          console.log(`🖼️  缓存单个头像URL: ${avatarKey}`);
+          
           if (type == 1) {
             // 更新联系人列表中指定用户的头像URL
             const updatePath = `contactsList[${index}].avatar`;
@@ -954,22 +1197,41 @@ Page({
       app.onPageShow(this);
     }
     
-    // 每次页面显示时检查TUIKit状态并刷新数据
+    // 检查隐私设置（仅在IM初始化时检查一次）
+    if (!this.hasCheckedPrivacy) {
+      this.checkAndSetPrivacySettings();
+      this.hasCheckedPrivacy = true;
+    }
+    
+    // 添加时间间隔检查，避免频繁刷新
+    const now = Date.now();
+    
     if (app.globalData.isTUIKitInitialized && wx.$TUIKit) {
       this.setData({
         isImInitialized: true
       });
-      this.loadConversationList();
-      this.loadFriendRequests();
       
-      // 检查隐私设置（仅在IM初始化时检查一次）
-      if (!this.hasCheckedPrivacy) {
-        this.checkAndSetPrivacySettings();
-        this.hasCheckedPrivacy = true;
+      // 检查是否需要刷新数据
+      if (!this.data.lastRefreshTime || (now - this.data.lastRefreshTime) > this.data.MIN_REFRESH_INTERVAL) {
+        // 只有在需要时才加载完整数据
+        console.log('⏱️  超过刷新间隔，重新加载数据');
+        this.loadConversationList();
+        this.loadFriendRequests();
+        this.setData({
+          lastRefreshTime: now
+        });
+      } else {
+        // 否则只更新增量数据（如未读消息数）
+        console.log('⏱️  在刷新间隔内，只更新增量数据');
+        this.refreshConversationUpdates();
       }
     } else {
       // 如果没有初始化，则重新检查TUIKit状态
       this.checkTUIKitStatus();
+      // 重置刷新时间，确保下次初始化后能正常加载数据
+      this.setData({
+        lastRefreshTime: 0
+      });
     }
   },
 

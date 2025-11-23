@@ -295,29 +295,40 @@ App({
     }
   },
 
-  checkUserInfoComplete: function() {
-    const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo')
+  checkUserInfoComplete: function(options = {}) {
+    const { 
+      redirect = true, 
+      message = '请完善您的名片信息'
+    } = options;
     
-    console.log('检查用户信息完整性:', userInfo)
+    const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo');
     
-    const isUserInfoComplete = userInfo && 
-                              userInfo.nickname && 
-                              userInfo.phone_number
+    console.log('检查用户信息完整性:', userInfo);
     
-    if (!isUserInfoComplete) {
-      console.log('用户信息不完整，跳转到名片页面完善信息')
+    const checkConditions = [
+      !!userInfo,
+      !!userInfo?.nickname,
+      !!userInfo?.phone_number
+    ];
+    
+    const isUserInfoComplete = checkConditions.every(condition => condition);
+    
+    if (!isUserInfoComplete && redirect) {
+      console.log('用户信息不完整，跳转到名片页面完善信息');
       wx.showToast({
-        title: '请完善您的名片信息',
+        title: message,
         icon: 'none',
         duration: 1500
-      })
+      });
       
       setTimeout(() => {
         wx.switchTab({
           url: '/pages/profile/profile'
-        })
-      }, 1500)
+        });
+      }, 1500);
     }
+    
+    return isUserInfoComplete; // 返回检查结果供调用者使用
   },
 
   // ==================== 系统信息 ====================

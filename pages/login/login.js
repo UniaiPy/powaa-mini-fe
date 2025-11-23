@@ -25,22 +25,12 @@ Page({
     
     if (isLoggedIn) {
       // 额外检查用户信息完整性
-      const userInfo = app.globalData.userInfo
-      const isUserInfoComplete = userInfo && 
-                                userInfo.nickname && 
-                                userInfo.phone_number;
-      
+      const isUserInfoComplete = app.checkUserInfoComplete();
       if (isUserInfoComplete) {
         // 已登录且信息完整，跳转到聊天页面
         console.log('用户已登录且信息完整，跳转到聊天页面')
         wx.switchTab({
           url: '/pages/chat/chat'
-        })
-      } else {
-        // 已登录但信息不完整，跳转到个人资料页面
-        console.log('用户已登录但信息不完整，跳转到个人资料页面')
-        wx.switchTab({
-          url: '/pages/profile/profile'
         })
       }
     } else {
@@ -85,25 +75,12 @@ Page({
               this.setData({ loading: false })
               console.log('检查用户信息完整性:', userInfo)
               // 检查用户信息是否完整（头像、昵称、手机号）
-              const isUserInfoComplete = userInfo && 
-                                        userInfo.nickname && 
-                                        // userInfo.avatar_url && 
-                                        userInfo.phone_number;
+              // 调用app.js中的checkUserInfoComplete方法检查用户信息完整性
               
-              if (!isUserInfoComplete) {
-                console.log('新用户，跳转到名片页面完善信息')
-                wx.showToast({
-                  title: '请完善您的名片信息',
-                  icon: 'none',
-                  duration: 1500
-                })
-                setTimeout(() => {
-                  // 跳转到名片页面完善个人信息
-                  wx.switchTab({
-                    url: '/pages/profile/profile'
-                  })
-                }, 1500)
-              } else {
+              const isUserInfoComplete = app.checkUserInfoComplete();
+              
+              if (isUserInfoComplete) {
+              // 如果用户信息完整，继续后续流程
                 // 老用户，直接跳转到聊天页面
                  console.log('老用户')
                 wx.switchTab({

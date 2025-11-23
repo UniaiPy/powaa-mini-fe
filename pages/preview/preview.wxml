@@ -162,10 +162,10 @@
       {{toastMessage}}
     </view>
   </view>
-  <view class="share-btn2">
+  <!-- <view class="share-btn2">
     <button class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="openShare">
       <text class="fa fa-paper-plane mr-4"></text>
       分享名片
     </button>
-  </view>
+  </view> -->
 </view>
