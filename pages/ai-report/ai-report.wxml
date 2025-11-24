@@ -16,9 +16,9 @@
       <!-- 头像和昵称 -->
       <view class="text-center py-3">
         <view class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
-          <image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" mode="aspectFill" class="w-full h-full"></image>
+          <image src="{{userInfo.avatar}}" mode="aspectFill" class="w-full h-full"></image>
         </view>
-        <view class="text-base font-medium text-gray-900">李小雅</view>
+        <view class="text-base font-medium text-gray-900">{{userInfo.nickname}}</view>
       </view>
       <!-- AI分身分析 -->
       <view class="bg-white p-4 fade-in-up">

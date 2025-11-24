@@ -1,14 +1,14 @@
 <!-- pages/preview/preview.wxml -->
 <view class="page-container">
   <!-- 顶部导航 -->
-  <!-- <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
+  <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
     <view class="fixed-nav flex items-center justify-center gap-2 w-full">
       <view class="text-base font-bold text-gray-900">名片预览</view>
       <button class="cursor-pointer share-btn" open-type="share">
         <text class="fa fa-share text-black text-xl"></text>
       </button>
     </view>
-  </custom-navigation-bar> -->
+  </custom-navigation-bar>
   <!-- 主内容 -->
   <view class="content-with-fixed-nav flex-1 content-card px-3 py-3 space-y-4 relative">
     <view class="bg-white rounded-lg overflow-hidden shadow-sm">
@@ -119,12 +119,10 @@
               <view class="text-gray-600">正在分析匹配度...</view>
             </view>
           </view>
-          
           <!-- 匹配度内容 -->
           <view class="text-gray-800 text-sm leading-relaxed" wx:if="{{!isLoadingMatchDegree || matchDegreeContent !== ''}}">
             <rich-text nodes="{{matchDegreeContent || '暂无匹配度数据'}}"></rich-text>
           </view>
-          
           <!-- 加载中提示 -->
           <view class="text-gray-400 text-xs text-center mt-2" wx:if="{{isLoadingMatchDegree}}">
             正在获取更多匹配度分析内容...

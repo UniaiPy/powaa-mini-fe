@@ -5,7 +5,10 @@ Page({
   data: {
     agreeTerms: false,
     loading: false,
-    unreadCount: 0
+    unreadCount: 0,
+    showModal: false,
+    modalTitle: '',
+    modalContent: ''
   },
 
   onLoad: function (options) {
@@ -161,17 +164,61 @@ Page({
     })
   },
 
+  // 请求并显示官方文档
+  showOfficialDocument: function(id, title) {
+    const app = getApp()
+    
+    wx.showLoading({
+      title: '加载中',
+      mask: true
+    })
+    
+    app.request({
+      url: `/api/official/${id}`,
+      method: 'GET',
+      success: (response) => {
+        wx.hideLoading()
+        
+        if (response.data) {
+          this.setData({
+            modalTitle: title,
+            modalContent: response.data.content || '暂无内容',
+            showModal: true
+          })
+        } else {
+          wx.showToast({
+            title: response.error || '获取文档失败',
+            icon: 'error',
+            duration: 2000
+          })
+        }
+      },
+      fail: (error) => {
+        wx.hideLoading()
+        console.error('获取文档内容失败:', error)
+        wx.showToast({
+          title: '网络请求失败',
+          icon: 'error',
+          duration: 2000
+        })
+      }
+    })
+  },
+  
+  // 关闭自定义模态框
+  closeModal: function() {
+    this.setData({
+      showModal: false
+    })
+  },
+
   // 打开用户协议
   openUserTerms: function() {
-    wx.navigateTo({
-      url: '/pages/about/about?section=terms'
-    })
+    this.showOfficialDocument(4, '用户协议')
   },
 
   // 打开隐私政策
   openPrivacyPolicy: function() {
-    wx.navigateTo({
-      url: '/pages/about/about?section=privacy'
-    })
+    this.showOfficialDocument(5, '隐私政策')
   }
 })

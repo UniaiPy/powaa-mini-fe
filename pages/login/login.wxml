@@ -32,4 +32,19 @@
   </view>
   <!-- 底部导航栏组件 -->
   <bottom-nav unread-count="{{unreadCount}}" />
+  <!-- 自定义模态框 -->
+  <view class="modal-container" wx:if="{{showModal}}">
+    <view class="modal-overlay" bindtap="closeModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">{{modalTitle}}</text>
+        <text class="modal-close" bindtap="closeModal">×</text>
+      </view>
+      <view class="modal-body">
+        <scroll-view scroll-y="true" class="modal-scroll">
+          <rich-text nodes="{{modalContent}}"></rich-text>
+        </scroll-view>
+      </view>
+    </view>
+  </view>
 </view>

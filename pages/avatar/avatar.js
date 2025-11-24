@@ -416,6 +416,8 @@ Page({
       this.setData({
         refreshing: false
       });
+      // 通知微信小程序框架下拉刷新已完成
+      wx.stopPullDownRefresh();
     }
   },
 
@@ -3002,12 +3004,13 @@ Page({
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */
-  onPullDownRefresh() {
-    // 可以在这里实现加载历史消息的逻辑
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
-  },
+  // onPullDownRefresh() {
+  //   console.log('下拉刷新');
+  //   // 可以在这里实现加载历史消息的逻辑
+  //   setTimeout(() => {
+  //     wx.stopPullDownRefresh();
+  //   }, 1000);
+  // },
 
   /**
    * 页面上拉触底事件的处理函数

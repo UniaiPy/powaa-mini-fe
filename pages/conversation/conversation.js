@@ -488,10 +488,6 @@ Page({
     try {
       if (this.data.isCompleted || !this.data.conversationID) {
         console.log('没有更多消息或没有会话ID，停止加载');
-        wx.showToast({
-          title: '没有更多历史消息',
-          icon: 'none'
-        });
         return;
       }
 

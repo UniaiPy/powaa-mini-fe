@@ -751,7 +751,7 @@ Page({
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/pages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: '/images/ai.png'
+      imageUrl: this.data.avatarUrl
     }
   },
   onShareTimeline() {
@@ -760,7 +760,7 @@ Page({
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/pages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: '/images/ai.png'
+      imageUrl: this.data.avatarUrl
     }
   }
 })

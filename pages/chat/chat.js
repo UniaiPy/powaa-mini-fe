@@ -1,5 +1,5 @@
 // pages/chat/chat.js
-import imManager from '../../utils/imManager.js'
+import imManager from '../../utils/imManager.js';
 
 Page({
 
@@ -31,42 +31,99 @@ Page({
   
   // 检查TUIKit状态 - 重新设计使用imManager
   checkTUIKitStatus: function() {
-    const app = getApp()
+    console.log('🔍 开始检查TUIKit状态...');
     
-    // 检查是否已登录
-    if (!app.globalData.token || !app.globalData.userInfo) {
-      console.error('用户未登录');
-      // 跳转到登录页面
-      setTimeout(() => {
+    try {
+      // 检查应用实例是否存在
+      const app = getApp();
+      if (!app || !app.globalData) {
+        console.error('❌ 应用实例不可用');
+        this.handleAppError('应用实例不可用');
+        return;
+      }
+      
+      // 检查是否已登录
+      if (!app.globalData.token || !app.globalData.userInfo) {
+        console.error('❌ 用户未登录或信息不完整', {
+          hasToken: !!app.globalData.token,
+          hasUserInfo: !!app.globalData.userInfo
+        });
+        // 立即跳转到登录页面，不使用setTimeout避免延迟
         wx.reLaunch({
           url: '/pages/login/login'
         });
-      }, 1500);
+        return;
+      }
+      
+      // 检查imManager是否可用
+      if (!imManager || !imManager.checkIMStatus) {
+        console.error('❌ imManager不可用或方法缺失');
+        this.handleAppError('IM管理器不可用');
+        return;
+      }
+      
+      // 使用imManager检查状态
+      const imStatus = imManager.checkIMStatus();
+      console.log('📊 IM状态检查结果:', imStatus);
+      
+      // 如果IM已初始化且已登录，直接加载数据
+      if (imStatus && imStatus.isInitialized && imStatus.isLoggedIn) {
+        console.log('✅ IM已初始化且已登录，直接加载数据');
+        this.setData({
+          isImInitialized: true
+        });
+        
+        // 设置页面级别的事件监听
+        this.setImEventListeners();
+        
+        // 加载数据
+        this.loadConversationList();
+        this.loadFriendRequests();
+      } else {
+        console.log('⏳ IM未完全初始化，开始初始化流程', {
+          isInitialized: imStatus?.isInitialized,
+          isLoggedIn: imStatus?.isLoggedIn
+        });
+        // 主动触发IM初始化
+        this.initIMWithManager();
+      }
+    } catch (error) {
+      console.error('❌ 检查TUIKit状态时发生异常:', error);
+      console.error('错误详情:', {
+        message: error.message,
+        stack: error.stack,
+        code: error.code
+      });
+      this.handleAppError('IM状态检查失败');
+    }
+  },
+  
+  // 统一处理应用错误
+  handleAppError: function(errorMessage) {
+    console.error('⚠️ 统一错误处理:', errorMessage);
+    
+    // 检查页面是否已卸载
+    if (this._isPageUnloaded) {
+      console.log('⚠️ 页面已卸载，跳过错误处理UI反馈');
       return;
     }
     
-    // 使用imManager检查状态
-    const imStatus = imManager.checkIMStatus();
-    console.log('IM状态检查:', imStatus);
+    wx.showToast({
+      title: errorMessage || '应用出现异常',
+      icon: 'none',
+      duration: 2000
+    });
     
-    // 如果IM已初始化且已登录，直接加载数据
-    if (imStatus.isInitialized && imStatus.isLoggedIn) {
-      console.log('✅ IM已初始化且已登录，直接加载数据');
-      this.setData({
-        isImInitialized: true
-      });
-      
-      // 设置页面级别的事件监听
-      this.setImEventListeners();
-      
-      // 加载数据
-      this.loadConversationList();
-      this.loadFriendRequests();
-    } else {
-      console.log('⏳ IM未完全初始化，开始初始化流程');
-      // 主动触发IM初始化
-      this.initIMWithManager();
-    }
+    // 延迟后跳转到登录页面
+    setTimeout(() => {
+      try {
+        wx.reLaunch({
+          url: '/pages/login/login'
+        });
+      } catch (error) {
+        console.error('❌ 跳转到登录页失败:', error);
+      }
+    }, 2500);
   },
   
   // 增量更新会话信息（避免频繁全量刷新）
@@ -211,180 +268,468 @@ Page({
   
   // 使用imManager初始化IM
   initIMWithManager: function() {
-    const app = getApp();
+    console.log('📱 开始IM初始化流程');
     
-    // 显示加载提示
-    wx.showLoading({
-      title: '初始化IM中...',
-    });
-    
-    // // 检查是否有必要的用户信息
-    if (!app.globalData.userInfo || !app.globalData.userInfo.userId) {
-      console.error('缺少必要的用户信息');
-      wx.hideLoading();
-      wx.showToast({
-        title: '用户信息不完整',
-        icon: 'none'
+    try {
+      // 检查页面是否已卸载
+      if (this._isPageUnloaded) {
+        console.log('⚠️ 页面已卸载，跳过IM初始化');
+        return;
+      }
+      
+      // 检查是否正在处理被踢出
+      if (this._isHandlingKickout) {
+        console.log('⚠️ 正在处理被踢出逻辑，跳过IM初始化');
+        return;
+      }
+      
+      const app = getApp();
+      
+      // 检查应用实例是否存在
+      if (!app || !app.globalData) {
+        console.error('❌ 应用实例不可用');
+        this.handleAppError('应用实例不可用');
+        return;
+      }
+      
+      // 显示加载提示
+      wx.showLoading({
+        title: '初始化IM中...',
       });
-      setTimeout(() => {
-        wx.reLaunch({
-          url: '/pages/login/login'
+      
+      // 检查是否有必要的用户信息
+      if (!app.globalData.userInfo || !app.globalData.userInfo.userId) {
+        console.error('❌ 缺少必要的用户信息', {
+          hasUserInfo: !!app.globalData.userInfo,
+          hasUserID: !!app.globalData.userInfo?.userId
         });
-      }, 1500);
-      return;
-    }
-    
-    // 从app.js获取IM配置
-    const userID = app.globalData.userInfo.userId.toString();
-    const userSig = app.globalData.userInfo.userSig;
-    const SDKAppID = app.globalData.sdkAppID;
-    
-    if (!userSig || !SDKAppID) {
-      console.error('缺少IM配置信息:', { userSig: !!userSig, SDKAppID: !!SDKAppID });
-      wx.hideLoading();
-      wx.showToast({
-        title: 'IM配置不完整',
-        icon: 'none'
-      });
-      setTimeout(() => {
-        wx.reLaunch({
-          url: '/pages/login/login'
-        });
-      }, 1500);
-      return;
-    }
-    
-    // 使用imManager初始化
-    imManager.initialize(userID, userSig, SDKAppID)
-      .then(() => {
-        console.log('✅ IM初始化成功');
         wx.hideLoading();
-        this.setData({
-          isImInitialized: true
+        // wx.showToast({
+        //   title: '用户信息不完整',
+        //   icon: 'none'
+        // });
+        // 立即跳转到登录页面，不使用setTimeout避免延迟
+        setTimeout(() => {
+          wx.reLaunch({
+            url: '/pages/login/login'
+          });
+        }, 1000);
+        return;
+      }
+      
+      // 从app.js获取IM配置
+      const userID = app.globalData.userInfo.userId.toString();
+      const userSig = app.globalData.userInfo.userSig;
+      const SDKAppID = app.globalData.sdkAppID;
+      
+      if (!userSig || !SDKAppID) {
+        console.error('❌ 缺少IM配置信息:', { 
+          userSig: !!userSig, 
+          SDKAppID: !!SDKAppID,
+          userID: userID
         });
-        
-        // 设置页面级别的事件监听
-        this.setImEventListeners();
-        
-        // 加载数据
-        this.loadConversationList();
-        this.loadFriendRequests();
-        
-        // 检查和设置用户隐私设置
-        this.checkAndSetPrivacySettings();
-      })
-      .catch((error) => {
-        console.error('❌ IM初始化失败:', error);
         wx.hideLoading();
-        
-        // 根据错误类型显示不同的提示
-        if (error.message && error.message.includes('用户未登录')) {
-          wx.showToast({
-            title: '请先登录',
-            icon: 'none'
+        wx.showToast({
+          title: 'IM配置不完整',
+          icon: 'none'
+        });
+        setTimeout(() => {
+          wx.reLaunch({
+            url: '/pages/login/login'
           });
-          setTimeout(() => {
-            wx.reLaunch({
-              url: '/pages/login/login'
-            });
-          }, 1500);
-        } else {
-          wx.showToast({
-            title: 'IM初始化失败',
-            icon: 'none'
-          });
-          // 初始化失败时跳转到登录页面
-          setTimeout(() => {
-            wx.reLaunch({
-              url: '/pages/login/login'
-            });
-          }, 1500);
-        }
+        }, 1000);
+        return;
+      }
+      
+      // 检查imManager是否可用
+      if (!imManager || !imManager.initialize) {
+        console.error('❌ imManager未初始化或缺少initialize方法');
+        wx.hideLoading();
+        this.handleAppError('IM管理器不可用');
+        return;
+      }
+      
+      console.log('🔧 开始调用imManager.initialize', {
+        userID: userID,
+        hasUserSig: !!userSig,
+        SDKAppID: SDKAppID
       });
+      
+      // 使用imManager初始化
+      imManager.initialize(userID, userSig, SDKAppID)
+        .then(() => {
+          // 再次检查页面是否已卸载
+          if (this._isPageUnloaded) {
+            console.log('⚠️ 页面已卸载，跳过初始化成功后的处理');
+            wx.hideLoading();
+            return;
+          }
+          
+          console.log('✅ IM初始化成功');
+          wx.hideLoading();
+          this.setData({
+            isImInitialized: true
+          });
+          
+          // 设置页面级别的事件监听
+          this.setImEventListeners();
+          
+          // 加载数据
+          this.loadConversationList();
+          this.loadFriendRequests();
+          
+          // 检查和设置用户隐私设置
+          this.checkAndSetPrivacySettings();
+        })
+        .catch((error) => {
+          console.error('❌ IM初始化失败:', error);
+          console.error('错误详情:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            errMsg: error.errMsg
+          });
+          
+          wx.hideLoading();
+          
+          // 检查页面是否已卸载
+          if (this._isPageUnloaded) {
+            console.log('⚠️ 页面已卸载，跳过错误处理');
+            return;
+          }
+          
+          // 检测账号被踢出的情况
+          const isKickoutError = error.code === 3003 || 
+                                error.code === 90104 || 
+                                (error.message && 
+                                 (error.message.includes('kicked out') || 
+                                  error.message.includes('在其他设备登录')));
+          
+          if (isKickoutError) {
+            console.log('⚠️ 检测到账号在其他设备登录或被踢出');
+            this.handleKickedOut();
+          } else if (error.message && error.message.includes('用户未登录')) {
+            wx.showToast({
+              title: '请先登录',
+              icon: 'none'
+            });
+            setTimeout(() => {
+              wx.reLaunch({
+                url: '/pages/login/login'
+              });
+            }, 1000);
+          } else {
+            wx.showToast({
+              title: 'IM初始化失败',
+              icon: 'none'
+            });
+            // 初始化失败时跳转到登录页面
+            setTimeout(() => {
+              wx.reLaunch({
+                url: '/pages/login/login'
+              });
+            }, 1000);
+          }
+        });
+    } catch (error) {
+      console.error('❌ 初始化IM过程中发生未捕获异常:', error);
+      console.error('异常详情:', {
+        message: error.message,
+        stack: error.stack
+      });
+      
+      try {
+        wx.hideLoading();
+      } catch (hideError) {
+        // 忽略隐藏loading的错误
+      }
+      
+      // 检查页面是否已卸载
+      if (!this._isPageUnloaded) {
+        this.handleAppError('IM初始化异常');
+      }
+    }
   },
   
   // 设置IM事件监听（页面级别）
+  // 定义事件处理函数
+  _onSdkReadyHandler: function(event) {
+    if (this._isPageUnloaded || this._isHandlingKickout) return;
+    console.log('✅ IM SDK准备就绪', { eventType: typeof event });
+  },
+  
+  _onConversationListUpdatedHandler: function(event) {
+    try {
+      if (this._isPageUnloaded || this._isHandlingKickout) return;
+      this.onConversationListUpdated(event);
+    } catch (err) {
+      console.error('❌ 处理会话列表更新事件时出错:', err);
+    }
+  },
+  
+  _onMessageReceivedHandler: function(event) {
+    try {
+      if (this._isPageUnloaded || this._isHandlingKickout) return;
+      this.onMessageReceived(event);
+    } catch (err) {
+      console.error('❌ 处理新消息事件时出错:', err);
+    }
+  },
+  
+  _onFriendApplicationListUpdatedHandler: function(event) {
+    try {
+      if (this._isPageUnloaded || this._isHandlingKickout) return;
+      this.onFriendApplicationListUpdated(event);
+    } catch (err) {
+      console.error('❌ 处理好友申请列表更新事件时出错:', err);
+    }
+  },
+  
   setImEventListeners: function() {
-    if (!wx.$TUIKit) return;
+    console.log('🔗 开始设置IM事件监听');
+    
+    // 检查页面是否已卸载
+    if (this._isPageUnloaded) {
+      console.log('⚠️ 页面已卸载，跳过设置IM事件监听');
+      return;
+    }
+    
+    // 检查是否正在处理被踢出
+    if (this._isHandlingKickout) {
+      console.log('⚠️ 正在处理被踢出逻辑，跳过设置IM事件监听');
+      return;
+    }
+    
+    // 检查wx.$TUIKit是否可用
+    if (!wx || !wx.$TUIKit || typeof wx.$TUIKit !== 'object') {
+      console.error('❌ wx.$TUIKit不可用或类型错误');
+      return;
+    }
     
     try {
+      // 检查必要的事件常量是否存在
+      if (!wx.TencentCloudChat || !wx.TencentCloudChat.EVENT) {
+        console.error('❌ TencentCloudChat.EVENT 常量不可用');
+        return;
+      }
+      
       // 监听SDK_READY事件
-      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_READY, (event) => {
-        console.log('IM SDK准备就绪');
-      });
+      if (wx.TencentCloudChat.EVENT.SDK_READY && typeof wx.$TUIKit.on === 'function') {
+        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.SDK_READY, this._onSdkReadyHandler, this);
+        console.log('✅ 添加SDK_READY事件监听成功');
+      } else {
+        console.warn('⚠️ SDK_READY事件常量不存在或wx.$TUIKit.on不可用');
+      }
       
       // 监听会话列表更新
-      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED, (event) => {
-        this.onConversationListUpdated(event);
-      });
+      if (wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED && this.onConversationListUpdated && typeof wx.$TUIKit.on === 'function') {
+        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED, this._onConversationListUpdatedHandler, this);
+        console.log('✅ 添加CONVERSATION_LIST_UPDATED事件监听成功');
+      } else {
+        console.warn('⚠️ CONVERSATION_LIST_UPDATED事件常量不存在或回调方法不可用');
+      }
       
       // 监听新消息
-      wx.$TUIKit.on(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED, (event) => {
-        this.onMessageReceived(event);
-      });
+      if (wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED && this.onMessageReceived && typeof wx.$TUIKit.on === 'function') {
+        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED, this._onMessageReceivedHandler, this);
+        console.log('✅ 添加MESSAGE_RECEIVED事件监听成功');
+      } else {
+        console.warn('⚠️ MESSAGE_RECEIVED事件常量不存在或回调方法不可用');
+      }
+      
+      // 监听好友申请列表更新
+      if (wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_LIST_UPDATED && this.onFriendApplicationListUpdated && typeof wx.$TUIKit.on === 'function') {
+        wx.$TUIKit.on(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_LIST_UPDATED, this._onFriendApplicationListUpdatedHandler, this);
+        console.log('✅ 添加FRIEND_APPLICATION_LIST_UPDATED事件监听成功');
+      } else {
+        console.warn('⚠️ FRIEND_APPLICATION_LIST_UPDATED事件常量不存在或回调方法不可用');
+      }
       
       // 设置好友申请监听
-      this.setupFriendApplicationListener();
+      try {
+        if (this.setupFriendApplicationListener && typeof this.setupFriendApplicationListener === 'function') {
+          this.setupFriendApplicationListener();
+          console.log('✅ 设置好友申请监听成功');
+        } else {
+          console.warn('⚠️ setupFriendApplicationListener方法不可用');
+        }
+      } catch (err) {
+        console.error('❌ 设置好友申请监听失败:', err);
+      }
       
+      console.log('✅ 所有IM事件监听设置完成');
     } catch (error) {
-      console.error('设置IM事件监听失败:', error);
+      console.error('❌ 设置IM事件监听失败:', error);
+      console.error('错误详情:', {
+        message: error.message,
+        stack: error.stack
+      });
     }
     
       // 监听imManager的事件
     try {
-      // 监听登录状态变化
-      imManager.addEventListener('LOGIN_STATUS_CHANGED', (data) => {
-        console.log('🔄 检测到登录状态变化:', data);
-        
-        if (!data.isLoggedIn) {
-          console.log('⚠️ 用户被踢出或连接断开');
-          
-          // 显示更明确的提示信息
-          if (data.reason === 'KICKED_OUT') {
-            wx.showModal({
-              title: '登录提示',
-              content: '您的账号已在其他设备登录，当前设备已自动下线。如需继续使用，请重新登录。',
-              showCancel: false,
-              confirmText: '我知道了',
-              success: () => {
-                // 清理本地状态并跳转到登录页
-                this.handleKickedOut();
-              }
-            });
-          } else if (data.reason === 'SDK_NOT_READY') {
-            wx.showToast({
-              title: 'IM连接断开，正在重新连接...',
-              icon: 'none',
-              duration: 2000
-            });
-            
-            // 延迟后重新初始化
-            setTimeout(() => {
-              this.reinitializeIM();
-            }, 2000);
+      // 避免重复绑定事件
+      if (this._hasBoundImManagerEvents) {
+        console.log('⚠️ 已绑定imManager事件，跳过重新绑定');
+        return;
+      }
+      
+      // 监听登录状态变化 - 使用命名方法
+      this.onLoginStatusChanged = (data) => {
+        try {
+          // 检查页面状态
+          if (this._isPageUnloaded || this._isHandlingKickout) {
+            console.log('⚠️ 页面已卸载或正在处理被踢出，跳过登录状态变化处理');
+            return;
           }
+          
+          console.log('🔄 检测到登录状态变化:', { 
+            isLoggedIn: data?.isLoggedIn, 
+            reason: data?.reason,
+            dataType: typeof data
+          });
+          
+          // 检查数据有效性
+          if (!data || typeof data !== 'object') {
+            console.warn('⚠️ 登录状态变化事件数据无效');
+            return;
+          }
+          
+          if (!data.isLoggedIn) {
+            console.log('⚠️ 用户被踢出或连接断开，原因:', data.reason);
+            
+            // 显示更明确的提示信息
+            if (data.reason === 'KICKED_OUT') {
+              // 检查是否正在处理被踢出，避免循环调用
+              if (this._isHandlingKickout) {
+                console.warn('⚠️ 已在处理被踢出逻辑，避免重复处理');
+                return;
+              }
+              
+              console.log('🚨 账号被踢出，显示提示对话框');
+              // 使用try-catch包装整个模态框调用
+              try {
+                wx.showModal({
+                  title: '登录提示',
+                  content: '您的账号已在其他设备登录，当前设备已自动下线。如需继续使用，请重新登录。',
+                  showCancel: false,
+                  confirmText: '我知道了',
+                  success: (res) => {
+                    try {
+                      console.log('👍 用户点击确认，开始处理被踢出逻辑');
+                      // 清理本地状态并跳转到登录页
+                      this.handleKickedOut();
+                    } catch (error) {
+                      console.error('❌ 处理模态框确认事件时出错:', error);
+                    }
+                  },
+                  fail: (err) => {
+                    console.error('❌ 显示登录提示模态框失败:', err);
+                    // 即使模态框显示失败，也要确保用户被正确引导到登录页面
+                    try {
+                      this.handleKickedOut();
+                    } catch (error) {
+                      console.error('❌ 备用处理被踢出逻辑失败:', error);
+                    }
+                  }
+                });
+              } catch (modalError) {
+                console.error('❌ 调用wx.showModal失败:', modalError);
+                // 模态框调用失败时的备用方案
+                try {
+                  setTimeout(() => {
+                    this.handleKickedOut();
+                  }, 100);
+                } catch (finalError) {
+                  console.error('❌ 最终备用方案执行失败:', finalError);
+                }
+              }
+            } else if (data.reason === 'SDK_NOT_READY') {
+              wx.showToast({
+                title: 'IM连接断开，正在重新连接...',
+                icon: 'none',
+                duration: 2000
+              });
+              
+              // 延迟后重新初始化
+              setTimeout(() => {
+                this.reinitializeIM();
+              }, 2000);
+            }
+          }
+        } catch (error) {
+          console.error('❌ 处理登录状态变化事件时发生异常:', error);
+          console.error('异常详情:', { message: error.message, stack: error.stack });
         }
-      });
+      }
       
-      // 监听被踢出事件
-      imManager.addEventListener('KICKED_OUT', (event) => {
-        console.log('🚫 收到被踢出事件:', event);
-        // 这个事件会被LOGIN_STATUS_CHANGED处理，这里只记录日志
-      });
+      // 只有在imManager和addEventListener方法都可用时才绑定事件
+      if (imManager && typeof imManager.addEventListener === 'function') {
+        imManager.addEventListener('LOGIN_STATUS_CHANGED', this.onLoginStatusChanged);
+        console.log('✅ 绑定LOGIN_STATUS_CHANGED事件成功');
+        // 设置绑定标志，防止重复绑定
+        this._hasBoundImManagerEvents = true;
+      } else {
+        console.error('❌ imManager或addEventListener方法不可用');
+      }
       
-      // 监听SDK_NOT_READY事件
-      imManager.addEventListener('SDK_NOT_READY', (event) => {
-        console.log('⚠️ 收到SDK_NOT_READY事件:', event);
-        wx.showToast({
-          title: 'IM连接断开，正在重新连接...',
-          icon: 'none',
-          duration: 2000
-        });
-      });
+      // 监听被踢出事件 - 使用命名方法
+      this.onKickedOut = (event) => {
+        try {
+          // 检查页面状态
+          if (this._isPageUnloaded || this._isHandlingKickout) {
+            console.log('⚠️ 页面已卸载或正在处理被踢出，跳过KICKED_OUT事件处理');
+            return;
+          }
+          console.log('🚫 收到被踢出事件:', event);
+          // 由于已经有LOGIN_STATUS_CHANGED事件处理被踢出逻辑，这里仅作为备份
+          // 但为了更可靠，我们也直接调用handleKickedOut方法
+          this.handleKickedOut();
+        } catch (error) {
+          console.error('❌ 处理KICKED_OUT事件时出错:', error);
+        }
+      };
       
-    } catch (error) {
-      console.error('设置imManager事件监听失败:', error);
-    }
+      // 只有在imManager和addEventListener方法都可用时才绑定事件
+      if (imManager && typeof imManager.addEventListener === 'function') {
+        if (this.onKickedOut) {
+          imManager.addEventListener('KICKED_OUT', this.onKickedOut);
+          console.log('✅ 绑定KICKED_OUT事件成功');
+        }
+        
+        // 监听SDK_NOT_READY事件 - 使用命名方法
+        this.onSDKNotReady = (event) => {
+            try {
+              // 检查页面状态
+              if (this._isPageUnloaded || this._isHandlingKickout) {
+                console.log('⚠️ 页面已卸载或正在处理被踢出，跳过SDK_NOT_READY事件处理');
+                return;
+              }
+              console.log('⚠️ 收到SDK_NOT_READY事件:', event);
+              wx.showToast({
+                title: 'IM连接断开，正在重新连接...',
+                icon: 'none',
+                duration: 2000
+              });
+            } catch (error) {
+              console.error('❌ 处理SDK_NOT_READY事件时出错:', error);
+            }
+          };
+          
+          if (this.onSDKNotReady) {
+            imManager.addEventListener('SDK_NOT_READY', this.onSDKNotReady);
+            console.log('✅ 绑定SDK_NOT_READY事件成功');
+          }
+          
+          // 所有事件绑定完成，设置标志
+          this._hasBoundImManagerEvents = true;
+        } else {
+          console.error('❌ imManager或addEventListener方法不可用');
+        }
+      } catch (error) {
+        console.error('❌ 设置imManager事件监听失败:', error);
+        console.error('错误详情:', { message: error.message, stack: error.stack });
+      }
   },
   
   // 会话列表更新回调
@@ -404,10 +749,6 @@ Page({
   
   // 加载会话列表 - 简化版本，使用imManager状态管理
   loadConversationList: function() {
-    wx.showLoading({
-      title: '加载会话中...',
-    });
-    
     try {
       // 使用imManager等待登录完成，而不是自定义的waitForSDKReady
       imManager.waitForLogin(10000)
@@ -500,9 +841,18 @@ Page({
     }
   },
   
+  // 防止循环调用的标记
+  _isHandlingKickout: false,
+  
   // 重新初始化IM
   reinitializeIM: function() {
     console.log('🔄 开始重新初始化IM...');
+    
+    // 检查是否正在处理被踢出事件，如果是则不进行重新初始化，避免循环调用
+    if (this._isHandlingKickout) {
+      console.log('⚠️ 正在处理被踢出事件，跳过重新初始化');
+      return;
+    }
     
     // 重置状态
     this.setData({
@@ -510,17 +860,34 @@ Page({
     });
     
     // 调用imManager的重新登录方法
-    imManager.relogin().then(() => {
-      console.log('✅ 重新登录成功，重新检查TUIKit状态');
-      // 重新检查TUIKit状态
-      this.checkTUIKitStatus();
-    }).catch((error) => {
-      console.error('❌ 重新登录失败:', error);
-      wx.showToast({
-        title: '重新登录失败，请重试',
-        icon: 'none'
-      });
-    });
+    try {
+      if (imManager && imManager.relogin) {
+        imManager.relogin().then(() => {
+          console.log('✅ 重新登录成功，重新检查TUIKit状态');
+          // 重新检查TUIKit状态
+          this.checkTUIKitStatus();
+        }).catch((error) => {
+          console.error('❌ 重新登录失败:', error);
+          
+          // 检查错误是否表示账号被踢出
+          if (error && (error.message && error.message.includes('KICKED_OUT') || 
+                        error.code === 3003 || 
+                        error.code === 90104)) {
+            console.log('⚠️ 检测到账号被踢出，直接跳转到登录页面');
+            this.handleKickedOut();
+          } else {
+            wx.showToast({
+              title: '重新登录失败，请重试',
+              icon: 'none'
+            });
+          }
+        });
+      } else {
+        console.error('❌ imManager或relogin方法不可用');
+      }
+    } catch (error) {
+      console.error('❌ 重新初始化IM异常:', error);
+    }
   },
   
   // 处理会话列表数据的独立方法
@@ -1251,31 +1618,107 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
+    console.log('🗑️ 页面卸载，清理资源...');
+    
+    // 设置页面卸载标志，防止后续操作执行
+    this._isPageUnloaded = true;
+    console.log('✅ 已设置_isPageUnloaded为true');
+    
+    // 重置处理被踢出标志
+    this._isHandlingKickout = false;
+    console.log('✅ 已重置_isHandlingKickout为false');
+    
+    // 重置事件绑定标志
+    this._hasBoundImManagerEvents = false;
+    console.log('✅ 已重置_hasBoundImManagerEvents为false');
+    
+    // 清理会话更新订阅
+    try {
+      if (this.conversationUpdateHandler && typeof this.conversationUpdateHandler.unsubscribe === 'function') {
+        console.log('🔄 执行会话更新订阅清理');
+        this.conversationUpdateHandler.unsubscribe();
+        console.log('✓ 会话更新订阅已清理');
+        this.conversationUpdateHandler = null; // 避免内存泄漏
+      } else {
+        console.log('ℹ️ conversationUpdateHandler不存在或unsubscribe方法不可用，跳过清理');
+      }
+    } catch (e) {
+      console.error('× 清理订阅失败:', e);
+      console.error('异常详情:', {
+        message: e.message,
+        stack: e.stack
+      });
+    }
+    
     // 清理imManager事件监听器
     try {
-      if (imManager && imManager.removeEventListener) {
+      if (imManager && imManager.removeEventListener && typeof imManager.removeEventListener === 'function') {
         // 移除所有imManager事件监听器
-        imManager.removeEventListener('LOGIN_STATUS_CHANGED', this.onLoginStatusChanged);
-        imManager.removeEventListener('KICKED_OUT', this.onKickedOut);
-        imManager.removeEventListener('SDK_NOT_READY', this.onSDKNotReady);
+        console.log('🔇 移除imManager事件监听器');
+        
+        if (this.onLoginStatusChanged && typeof this.onLoginStatusChanged === 'function') {
+          imManager.removeEventListener('LOGIN_STATUS_CHANGED', this.onLoginStatusChanged);
+          console.log('✓ 已移除LOGIN_STATUS_CHANGED事件监听器');
+          this.onLoginStatusChanged = null;
+        }
+        if (this.onKickedOut && typeof this.onKickedOut === 'function') {
+          imManager.removeEventListener('KICKED_OUT', this.onKickedOut);
+          console.log('✓ 已移除KICKED_OUT事件监听器');
+          this.onKickedOut = null;
+        }
+        if (this.onSDKNotReady && typeof this.onSDKNotReady === 'function') {
+          imManager.removeEventListener('SDK_NOT_READY', this.onSDKNotReady);
+          console.log('✓ 已移除SDK_NOT_READY事件监听器');
+          this.onSDKNotReady = null;
+        }
+      } else {
+        console.warn('⚠️ imManager或removeEventListener方法不可用，跳过事件监听器清理');
       }
     } catch (error) {
-      console.error('清理imManager事件监听器失败:', error);
+      console.error('× 清理imManager事件监听器失败:', error);
+      console.error('异常详情:', {
+        message: error.message,
+        stack: error.stack
+      });
     }
     
     // 清理TUIKit事件监听器
     try {
-      if (wx.$TUIKit) {
-        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.SDK_READY);
-        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED);
-        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED);
-        wx.$TUIKit.off(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_LIST_UPDATED);
+      // 确保所有必要的对象和方法都可用
+      if (wx && wx.$TUIKit && typeof wx.$TUIKit === 'object' && 
+          wx.$TUIKit.off && typeof wx.$TUIKit.off === 'function' && 
+          wx.TencentCloudChat && wx.TencentCloudChat.EVENT) {
+        console.log('🔄 清理TUIKit事件监听器');
+        
+        // 定义一个安全的off方法调用函数
+        const safeOff = (eventName, handler) => {
+          try {
+            if (eventName && typeof eventName === 'string' && handler && typeof handler === 'function') {
+              wx.$TUIKit.off(eventName, handler, this);
+              console.log(`✓ 已移除${eventName}事件监听器`);
+            }
+          } catch (err) {
+            console.warn(`⚠️ 移除${eventName}事件监听器失败:`, err.message);
+          }
+        };
+        
+        // 依次清理各个事件监听器
+        safeOff(wx.TencentCloudChat.EVENT.SDK_READY, this._onSdkReadyHandler);
+        safeOff(wx.TencentCloudChat.EVENT.CONVERSATION_LIST_UPDATED, this._onConversationListUpdatedHandler);
+        safeOff(wx.TencentCloudChat.EVENT.MESSAGE_RECEIVED, this._onMessageReceivedHandler);
+        safeOff(wx.TencentCloudChat.EVENT.FRIEND_APPLICATION_LIST_UPDATED, this._onFriendApplicationListUpdatedHandler);
+      } else {
+        console.warn('⚠️ wx.$TUIKit或相关方法/常量不可用，跳过TUIKit事件监听器清理');
       }
     } catch (error) {
-      console.error('清理TUIKit事件监听器失败:', error);
+      console.error('× 清理TUIKit事件监听器失败:', error);
+      console.error('异常详情:', {
+        message: error.message,
+        stack: error.stack
+      });
     }
     
-    console.log('🧹 页面卸载，事件监听器已清理');
+    console.log('🧹 页面卸载，所有资源清理完成');
   },
 
   /**
@@ -2017,32 +2460,152 @@ Page({
     });
   },
 
+  // 页面状态标志
+  _isPageUnloaded: false,
+  
   // 处理被踢出登录
   handleKickedOut: function() {
-    console.log('🚪 处理用户被踢出登录');
+    console.log('🚪 开始处理用户被踢出登录流程');
     
-    // 清理本地状态
+    // 检查是否已经在处理中，防止循环调用
+    if (this._isHandlingKickout) {
+      console.warn('⚠️ handleKickedOut方法已经在执行中，避免重复调用');
+      return;
+    }
+    
     try {
-      const app = getApp();
-      if (app && app.logout) {
-        app.logout();
+      // 设置处理被踢出标志，防止循环调用
+      this._isHandlingKickout = true;
+      console.log('✅ 设置_isHandlingKickout标志为true');
+      
+      // 检查页面是否已卸载，如果已卸载则不再执行后续操作
+      if (this._isPageUnloaded) {
+        console.log('⚠️ 页面已卸载，跳过handleKickedOut处理');
+        return;
       }
+      
+      // 清理本地状态
+      try {
+        console.log('🧹 开始清理本地登录状态');
+        const app = getApp();
+        if (app && app.logout && typeof app.logout === 'function') {
+          console.log('🔄 调用app.logout清理全局登录状态');
+          app.logout();
+          console.log('✅ 全局登录状态清理完成');
+        } else {
+          console.warn('⚠️ app.logout方法不可用，跳过全局状态清理');
+        }
+      } catch (error) {
+        console.error('❌ 清理登录状态失败:', error);
+        console.error('清理失败详情:', {
+          message: error.message,
+          stack: error.stack
+        });
+      }
+      
+      // 清理IM状态
+      try {
+        console.log('🧹 开始清理IM状态');
+        if (imManager && imManager.logout && typeof imManager.logout === 'function') {
+          console.log('🔄 调用imManager.logout清理IM状态');
+          imManager.logout();
+          console.log('✅ IM状态清理完成');
+        } else {
+          console.warn('⚠️ imManager.logout方法不可用，跳过IM状态清理');
+        }
+      } catch (error) {
+        console.error('❌ 清理IM状态失败:', error);
+        console.error('清理失败详情:', {
+          message: error.message,
+          stack: error.stack
+        });
+      }
+      
+      // 立即跳转到登录页面，避免长时间等待
+      console.log('🚀 执行wx.reLaunch跳转到登录页面');
+      
+      // 定义跳转函数，便于多次尝试
+      const performNavigation = (method, options) => {
+        return new Promise((resolve, reject) => {
+          console.log(`🔄 执行${method}跳转到登录页面`);
+          if (wx[method] && typeof wx[method] === 'function') {
+            wx[method]({
+              ...options,
+              success: (res) => {
+                console.log(`✅ ${method}跳转成功`);
+                resolve(res);
+              },
+              fail: (error) => {
+                console.error(`❌ ${method}跳转失败:`, error);
+                console.error('跳转失败详情:', {
+                  message: error.message,
+                  stack: error.stack,
+                  errMsg: error.errMsg
+                });
+                reject(error);
+              }
+            });
+          } else {
+            console.error(`❌ ${method}方法不可用`);
+            reject(new Error(`${method} method is not available`));
+          }
+        });
+      };
+      
+      // 尝试多种跳转方式，确保用户能被引导到登录页面
+      performNavigation('reLaunch', { url: '/pages/login/login' })
+        .catch(() => {
+          // reLaunch失败，尝试redirectTo
+          console.log('🔄 reLaunch失败，尝试redirectTo');
+          return performNavigation('redirectTo', { url: '/pages/login/login' });
+        })
+        .catch(() => {
+          // redirectTo失败，尝试navigateTo
+          console.log('🔄 redirectTo失败，尝试navigateTo');
+          return performNavigation('navigateTo', { url: '/pages/login/login' });
+        })
+        .catch((finalError) => {
+          console.error('❌ 所有跳转方式均失败:', finalError);
+          // 最后尝试直接设置页面卸载标志
+          console.log('🔄 设置页面卸载标志');
+          this._isPageUnloaded = true;
+        });
+        
     } catch (error) {
-      console.error('清理登录状态失败:', error);
-    }
-    
-    // 清理IM状态
-    try {
-      imManager.logout();
-    } catch (error) {
-      console.error('清理IM状态失败:', error);
-    }
-    
-    // 跳转到登录页面
-    setTimeout(() => {
-      wx.reLaunch({
-        url: '/pages/login/login'
+      console.error('❌ handleKickedOut执行失败:', error);
+      console.error('错误详情:', {
+        message: error.message,
+        stack: error.stack
       });
-    }, 500);
+      
+      // 即使出错也要确保跳转到登录页面
+      try {
+        console.log('🔄 执行错误捕获后的备用跳转');
+        wx.reLaunch({
+          url: '/pages/login/login',
+          fail: (relaunchError) => {
+            console.error('❌ 备用reLaunch跳转失败:', relaunchError);
+            // 最后尝试redirectTo
+            setTimeout(() => {
+              try {
+                wx.redirectTo({
+                  url: '/pages/login/login',
+                  fail: (finalError) => {
+                    console.error('❌ 最终跳转登录页面失败:', finalError);
+                  }
+                });
+              } catch (finalError) {
+                console.error('❌ 无法执行任何跳转:', finalError);
+              }
+            }, 100);
+          }
+        });
+      } catch (relaunchError) {
+        console.error('❌ 无法跳转到登录页面:', relaunchError);
+      }
+    } finally {
+      console.log('🏁 handleKickedOut方法执行完成');
+      // 注意：不在这里清除_isHandlingKickout标志，因为页面跳转后这个值不再重要
+    }
   }
-})
+});

@@ -5,5 +5,9 @@
   "enablePullDownRefresh": false,
   "disableScroll": false,
   "backgroundColor": "#f7f7f7",
-  "backgroundTextStyle": "dark"
+  "backgroundTextStyle": "dark",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar"
+  }
 }

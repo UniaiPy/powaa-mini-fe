@@ -143,11 +143,6 @@ Page({
       return
     }
     
-    // 显示加载提示
-    wx.showLoading({
-      title: '加载中...',
-    })
-    
     // 使用全局request方法发送请求
     const userId = app.globalData.userInfo?.id || this.data.userInfo?.id;
     app.request({
@@ -164,7 +159,7 @@ Page({
           // 更新用户基本信息
           if (profileData.userInfo) {
             updateData.userInfo = {
-              name: profileData.userInfo.name || '请编辑您的用户名',
+              name: profileData.userInfo.name || '请编辑您的昵称',
               aiStatus: profileData.userInfo.aiStatus || '在线',
               description: profileData.userInfo.description || ''
             }

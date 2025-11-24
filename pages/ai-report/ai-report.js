@@ -4,6 +4,10 @@ Page({
    * 页面的初始数据
    */
   data: {
+    userInfo: {
+      avatar: '',
+      nickname: ''
+    },
     reportTime: '',
     unreadCount: 0,
     // 报告数据
@@ -18,8 +22,20 @@ Page({
   onLoad: function (options) {
     // 从后端获取AI报告数据
     this.fetchAIReportData();
-  },
 
+  },
+  onShow: function () {
+    // 从全局变量获取用户信息
+    const globalUserInfo = getApp().globalData.userInfo;
+    if (globalUserInfo) {
+      this.setData({
+        userInfo: {
+          avatar: globalUserInfo.avatar_url || '',
+          nickname: globalUserInfo.nickname || '用户'
+        }
+      });
+    }
+  },
   /**
    * 生命周期函数--监听页面初次渲染完成
    */

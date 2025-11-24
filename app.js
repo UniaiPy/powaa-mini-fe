@@ -134,7 +134,7 @@ App({
     // 确保用户信息包含必要字段
     const safeUser = {
       id: user.id || '',
-      nickname: user.nickname || '小皮' + user.id,
+      nickname: user.nickname || '小瓦' + user.id,
       phone_number: user.phone || '',
     }
     
