@@ -25,7 +25,11 @@ Page({
     aiOnline: true,
     aiStatus: 'online',
     // 当前选择的模型
-    selectedModel: '高级模型',
+    selectedModel: '',
+    // AI模型列表
+    modelList: [],
+    // AI训练状态
+    aiTrainingStatus: '',
     // 语音录制状态
     isRecording: false,
     // 是否为语音模式
@@ -72,6 +76,41 @@ Page({
     
     // 获取用户信息
     this.getUserInfo();
+    
+    // 获取AI分身会话信息
+    this.fetchConversationInfo();
+  },
+  
+  /**
+   * 获取AI分身会话信息
+   */
+  async fetchConversationInfo() {
+    try {
+      const app = getApp();
+      const result = await new Promise((resolve, reject) => {
+        app.request({
+          url: '/api/ai-avatars/conversations',
+          method: 'GET',
+          success: (res) => {
+            resolve(res);
+          },
+          fail: (error) => {
+            reject(error);
+          }
+        });
+      });
+      
+      if (result.success && result.data) {
+        const data = result.data;
+        this.setData({
+          modelList: data.model_list || [],
+          selectedModel: data.selected_model || '',
+          aiTrainingStatus: data.status || ''
+        });
+      }
+    } catch (error) {
+      console.error('获取AI分身会话信息失败:', error);
+    }
   },
 
   /**
@@ -1784,6 +1823,41 @@ Page({
       showModelMenu: false
     });
     console.log('选择了模型:', modelName);
+    
+    // 调用接口修改模型
+    this.setModel(modelName);
+  },
+  
+  /**
+   * 设置模型
+   */
+  async setModel(modelName) {
+    try {
+      const app = getApp();
+      const result = await new Promise((resolve, reject) => {
+        app.request({
+          url: '/api/ai-avatars/set_models',
+          method: 'POST',
+          data: {
+            selected_model: modelName
+          },
+          success: (res) => {
+            resolve(res);
+          },
+          fail: (error) => {
+            reject(error);
+          }
+        });
+      });
+      
+      if (result.success) {
+        console.log('模型设置成功');
+      } else {
+        console.error('模型设置失败:', result.message);
+      }
+    } catch (error) {
+      console.error('设置模型失败:', error);
+    }
   },
 
   /**
@@ -2316,10 +2390,20 @@ Page({
    */
 
   openAIReport() {
-    // 这里可以添加跳转到AI报告页面的逻辑
-    wx.navigateTo({
-      url: '/pages/ai-report/ai-report',
-    });
+    // 检查训练状态
+    if (this.data.aiTrainingStatus === 'active') {
+      // 跳转到AI报告页面
+      wx.navigateTo({
+        url: '/pages/ai-report/ai-report',
+      });
+    } else {
+      // 显示提示信息
+      wx.showToast({
+        title: '请先完成训练',
+        icon: 'none',
+        duration: 2000
+      });
+    }
   },
 
   /**

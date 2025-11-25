@@ -234,21 +234,9 @@
     <view class="model-header">
       <view class="model-title">选择AI模型</view>
     </view>
-    <view class="model-item {{selectedModel === 'gpt4' ? 'active' : ''}}" bindtap="selectModel" data-model="gpt4">
+    <view wx:for="{{modelList}}" wx:key="{{item}}" class="model-item {{selectedModel === item ? 'active' : ''}}" bindtap="selectModel" data-model="{{item}}">
       <view class="model-info">
-        <view class="model-name">GPT-4</view>
-      </view>
-      <view class="model-status"></view>
-    </view>
-    <view class="model-item {{selectedModel === 'gpt3' ? 'active' : ''}}" bindtap="selectModel" data-model="gpt3">
-      <view class="model-info">
-        <view class="model-name">GPT-3.5</view>
-      </view>
-      <view class="model-status"></view>
-    </view>
-    <view class="model-item {{selectedModel === 'claude' ? 'active' : ''}}" bindtap="selectModel" data-model="claude">
-      <view class="model-info">
-        <view class="model-name">Claude 3</view>
+        <view class="model-name">{{item}}</view>
       </view>
       <view class="model-status"></view>
     </view>

@@ -366,8 +366,32 @@ Page({
    * 开始聊天
    */
   startChat: function() {
-    this.setData({
-      showChatModal: true
+    const app = getApp();
+    const targetUserId = this.data.userId;
+    // 调用后端接口检查好友关系
+    app.request({
+      url: `/api/friendships/check/${targetUserId}`,
+      method: 'GET',
+      success: (res) => {
+        if (res.success && res.data.is_friend) {
+          // 是好友，直接跳转聊天会话页面
+          wx.navigateTo({
+            url: `/pages/conversation/conversation?conversationID=C2C${targetUserId}`
+          });
+        } else {
+          // 不是好友，显示打招呼弹窗
+          this.setData({
+            showChatModal: true
+          });
+        }
+      },
+      fail: (error) => {
+        console.error('检查好友关系失败:', error);
+        // 失败时默认显示打招呼弹窗
+        this.setData({
+          showChatModal: true
+        });
+      }
     });
   },
 

@@ -58,7 +58,7 @@ Page({
     });
 
     app.request({
-      url: '/api/ai-avatars', // 使用相对路径，app会自动拼接baseUrl
+      url: '/api/ai-avatars/report', // 使用相对路径，app会自动拼接baseUrl
       method: 'GET',
       success: function(res) {
         console.log('AI报告数据获取成功:', res);

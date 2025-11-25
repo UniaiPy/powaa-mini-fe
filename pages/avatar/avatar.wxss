@@ -585,17 +585,12 @@
   font-size: 14px;
 }
 
-.model-item:active {
-  background-color: #f3f4f6;
-}
-
 .model-item.active {
   background-color: #f0f9ff;
-  color: #1e40af;
 }
 
 .model-info {
-  flex: 1;
+  flex: 1rgb(21, 22, 28)
 }
 
 .model-name {
@@ -606,12 +601,12 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10b981;
+  background: #9ca3af;
   flex-shrink: 0;
 }
 
-.model-status.offline {
-  background: #9ca3af;
+.model-item.active .model-status {
+  background: #10b981;
 }
 
 /* 表情选择器样式 */
