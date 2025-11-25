@@ -106,12 +106,7 @@ Page({
       url: `/pages/profile/profile?userId=${userId}`
     });
   },
-
- 
-
-  /**
-   * 显示匹配度说明
-   */
+  
   /**
    * 显示匹配度说明
    * 点击时调用匹配度分析接口，使用流式输出
@@ -140,10 +135,10 @@ Page({
       return;
     }
     
-    // 设置初始状态，添加加载提示文本
+    // 设置初始状态，初始内容为空
     this.setData({
       showMatchDegreeModal: true,
-      matchDegreeContent: '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>',
+      matchDegreeContent: '',
       isLoadingMatchDegree: true
     });
     
@@ -182,101 +177,54 @@ Page({
       return;
     };
     
-    // 处理单个SSE数据块
-    const processDataBlock = (block) => {
-      try {
-        const parsedBlock = JSON.parse(block.trim());
-        
-        // 如果有content字段，立即添加到累计内容中并更新页面
-        if (parsedBlock.content) {
-          accumulatedContent += parsedBlock.content;
-          this.setData({ matchDegreeContent: accumulatedContent });
-        }
-        
-        // 检查是否完成
-        if (parsedBlock.done) {
-          stopPolling('检测到done:true，处理完成');
-          return true;
-        }
-      } catch (e) {
-        console.error('解析单个data块失败:', e);
-      }
-      return false;
-    };
-    
-    // 流式处理SSE数据
-    const streamProcessSSEData = (sseData, delay = 100) => {
-      // 分割成多个data块
-      const dataBlocks = sseData.split('data:');
-      let currentBlockIndex = 0;
-      
-      // 过滤掉空块
-      const validBlocks = dataBlocks.filter(block => block.trim());
-      
-      // 处理下一个数据块
-      const processNextBlock = () => {
-        if (currentBlockIndex < validBlocks.length) {
-          const block = validBlocks[currentBlockIndex];
-          const isDone = processDataBlock(block);
-          
-          currentBlockIndex++;
-          
-          // 如果未完成，继续处理下一个块
-          if (!isDone) {
-            setTimeout(processNextBlock, delay);
-          }
-        } else {
-          // 所有块都处理完毕
-          stopPolling('所有数据块处理完毕');
-        }
-      };
-      
-      // 开始处理数据块
-      processNextBlock();
-    };
-    
-    // 请求数据
-    wx.request({
+
+    const requestTask = wx.request({
+      timeout: 100000,
+      responseType: 'text',
       url: url,
       method: 'POST',
       data: requestData,
+      enableChunked: true,
       header: {
         'content-type': 'application/json',
         'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : '',
         'Accept': 'text/event-stream' // 添加流式响应请求头
-      },
-      success: (res) => {
-        console.log('请求响应:', res);
-        
-        // 处理响应
-        if (res.statusCode === 200 && typeof res.data === 'string') {
-          // 清空初始加载提示
-          accumulatedContent = '';
-          // 流式处理SSE数据，逐个块处理并立即更新UI
-          streamProcessSSEData(res.data);
-        } else if (res.statusCode === 200 && typeof res.data === 'object') {
-          // 处理非SSE格式的响应
-          if (res.data.content) {
-            accumulatedContent = res.data.content;
-            this.setData({ matchDegreeContent: accumulatedContent });
-          }
-          stopPolling('非SSE响应处理完成');
-        } else {
-          console.error(`请求失败，状态码: ${res.statusCode}`);
-          this.setData({
-            matchDegreeContent: `<div style="text-align: center; color: #ff4d4f; padding: 20px 0;">请求失败，状态码: ${res.statusCode}</div>`
-          });
-          stopPolling('请求失败');
-        }
-      },
-      fail: (error) => {
-        console.error('请求失败:', error);
-        this.setData({
-          matchDegreeContent: '<div style="text-align: center; color: #ff4d4f; padding: 20px 0;">网络请求失败，请稍后重试</div>'
-        });
-        stopPolling('网络请求失败');
       }
-    });
+    })
+
+// 返回的 requestTask  拥有一个 onChunkReceived 监听回调
+// onChunkReceived 的回调参数：
+// res:data (ArrayBuffer)：接收到的分块数据。
+
+    requestTask.onChunkReceived(res => {
+      // res 流式数据  注意：这里可能是多块数据，服务推送多次信息，onChunkReceived只响应一次，则该次监听的内容就是服务器推送多次拼接在一起的字符串，需要单独裁剪额外处理
+      try {
+        // 解码分块数据
+        const uint8Array = new Uint8Array(res.data);
+      let test = String.fromCharCode.apply(null, uint8Array);
+      test = decodeURIComponent(escape(test));
+      let testArr = test.split('data:');
+        // console.log(testArr, '====9999===');  // 这里就是服务器推送的原始内容
+        testArr.forEach(item => {
+          if (item.trim()) {
+            // 处理每个数据块
+            const parsedBlock = JSON.parse(item);
+            // 检查是否有content字段
+            if (parsedBlock.content) {
+              // 立即添加到累计内容中并更新页面
+              accumulatedContent += parsedBlock.content;
+              this.setData({ matchDegreeContent: accumulatedContent });
+            }
+            if(parsedBlock.done){
+                stopPolling('检测到done:true，处理完成');
+              }
+          }
+        })
+      }
+      catch(err){
+      console.error('推送数据结构异常！', err); 
+    }
+    })
   },
   
   /**

@@ -120,8 +120,12 @@
             </view>
           </view>
           <!-- 匹配度内容 -->
-          <view class="text-gray-800 text-sm leading-relaxed" wx:if="{{!isLoadingMatchDegree || matchDegreeContent !== ''}}">
-            <rich-text nodes="{{matchDegreeContent || '暂无匹配度数据'}}"></rich-text>
+          <view class="text-gray-800 text-sm leading-relaxed" wx:if="{{matchDegreeContent !== ''}}">
+            <rich-text nodes="{{matchDegreeContent}}"></rich-text>
+          </view>
+          <!-- 无内容提示 -->
+          <view class="text-gray-600 text-sm text-center py-12" wx:if="{{!isLoadingMatchDegree && matchDegreeContent === ''}}">
+            暂无匹配度数据
           </view>
           <!-- 加载中提示 -->
           <view class="text-gray-400 text-xs text-center mt-2" wx:if="{{isLoadingMatchDegree && matchDegreeContent !== ''}}">
