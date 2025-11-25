@@ -1253,8 +1253,8 @@ Page({
     if (!app.checkUserInfoComplete()) {
       return
     }
-    const userId = app.globalData.userInfo.id;
-    // const userId = 7;
+    // const userId = app.globalData.userInfo.id;
+    const userId = 1;
     wx.navigateTo({
       url: `/pages/preview/preview?type=profile&userId=${userId}`
     })

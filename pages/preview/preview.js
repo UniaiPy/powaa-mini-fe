@@ -134,15 +134,16 @@ Page({
     if (cachedData) {
       this.setData({
         showMatchDegreeModal: true,
-        matchDegreeContent: cachedData.content
+        matchDegreeContent: cachedData.content,
+        isLoadingMatchDegree: false
       });
       return;
     }
     
-    // 设置初始状态
+    // 设置初始状态，添加加载提示文本
     this.setData({
       showMatchDegreeModal: true,
-      matchDegreeContent: '',
+      matchDegreeContent: '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>',
       isLoadingMatchDegree: true
     });
     
@@ -152,144 +153,130 @@ Page({
   
   /**
    * 获取匹配度分析结果
-   * 使用SSE流式获取数据
+   * 实现SSE流式响应，每次只解析新增的数据块并逐步更新内容
    */
   fetchMatchDegree: function(userId, targetUserId, cacheKey) {
     const app = getApp();
     const baseUrl = 'http://ai.powaa.cn';
     const url = `${baseUrl}/ai/match/compare`;
-    let content = '';
-    let isDone = false;
-    let pollCount = 0;
-    const maxPollCount = 200; // 最大轮询次数，防止无限循环
+    let accumulatedContent = ''; // 累计的内容
     
     const requestData = {
       userId: userId,
       targetUserId: targetUserId
     };
     
-    // 优化的SSE模拟轮询函数
-    const mockSSE = () => {
-      // 防止无限轮询
-      if (isDone || pollCount >= maxPollCount) {
-        console.log('轮询结束，状态:', isDone ? '完成' : '达到最大轮询次数');
-        // 如果达到最大轮询次数但还未完成，强制停止加载状态
-        if (pollCount >= maxPollCount) {
-          this.setData({ isLoadingMatchDegree: false });
-          // 如果获取到了部分内容，保存缓存
-          if (content) {
-            this.cacheMatchDegree(cacheKey, content);
-          } else {
-            // 如果没有任何内容，显示默认文本
-            const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
-            this.setData({ matchDegreeContent: defaultContent });
-          }
-        }
-        return;
+    // 轮询终止函数
+    const stopPolling = (reason) => {
+      console.log(`轮询终止，原因: ${reason}`);
+      this.setData({ isLoadingMatchDegree: false });
+      
+      // 保存缓存
+      if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
+        this.cacheMatchDegree(cacheKey, accumulatedContent);
+      } else if (!accumulatedContent) {
+        // 如果没有任何内容，显示默认文本
+        const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
+        this.setData({ matchDegreeContent: defaultContent });
       }
+      return;
+    };
+    
+    // 处理单个SSE数据块
+    const processDataBlock = (block) => {
+      try {
+        const parsedBlock = JSON.parse(block.trim());
+        
+        // 如果有content字段，立即添加到累计内容中并更新页面
+        if (parsedBlock.content) {
+          accumulatedContent += parsedBlock.content;
+          this.setData({ matchDegreeContent: accumulatedContent });
+        }
+        
+        // 检查是否完成
+        if (parsedBlock.done) {
+          stopPolling('检测到done:true，处理完成');
+          return true;
+        }
+      } catch (e) {
+        console.error('解析单个data块失败:', e);
+      }
+      return false;
+    };
+    
+    // 流式处理SSE数据
+    const streamProcessSSEData = (sseData, delay = 100) => {
+      // 分割成多个data块
+      const dataBlocks = sseData.split('data:');
+      let currentBlockIndex = 0;
       
-      pollCount++;
-      console.log(`第${pollCount}次轮询请求`);
+      // 过滤掉空块
+      const validBlocks = dataBlocks.filter(block => block.trim());
       
-      wx.request({
-        url: url,
-        method: 'POST',
-        data: requestData,
-        header: {
-          'content-type': 'application/json',
-          'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : '',
-          'Accept': 'text/event-stream' // 添加SSE接受头
-        },
-        success: (res) => {
-          console.log(`第${pollCount}次轮询响应:`, res);
+      // 处理下一个数据块
+      const processNextBlock = () => {
+        if (currentBlockIndex < validBlocks.length) {
+          const block = validBlocks[currentBlockIndex];
+          const isDone = processDataBlock(block);
           
-          // 处理不同类型的响应格式
-          if (res.data) {
-            // 1. 尝试直接作为JSON对象处理
-            if (typeof res.data === 'object') {
-              handleResponseData(res.data);
-            }
-            // 2. 尝试作为字符串处理
-            else if (typeof res.data === 'string') {
-              // 先尝试直接解析为JSON
-              try {
-                const jsonData = JSON.parse(res.data);
-                handleResponseData(jsonData);
-              } catch (e) {
-                // 如果不是纯JSON，按SSE格式处理
-                const lines = res.data.split('\n');
-                lines.forEach(line => {
-                  // 跳过空行
-                  if (!line.trim()) return;
-                  
-                  // 标准SSE格式处理
-                  if (line.startsWith('data:')) {
-                    const dataStr = line.substring(5).trim();
-                    try {
-                      const data = JSON.parse(dataStr);
-                      handleResponseData(data);
-                    } catch (e) {
-                      console.error('解析SSE data行失败:', e, '行内容:', line);
-                    }
-                  }
-                  // 非标准格式，尝试直接解析整行
-                  else {
-                    try {
-                      const data = JSON.parse(line);
-                      handleResponseData(data);
-                    } catch (e) {
-                      // 如果都解析失败，记录但不中断
-                      console.error('解析非标准行失败:', e, '行内容:', line);
-                    }
-                  }
-                });
-              }
-            }
+          currentBlockIndex++;
+          
+          // 如果未完成，继续处理下一个块
+          if (!isDone) {
+            setTimeout(processNextBlock, delay);
           }
-        },
-        fail: (error) => {
-          console.error(`第${pollCount}次轮询失败:`, error);
-          // 请求失败时也继续轮询几次，可能是网络波动
-          if (pollCount < maxPollCount / 2) {
-            setTimeout(mockSSE, 500); // 失败时延长间隔
-          } else {
-            // 失败次数过多，停止轮询
-            isDone = true;
-            this.setData({ isLoadingMatchDegree: false });
-            this.showToast('获取匹配度说明失败，请稍后重试');
-          }
-        },
-        complete: () => {
-          // 只有在未完成时才继续轮询
-          if (!isDone && pollCount < maxPollCount) {
-            setTimeout(mockSSE, 200); // 调整轮询间隔
-          }
+        } else {
+          // 所有块都处理完毕
+          stopPolling('所有数据块处理完毕');
         }
-      });
-    };
-    
-    // 统一处理响应数据的函数
-    const handleResponseData = (data) => {
-      console.log('处理响应数据:', data);
+      };
       
-      // 检查是否有content字段
-      if (data.content && typeof data.content === 'string') {
-        content += data.content;
-        this.setData({ matchDegreeContent: content });
-      }
-      // 检查是否有complete或done标志
-      if (data.done || data.complete || data.finished) {
-        isDone = true;
-        this.setData({ isLoadingMatchDegree: false });
-        // 保存缓存
-        if (content) {
-          this.cacheMatchDegree(cacheKey, content);
-        }
-      }
+      // 开始处理数据块
+      processNextBlock();
     };
     
-    // 启动轮询
-    mockSSE();
+    // 请求数据
+    wx.request({
+      url: url,
+      method: 'POST',
+      data: requestData,
+      header: {
+        'content-type': 'application/json',
+        'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : '',
+        'Accept': 'text/event-stream' // 添加流式响应请求头
+      },
+      success: (res) => {
+        console.log('请求响应:', res);
+        
+        // 处理响应
+        if (res.statusCode === 200 && typeof res.data === 'string') {
+          // 清空初始加载提示
+          accumulatedContent = '';
+          // 流式处理SSE数据，逐个块处理并立即更新UI
+          streamProcessSSEData(res.data);
+        } else if (res.statusCode === 200 && typeof res.data === 'object') {
+          // 处理非SSE格式的响应
+          if (res.data.content) {
+            accumulatedContent = res.data.content;
+            this.setData({ matchDegreeContent: accumulatedContent });
+          }
+          stopPolling('非SSE响应处理完成');
+        } else {
+          console.error(`请求失败，状态码: ${res.statusCode}`);
+          this.setData({
+            matchDegreeContent: `<div style="text-align: center; color: #ff4d4f; padding: 20px 0;">请求失败，状态码: ${res.statusCode}</div>`
+          });
+          stopPolling('请求失败');
+        }
+      },
+      fail: (error) => {
+        console.error('请求失败:', error);
+        this.setData({
+          matchDegreeContent: '<div style="text-align: center; color: #ff4d4f; padding: 20px 0;">网络请求失败，请稍后重试</div>'
+        });
+        stopPolling('网络请求失败');
+      }
+    });
   },
   
   /**
