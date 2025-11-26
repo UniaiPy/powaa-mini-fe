@@ -16,7 +16,7 @@
           <text class="fa fa-eye"></text>
         </view>
         <button class="share-btn text-xl text-black cursor-pointer ml-7" bindtap="openShare">
-          <text class="fa fa-share"></text>
+          <text class="fa fa-share-alt"></text>
         </button>
       </view>
     </view>

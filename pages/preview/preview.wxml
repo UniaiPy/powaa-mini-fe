@@ -5,7 +5,7 @@
     <view class="fixed-nav flex items-center justify-center gap-2 w-full">
       <view class="text-base font-bold text-gray-900">名片预览</view>
       <button class="cursor-pointer share-btn" open-type="share">
-        <text class="fa fa-share text-black text-xl"></text>
+        <text class="fa fa-share-alt text-black text-xl"></text>
       </button>
     </view>
   </custom-navigation-bar>

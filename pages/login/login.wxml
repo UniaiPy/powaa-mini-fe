@@ -14,9 +14,9 @@
       <view class="space-y-3 mb-6">
         <!-- 微信登录按钮 -->
         <button class="action-button" bindtap="wxLogin" loading="{{loading}}" disabled="{{loading || !agreeTerms}}">
-          <text class="btn-icon">
+          <view class="btn-icon">
             <text class="fa fa-weixin"></text>
-          </text>
+          </view>
           微信一键登录
         </button>
       </view>

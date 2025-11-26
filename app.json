@@ -49,6 +49,5 @@
     }
   },
   "sitemapLocation": "sitemap.json",
-  "renderer": "webview",
-  "lazyCodeLoading":"requiredComponents"
+  "renderer": "webview"
 }
