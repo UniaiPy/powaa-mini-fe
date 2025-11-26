@@ -1,4 +1,4 @@
-// pages/search/search.js
+// subpages/search/search.js
 Page({
   data: {
     searchText: '',
@@ -130,7 +130,7 @@ Page({
   navigateToConversation: function(e) {
     const user = e.currentTarget.dataset.user;
     wx.navigateTo({
-      url: `/pages/conversation/conversation?user=${encodeURIComponent(JSON.stringify(user))}`
+      url: `/subpages/conversation/conversation?user=${encodeURIComponent(JSON.stringify(user))}`
     });
   }
   

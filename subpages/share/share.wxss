@@ -1,4 +1,4 @@
-/* pages/share/share.wxss */
+/* subpages/share/share.wxss */
 /* 引入基础样式和iconfont */
 @import '../../app.wxss';
 

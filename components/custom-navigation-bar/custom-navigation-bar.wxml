@@ -21,7 +21,10 @@
     <view class="navigationBar flex-between" style="{{system.navigationBarStyle}};Background-color:{{backgroundColor}};backGround:{{background}}">
       <!-- 左侧占位区域 -->
       <view class="navigation-placeholder" style="width: {{system.menu.width}}px;padding: 0 {{system.systemInfo.windowWidth - (system.menu.left + system.menu.width)}}px;">
-        <view class="back" catchtap="back" wx:if="{{showBack}}">
+        <view class="back" catchtap="back" wx:if="{{showBack && !showHome}}">
+          <view class="icon" style="border-color: {{color}};"></view>
+        </view>
+        <view class="home" catchtap="home" wx:if="{{showHome}}">
           <view class="icon" style="border-color: {{color}};"></view>
         </view>
       </view>

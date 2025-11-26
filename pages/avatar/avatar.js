@@ -1436,12 +1436,43 @@ Page({
    * 选择位置
    */
   chooseLocation() {
-    wx.chooseLocation({
-      success: (res) => {
-        this.sendLocationMessage(res);
-      },
-      fail: (error) => {
-        console.error('选择位置失败:', error);
+    // 调用前检查授权
+    wx.getSetting({
+      success(res) {
+        // 若未授权，先请求授权
+        if (!res.authSetting['scope.userLocation']) {
+          wx.authorize({
+            scope: 'scope.userLocation',
+            success() {
+              // 授权成功，调用接口
+              wx.chooseLocation({
+                success:(res2) => {
+                  this.sendLocationMessage(res2);
+                },
+                fail(error) {
+                  console.error('选择位置失败:', error);
+                }
+              });
+            },
+            fail() {
+              // 用户拒绝授权，引导手动开启
+              wx.showModal({
+                title: '提示',
+                content: '需要位置权限才能选择地点',
+                success(res) {
+                  if (res.confirm) wx.openSetting(); // 跳转到设置页开启权限
+                }
+              });
+            }
+          });
+        } else {
+          // 已授权，直接调用
+          wx.chooseLocation({
+            success(res) {
+              console.log('选择的位置：', res);
+            }
+          });
+        }
       }
     });
   },
@@ -2394,7 +2425,7 @@ Page({
     if (this.data.aiTrainingStatus === 'active') {
       // 跳转到AI报告页面
       wx.navigateTo({
-        url: '/pages/ai-report/ai-report',
+        url: '/subpages/ai-report/ai-report',
       });
     } else {
       // 显示提示信息

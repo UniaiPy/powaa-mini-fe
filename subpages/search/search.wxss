@@ -1,4 +1,4 @@
-/* pages/search/search.wxss *//* pages/chat/chat.wxss */
+/* subpages/search/search.wxss *//* subpages/chat/chat.wxss */
 
 /* 全局样式 */
 page {

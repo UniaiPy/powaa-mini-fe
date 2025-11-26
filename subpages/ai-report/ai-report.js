@@ -1,4 +1,4 @@
-// pages/ai-report/ai-report.js
+// subpages/ai-report/ai-report.js
 Page({
   /**
    * 页面的初始数据

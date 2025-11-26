@@ -44,6 +44,20 @@
   border-right-width: 0;
 }
 
+.home .icon{
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 24rpx;
+  height: 24rpx;
+  border: 5rpx solid #fff;
+  border-radius: 4rpx;
+}
+
 .flex-between{
   display: flex;
   justify-content: space-between;

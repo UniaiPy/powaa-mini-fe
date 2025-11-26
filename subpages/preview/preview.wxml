@@ -1,7 +1,7 @@
-<!-- pages/preview/preview.wxml -->
+<!-- subpages/preview/preview.wxml -->
 <view class="page-container">
   <!-- 顶部导航 -->
-  <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000'>
+  <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000' showBack="{{!isFromShare}}" showHome="{{isFromShare}}">
     <view class="fixed-nav flex items-center justify-center gap-2 w-full">
       <view class="text-base font-bold text-gray-900">名片预览</view>
       <button class="cursor-pointer share-btn" open-type="share">

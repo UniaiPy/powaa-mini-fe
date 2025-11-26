@@ -1,15 +1,14 @@
-{
-  "pages": [
-    "pages/login/login",
-    "pages/chat/chat",
-    "pages/conversation/conversation",
-    "pages/avatar/avatar",
-    "pages/profile/profile",
-    "pages/share/share",
-    "pages/preview/preview",
-    "pages/about/about",
-    "pages/ai-report/ai-report",
-    "pages/search/search"
+{  "pages": [    "pages/login/login",    "pages/chat/chat",    "pages/avatar/avatar",    "pages/profile/profile"  ],  "subpackages": [    {
+      "root": "subpages",
+      "pages": [
+        "conversation/conversation",
+        "share/share",
+        "preview/preview",
+        "about/about",
+        "ai-report/ai-report",
+        "search/search"
+      ]
+    }
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -42,11 +41,6 @@
         "selectedIconPath": "assets/icons/card-active.png"
       }
     ]
-  },
-  "permission": {
-    "scope.userLocation": {
-      "desc": "用于提供位置信息"
-    }
   },
   "sitemapLocation": "sitemap.json",
   "renderer": "webview"

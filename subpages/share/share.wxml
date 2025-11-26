@@ -1,4 +1,4 @@
-<!-- pages/share/share.wxml -->
+<!-- subpages/share/share.wxml -->
 <view class="page-container">
   <!-- 顶部导航 -->
   <!-- <view class="fixed-nav flex items-center justify-between py-3 px-6 text-black">

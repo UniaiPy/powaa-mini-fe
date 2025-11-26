@@ -29,6 +29,11 @@ Component({
     showBack: {
       type: Boolean,
       value: true
+    },
+    // 是否显示主页按钮（替代返回按钮）
+    showHome: {
+      type: Boolean,
+      value: false
     }
   },
 
@@ -54,6 +59,11 @@ Component({
   methods: {
     back () {
       wx.navigateBack()
+    },
+    home () {
+      wx.switchTab({
+        url: '/pages/chat/chat'
+      })
     }
   }
 })

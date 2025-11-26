@@ -1,4 +1,4 @@
-// pages/conversation/conversation.js
+// subpages/conversation/conversation.js
 // 导入IM管理器
 import imManager from '../../utils/imManager.js';
 // 导入时间格式化工具
@@ -2665,7 +2665,7 @@ Page({
     console.log('chatInfo:', chatInfo)
     const userId = chatInfo.id || chatInfo.name
     wx.navigateTo({
-      url: `/pages/preview/preview?type=avatar&userId=${userId}`
+      url: `/subpages/preview/preview?type=avatar&userId=${userId}`
     })
   },
 
@@ -2674,7 +2674,7 @@ Page({
    */
   shareCard() {
     wx.navigateTo({
-      url: '/pages/share/share'
+      url: '/subpages/share/share'
     })
   },
 
@@ -2947,7 +2947,7 @@ Page({
     const { chatInfo } = this.data
     return {
       title: `与${chatInfo.name}的对话`,
-      path: `/pages/conversation/conversation?userName=${encodeURIComponent(chatInfo.name)}`
+      path: `/subpages/conversation/conversation?userName=${encodeURIComponent(chatInfo.name)}`
     }
   },
 

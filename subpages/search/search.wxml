@@ -1,5 +1,5 @@
-<!-- pages/search/search.wxml -->
-<!-- pages/search/search.wxml -->
+<!-- subpages/search/search.wxml -->
+<!-- subpages/search/search.wxml -->
 <view class="page-container">
     <!-- 搜索框覆盖层 -->
     <view class="search-overlay">

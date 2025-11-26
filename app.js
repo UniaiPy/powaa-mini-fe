@@ -217,11 +217,11 @@ App({
         success: (res) => {
           console.log('API响应:', res)
           
-          // 处理401未授权错误
-          if (res.statusCode === 401 || (res.data && res.data.error && 
+          // 处理401未授权错误，但允许匿名访问的请求除外
+          if ((res.statusCode === 401 || (res.data && res.data.error && 
               (res.data.error.includes('认证令牌无效') || 
                res.data.error.includes('token无效') || 
-               res.data.error.includes('token已过期')))) {
+               res.data.error.includes('token已过期')))) && !options.allowAnonymous) {
             this.handleAuthError(options)
             reject(new Error('登录已过期，请重新登录'))
           } else {
@@ -248,8 +248,8 @@ App({
   handleAuthError: function(options) {
     this.logout()
     
-    // 避免在登录相关接口上循环重定向
-    if (!options.url.includes('/api/auth/') && !options.noAutoRedirect) {
+    // 避免在登录相关接口上循环重定向，允许匿名访问的请求也不重定向
+    if (!options.url.includes('/api/auth/') && !options.noAutoRedirect && !options.allowAnonymous) {
       wx.showToast({
         title: '登录已过期，请重新登录',
         icon: 'none',

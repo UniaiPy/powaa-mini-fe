@@ -1240,7 +1240,7 @@ Page({
    */
   navigateToAbout() {
     wx.navigateTo({
-      url: '/pages/about/about'
+      url: '/subpages/about/about'
     })
   },
 
@@ -1253,10 +1253,10 @@ Page({
     if (!app.checkUserInfoComplete()) {
       return
     }
-    // const userId = app.globalData.userInfo.id;
-    const userId = 1;
+    const userId = app.globalData.userInfo.id;
+    // const userId = 1;
     wx.navigateTo({
-      url: `/pages/preview/preview?type=profile&userId=${userId}`
+      url: `/subpages/preview/preview?type=profile&userId=${userId}`
     })
   },
   /**
@@ -1269,7 +1269,7 @@ Page({
       return
     }
     wx.navigateTo({
-      url: '/pages/share/share'
+      url: '/subpages/share/share'
     })
   },
 
@@ -1285,7 +1285,7 @@ Page({
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
       imageUrl: '/images/ai.png'
     }
   },
@@ -1298,7 +1298,7 @@ Page({
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
       imageUrl: '/images/ai.png'
     }
   }

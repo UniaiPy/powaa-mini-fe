@@ -1,4 +1,4 @@
-// pages/about/about.js
+// subpages/about/about.js
 
 Page({
   data: {

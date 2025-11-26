@@ -1,4 +1,4 @@
-/* pages/preview/preview.wxss */
+/* subpages/preview/preview.wxss */
 /* 引入基础样式和iconfont */
 @import '../../app.wxss';
 

@@ -1,4 +1,4 @@
-// pages/preview/preview.js
+// subpages/preview/preview.js
 import TencentCloudChat from '@tencentcloud/chat';
 Page({
   /**
@@ -32,11 +32,19 @@ Page({
     const targetUserId = options.userId || '';
     const type = options.type || '';
     
+    // 判断是否通过分享进入页面
+    const enterOptions = wx.getEnterOptionsSync();
+    const scene = enterOptions.scene;
+    // 分享场景值：1007(单人聊天)、1008(群聊)、1011(朋友圈)、1012(历史分享页)、1013(公众号文章)、1025(扫码)等
+    const isFromShare = [1007, 1008, 1011, 1012, 1013, 1025].includes(scene);
+    
     this.setData({
       userId: targetUserId,
       type: type,
       // 判断是否为当前用户自己的名片（确保类型一致并进行空值检查）
-      isOwnProfile: currentUserId && targetUserId && String(currentUserId) === String(targetUserId)
+      isOwnProfile: currentUserId && targetUserId && String(currentUserId) === String(targetUserId),
+      // 是否通过分享进入页面
+      isFromShare: isFromShare
     });
     // 加载用户个人资料数据
     this.loadProfileData();
@@ -86,18 +94,6 @@ Page({
   },
 
   /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage: function () {
-    const userId = this.data.userId;
-    return {
-      title: '预览名片',
-      path: `/pages/preview/preview?userId=${userId}&type=${this.data.type}`,
-      imageUrl: '/images/share-cover.png' // 分享封面图
-    };
-  },
-
-  /**
    * 导航到个人资料页面
    */
   navigateToProfile: function() {
@@ -113,6 +109,22 @@ Page({
    */
   showMatchDegree: function() {
     const app = getApp();
+    
+    // 检查用户是否登录
+    if (!app.isLoggedIn()) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none',
+        duration: 1500
+      });
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/login/login'
+        });
+      }, 1500);
+      return;
+    }
+    
     const userId = String(app.globalData.userInfo?.id || '');
     const targetUserId = String(this.data.userId || '');
     
@@ -303,15 +315,32 @@ Page({
   startChat: function() {
     const app = getApp();
     const targetUserId = this.data.userId;
+    
+    // 检查用户是否登录
+    if (!app.isLoggedIn()) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none',
+        duration: 1500
+      });
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/login/login'
+        });
+      }, 1500);
+      return;
+    }
+    
     // 调用后端接口检查好友关系
     app.request({
       url: `/api/friendships/check/${targetUserId}`,
       method: 'GET',
+      allowAnonymous: true, // 允许匿名访问
       success: (res) => {
         if (res.success && res.data.is_friend) {
           // 是好友，直接跳转聊天会话页面
           wx.navigateTo({
-            url: `/pages/conversation/conversation?conversationID=C2C${targetUserId}`
+            url: `/subpages/conversation/conversation?conversationID=C2C${targetUserId}`
           });
         } else {
           // 不是好友，显示打招呼弹窗
@@ -344,9 +373,25 @@ Page({
    */
   sendGreeting: function() {
     const message = this.data.greetingMessage;
+    const app = getApp();
     
     if (!message || message.trim() === '') {
       this.showToast('请输入打招呼消息');
+      return;
+    }
+    
+    // 检查用户是否登录
+    if (!app.isLoggedIn()) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none',
+        duration: 1500
+      });
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/login/login'
+        });
+      }, 1500);
       return;
     }
     
@@ -363,8 +408,7 @@ Page({
       avatar: this.data.avatarUrl || ''
     };
     
-    // 获取app实例用于后续使用（提前定义，确保在整个函数作用域内可用）
-    const app = getApp();
+    // app实例已在函数顶部定义，无需重复声明
     
     // 检查TUIKit是否已初始化
     if (!wx.$TUIKit) {
@@ -630,6 +674,7 @@ Page({
     app.request({
       url: requestUrl,
       method: 'GET',
+      allowAnonymous: true, // 允许匿名访问，解决分享页面未登录用户无法访问的问题
       success: (res) => {
         console.log('获取用户信息成功:', res);
         
@@ -698,7 +743,7 @@ Page({
    */
   openShare() {
     wx.navigateTo({
-      url: '/pages/share/share'
+      url: '/subpages/share/share'
     })
   },
   /**
@@ -709,7 +754,7 @@ Page({
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
       imageUrl: this.data.avatarUrl
     }
   },
@@ -718,7 +763,7 @@ Page({
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/pages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
       imageUrl: this.data.avatarUrl
     }
   }

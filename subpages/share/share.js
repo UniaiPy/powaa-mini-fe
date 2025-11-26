@@ -1,4 +1,4 @@
-// pages/share/share.js
+// subpages/share/share.js
 Page({
   /**
    * 页面的初始数据
@@ -28,7 +28,7 @@ Page({
     if (userId) {
       this.setData({
         currentUserId: userId,
-        previewUrl: `/pages/preview/preview?userId=${userId}`
+        previewUrl: `/subpages/preview/preview?userId=${userId}`
       });
       
       // 获取用户社交媒体信息
@@ -116,22 +116,27 @@ Page({
   /**
    * 用户点击右上角分享
    */
+
   onShareAppMessage() {
-    const app = getApp()
-    const userId = app.globalData.userInfo.id;
+    const app = getApp();
+    const userInfo = app.globalData.userInfo || {};
+    const userId = userInfo.id || '';
     return {
-      title: `${app.globalData.userInfo.nickname}的AI名片`,
-      path: `/pages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: '/images/ai.png'
+      title: `${userInfo.nickname || '用户'}的AI名片`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      // 使用用户头像作为分享图片，若不存在则使用默认图片
+      imageUrl: userInfo.avatar || '/images/ai.png'
     }
   },
   onShareTimeline() {
-    const app = getApp()
-    const userId = app.globalData.userInfo.id;
+    const app = getApp();
+    const userInfo = app.globalData.userInfo || {};
+    const userId = userInfo.id || '';
     return {
-      title: `${app.globalData.userInfo.nickname}的AI名片`,
-      path: `/pages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: '/images/ai.png'
+      title: `${userInfo.nickname || '用户'}的AI名片`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      // 使用用户头像作为分享图片，若不存在则使用默认图片
+      imageUrl: userInfo.avatar || '/images/ai.png'
     }
   },
 

@@ -2014,7 +2014,7 @@ Page({
   navigateToPreview: function(e) {
     const user = e.currentTarget.dataset.user;
     wx.navigateTo({
-      url: `/pages/preview/preview?user=${encodeURIComponent(JSON.stringify(user))}`
+      url: `/subpages/preview/preview?user=${encodeURIComponent(JSON.stringify(user))}`
     });
   },
 
@@ -2050,7 +2050,7 @@ Page({
     }
     
     // 构建跳转URL，包含用户信息和会话ID
-    let url = `/pages/conversation/conversation`;
+    let url = `/subpages/conversation/conversation`;
     if (conversationID) {
       url += `?conversationID=${conversationID}`;
     }
@@ -2080,7 +2080,7 @@ Page({
   // 导航到关于页面
   navigateToAbout: function() {
     wx.navigateTo({
-      url: '/pages/about/about'
+      url: '/subpages/about/about'
     });
   },
 
