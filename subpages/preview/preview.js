@@ -31,20 +31,33 @@ Page({
     const currentUserId = app.globalData.userInfo?.id;
     const targetUserId = options.userId || '';
     const type = options.type || '';
+    console.log('options:', options.isFromProfile);
+    if(options.isFromProfile){
+      this.setData({
+        isFromShare: false
+      });
+    }else{
+      this.setData({
+        isFromShare: true
+      });
+    }
+    
+    
     
     // 判断是否通过分享进入页面
-    const enterOptions = wx.getEnterOptionsSync();
-    const scene = enterOptions.scene;
+    // const enterOptions = wx.getEnterOptionsSync();
+    // const scene = enterOptions.scene;
+    // console.log('scene:', scene);
     // 分享场景值：1007(单人聊天)、1008(群聊)、1011(朋友圈)、1012(历史分享页)、1013(公众号文章)、1025(扫码)等
-    const isFromShare = [1007, 1008, 1011, 1012, 1013, 1025].includes(scene);
-    
+    // const isFromShare = [1007, 1008, 1011, 1012, 1013, 1025].includes(scene);
+    // console.log('isFromShare:', isFromShare);
     this.setData({
       userId: targetUserId,
       type: type,
       // 判断是否为当前用户自己的名片（确保类型一致并进行空值检查）
       isOwnProfile: currentUserId && targetUserId && String(currentUserId) === String(targetUserId),
       // 是否通过分享进入页面
-      isFromShare: isFromShare
+      // isFromShare: isFromShare
     });
     // 加载用户个人资料数据
     this.loadProfileData();

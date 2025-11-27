@@ -34,6 +34,7 @@ Page({
       // 获取用户社交媒体信息
       this.fetchUserSocialMedia();
     }
+    this.loadProfileData();
   },
   
   /**
@@ -102,6 +103,44 @@ Page({
   onReachBottom: function () {
     
   },
+   loadProfileData: function() {
+    const app = getApp();
+    const userId = String(app.globalData.userInfo?.id || '');
+    wx.showLoading({
+      title: '加载中...',
+    });
+    const requestUrl = `/api/users/profile/${userId}`;
+    
+    app.request({
+      url: requestUrl,
+      method: 'GET',
+      allowAnonymous: true, // 允许匿名访问，解决分享页面未登录用户无法访问的问题
+      success: (res) => {
+        console.log('获取用户信息成功:', res);
+        
+        if (res.code === 0 && res.data) {
+          // 更新页面数据
+          const updateData = {};
+          // 更新头像
+          if (res.data.avatar_url) {
+            updateData.avatarUrl = res.data.avatar_url;
+          }
+          
+          // 设置页面数据
+          this.setData(updateData);
+        } else {
+          this.showToast(res.message || '获取用户信息失败');
+        }
+      },
+      fail: (error) => {
+        console.error('获取用户信息失败:', error);
+        this.showToast('网络错误，请稍后重试');
+      },
+      complete: () => {
+        wx.hideLoading();
+      }
+    });
+  },
 
   // /**
   //  * 用户点击右上角分享
@@ -125,7 +164,7 @@ Page({
       title: `${userInfo.nickname || '用户'}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}`,
       // 使用用户头像作为分享图片，若不存在则使用默认图片
-      imageUrl: userInfo.avatar || '/images/ai.png'
+      imageUrl: this.data.avatarUrl || '/images/ai.png'
     }
   },
   onShareTimeline() {
@@ -136,7 +175,7 @@ Page({
       title: `${userInfo.nickname || '用户'}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}`,
       // 使用用户头像作为分享图片，若不存在则使用默认图片
-      imageUrl: userInfo.avatar || '/images/ai.png'
+      imageUrl: this.data.avatarUrl || '/images/ai.png'
     }
   },
 

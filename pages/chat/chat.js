@@ -900,7 +900,7 @@ Page({
       const userId = userProfile.userID;
       
       // 过滤掉AI分身的会话
-      if (userId && (userId === 'AI分身')) {
+      if (userId && (userId === 'AI分身' || userId === '@RBT#001')) {
         console.log('过滤掉AI分身会话:', userId);
         return false;
       }

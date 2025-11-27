@@ -1,34 +1,45 @@
 /* components/custom-navigation-bar/custom-navigation-bar.wxss */
-.component{
+.component {
   color: #fff;
 }
-.statusBar,.navigationBar,.menuButton{
+
+.statusBar,
+.navigationBar,
+.menuButton {
   position: fixed;
   z-index: 10000;
 }
+
 /* 默认顶部背景色 */
-.statusBar,.navigationBar{
+.statusBar,
+.navigationBar {
   background-color: #000;
 }
-.navigationBar-content{
+
+.navigationBar-content {
   position: relative;
   width: 100%;
   height: 100%;
   display: flex;
 }
-.navigationBar-content.border-box{
+
+.navigationBar-content.border-box {
   box-sizing: border-box;
 }
-.navigationBar-content,.navigation-placeholder{
+
+.navigationBar-content,
+.navigation-placeholder {
   position: relative;
   font-size: 10pt;
 }
-.back{
+
+.back {
   position: relative;
   width: 40rpx;
   height: 100%;
 }
-.back .icon{
+
+.back .icon {
   content: '';
   position: absolute;
   top: 50%;
@@ -44,26 +55,28 @@
   border-right-width: 0;
 }
 
-.home .icon{
+.home .icon {
   content: '';
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  left: 0;
+  left: 25rpx;
   right: 0;
-  margin: 0 auto;
-  width: 24rpx;
-  height: 24rpx;
-  border: 5rpx solid #fff;
-  border-radius: 4rpx;
+  display: flex;
+  align-items: center;
 }
 
-.flex-between{
+.home .icon image {
+  width: 40rpx;
+  height: auto;
+}
+
+.flex-between {
   display: flex;
   justify-content: space-between;
 }
 
-.flex-1{
+.flex-1 {
   flex: 1;
 }
 

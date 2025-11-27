@@ -1256,7 +1256,7 @@ Page({
     const userId = app.globalData.userInfo.id;
     // const userId = 1;
     wx.navigateTo({
-      url: `/subpages/preview/preview?type=profile&userId=${userId}`
+      url: `/subpages/preview/preview?isFromProfile=true&type=profile&userId=${userId}`
     })
   },
   /**
@@ -1286,7 +1286,7 @@ Page({
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: '/images/ai.png'
+      imageUrl: this.data.avatarUrl || '/images/ai.png'
     }
   },
   onShareTimeline() {

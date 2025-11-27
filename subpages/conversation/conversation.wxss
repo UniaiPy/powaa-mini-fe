@@ -825,6 +825,22 @@
   border-radius: 0 !important;
 }
 
+/* 位置消息样式 */
+.message-location {
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* 地图组件样式 */
+.location-map {
+  width: 200px;
+  height: 120px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
 /* 文件消息样式 - 参考微信样式 */
 .message-file {
   display: flex;

@@ -974,10 +974,19 @@
 
 .message-location {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 12rpx;
   padding: 20rpx;
+}
+
+/* 地图组件样式 */
+.location-map {
+  width: 400rpx;
+  height: 240rpx;
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
 }
 
 .location-icon {

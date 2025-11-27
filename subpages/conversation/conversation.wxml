@@ -96,7 +96,7 @@
             <!-- 位置消息 -->
             <block wx:elif="{{item.messageType === 'location'}}">
               <view class="message-location">
-                <text class="fa fa-map-marker location-icon"></text>
+                <map longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="[{latitude: {{item.location.latitude}}, longitude: {{item.location.longitude}}, width: 20, height: 20}]" class="location-map" style="width: 250rpx; height: 150rpx;"></map>
                 <text class="location-text">{{item.location.address}}</text>
               </view>
             </block>
@@ -159,7 +159,7 @@
             <!-- 位置消息 -->
             <block wx:elif="{{item.messageType === 'location'}}">
               <view class="message-location">
-                <text class="fa fa-map-marker location-icon"></text>
+                <map longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="[{latitude: {{item.location.latitude}}, longitude: {{item.location.longitude}}, width: 20, height: 20}]" class="location-map" style="width: 250rpx; height: 150rpx;"></map>
                 <text class="location-text">{{item.location.address}}</text>
               </view>
             </block>

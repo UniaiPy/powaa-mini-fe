@@ -24,8 +24,10 @@
         <view class="back" catchtap="back" wx:if="{{showBack && !showHome}}">
           <view class="icon" style="border-color: {{color}};"></view>
         </view>
-        <view class="home" catchtap="home" wx:if="{{showHome}}">
-          <view class="icon" style="border-color: {{color}};"></view>
+        <view class="home" catchtap="home" wx:if="{{showHome && !showBack}}">
+          <view class="icon" style="border-color: {{color}};">
+            <image src="/assets/icons/home.png" mode="widthFix"></image>
+          </view>
         </view>
       </view>
       <view class="navigationBar-content flex-1">

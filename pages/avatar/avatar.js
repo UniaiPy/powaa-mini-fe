@@ -35,7 +35,7 @@ Page({
     // 是否为语音模式
     isVoiceMode: false,
     // 会话ID（固定为C2CAI分身）
-    conversationID: 'C2CAI分身',
+    conversationID: 'C2C@RBT#001',
     // 加载状态
     loading: false,
     // 错误信息
