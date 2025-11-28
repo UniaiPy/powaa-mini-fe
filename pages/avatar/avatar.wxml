@@ -37,7 +37,7 @@
           <view class="avatar-circle other-avatar">
             <image src="/images/robot-avatar.png" mode="aspectFill"></image>
           </view>
-          <view class="message other-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
+          <view class="message other-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'location' ? 'message-location-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
             <!-- 文本消息 -->
             <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
               <text>{{item.content}}</text>
@@ -60,9 +60,12 @@
             </block>
             <!-- 位置消息 -->
             <block wx:elif="{{item.messageType === 'location'}}">
-              <view class="message-location">
-                <map longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="[{latitude: {{item.location.latitude}}, longitude: {{item.location.longitude}}, width: 20, height: 20}]" class="location-map" style="width: 250rpx; height: 150rpx;"></map>
-                <text class="location-text">{{item.location.address}}</text>
+              <view class="message-location" bindtap="openLocationMap" data-location="{{item.location}}">
+                <view class="location-name" wx:if="{{item.location.name}}">
+                  {{item.location.name}}
+                </view>
+                <view class="location-address">{{item.location.address}}</view>
+                <map longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 24, iconPath: '/assets/icons/location.png'}]}}" class="location-map"></map>
               </view>
             </block>
             <!-- 表情消息 -->
@@ -100,7 +103,7 @@
         </block>
         <!-- 用户消息 -->
         <block wx:else>
-          <view class="message user-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
+          <view class="message user-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'location' ? 'message-location-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
             <!-- 文本消息 -->
             <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
               <text>{{item.content}}</text>
@@ -123,9 +126,13 @@
             </block>
             <!-- 位置消息 -->
             <block wx:elif="{{item.messageType === 'location'}}">
-              <view class="message-location">
-                <map longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="[{latitude: {{item.location.latitude}}, longitude: {{item.location.longitude}}, width: 20, height: 20}]" class="location-map" style="width: 250rpx; height: 150rpx;"></map>
-                <text class="location-text">{{item.location.address}}</text>
+              <view class="message-location" bindtap="openLocationMap" data-location="{{item.location}}">
+                <!-- <text class="location-name">{{item.location.name || '位置'}}</text> -->
+                <view class="location-name" wx:if="{{item.location.name}}">
+                  {{item.location.name}}
+                </view>
+                <view class="location-address">{{item.location.address}}</view>
+                <map longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 24, iconPath: '/assets/icons/location.png'}]}}" class="location-map"></map>
               </view>
             </block>
             <!-- 表情消息 -->

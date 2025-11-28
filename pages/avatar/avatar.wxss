@@ -777,12 +777,6 @@
   cursor: pointer;
 }
 
-.message-location {
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  cursor: pointer;
-}
 
 .message-audio,
 .message-video {
@@ -972,22 +966,48 @@
 }
 
 
+/* 位置消息样式 */
+.message-location-container {
+  background: transparent !important;
+  border: none !important;
+  /* box-shadow: none !important; */
+  padding: 0 !important;
+  border-radius: 8px !important;
+  color: #111827;
+  width: 70%;
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); */
+}
+
 .message-location {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 12rpx;
-  padding: 20rpx;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+
 }
 
 /* 地图组件样式 */
 .location-map {
-  width: 400rpx;
-  height: 240rpx;
-  border-radius: 8rpx;
-  margin-bottom: 16rpx;
+  width: 100%;
+  height: 240rpx !important;
+  border-radius: 8px;
 }
+
+.location-name {
+  font-size: 16px;
+  padding: 8px 10px;
+  display: block;
+}
+
+.location-address {
+  margin: 0 10px 8px 10px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #6b7280;
+}
+
 
 .location-icon {
   font-size: 48rpx;

@@ -298,7 +298,7 @@ Page({
       });
       
       // 检查是否有必要的用户信息
-      if (!app.globalData.userInfo || !app.globalData.userInfo.userId) {
+      if (!app.globalData.userInfo || !app.globalData.userInfo.id) {
         console.error('❌ 缺少必要的用户信息', {
           hasUserInfo: !!app.globalData.userInfo,
           hasUserID: !!app.globalData.userInfo?.userId
@@ -318,9 +318,9 @@ Page({
       }
       
       // 从app.js获取IM配置
-      const userID = app.globalData.userInfo.userId.toString();
-      const userSig = app.globalData.userInfo.userSig;
-      const SDKAppID = app.globalData.sdkAppID;
+      const userID = app.globalData.userInfo.id.toString();
+      const userSig = app.globalData.userSig;
+      const SDKAppID = app.globalData.SDKAppID;
       
       if (!userSig || !SDKAppID) {
         console.error('❌ 缺少IM配置信息:', { 

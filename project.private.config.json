@@ -5,6 +5,13 @@
     "miniprogram": {
       "list": [
         {
+          "name": "pages/chat/chat",
+          "pathName": "pages/chat/chat",
+          "query": "",
+          "scene": null,
+          "launchMode": "default"
+        },
+        {
           "name": "subpages/preview/preview",
           "pathName": "subpages/preview/preview",
           "query": "",

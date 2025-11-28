@@ -739,10 +739,22 @@ Page({
       case wx.TencentCloudChat.TYPES.MSG_LOCATION:
         messageInfo.content = '[位置]';
         messageInfo.messageType = 'location';
+        // 从description中分离name和address
+        const description = message.payload.description || '';
+        let name = '';
+        let address = '';
+        if (description.includes(' - ')) {
+          const parts = description.split(' - ');
+          name = parts[0] || '';
+          address = parts[1] || '';
+        } else {
+          address = description;
+        }
         messageInfo.location = {
           latitude: message.payload.latitude,
           longitude: message.payload.longitude,
-          address: message.payload.description || ''
+          name: name,
+          address: address
         };
         break;
         
@@ -1438,43 +1450,75 @@ Page({
   chooseLocation() {
     // 调用前检查授权
     wx.getSetting({
-      success(res) {
+      success: async (res) => {
         // 若未授权，先请求授权
         if (!res.authSetting['scope.userLocation']) {
-          wx.authorize({
-            scope: 'scope.userLocation',
-            success() {
-              // 授权成功，调用接口
-              wx.chooseLocation({
-                success:(res2) => {
-                  this.sendLocationMessage(res2);
-                },
-                fail(error) {
-                  console.error('选择位置失败:', error);
+          try {
+            await wx.authorize({
+              scope: 'scope.userLocation'
+            });
+            console.log('位置权限授权成功');
+            await this.handleChooseLocation();
+          } catch (authError) {
+            console.log('位置权限授权失败，引导用户手动开启');
+            wx.showModal({
+              title: '位置权限',
+              content: '需要位置权限来发送位置信息，请在设置中开启',
+              confirmText: '去设置',
+              success: (res) => {
+                if (res.confirm) {
+                  wx.openSetting();
                 }
-              });
-            },
-            fail() {
-              // 用户拒绝授权，引导手动开启
-              wx.showModal({
-                title: '提示',
-                content: '需要位置权限才能选择地点',
-                success(res) {
-                  if (res.confirm) wx.openSetting(); // 跳转到设置页开启权限
-                }
-              });
-            }
-          });
+              }
+            });
+          }
         } else {
           // 已授权，直接调用
-          wx.chooseLocation({
-            success(res) {
-              console.log('选择的位置：', res);
-            }
-          });
+          await this.handleChooseLocation();
         }
       }
     });
+  },
+
+  /**
+   * 处理选择位置的逻辑
+   */
+  async handleChooseLocation() {
+    try {
+      console.log('开始调用 wx.getLocation 获取当前位置');
+      // 先获取用户当前位置
+      const currentLocation = await wx.getLocation({
+        type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
+        altitude: false
+      });
+      console.log('wx.getLocation 返回结果:', currentLocation);
+      
+      const locationRes = await wx.chooseLocation({
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude
+      });
+      
+      console.log('选择的位置:', locationRes);
+      
+      // 发送位置消息
+      await this.sendLocationMessage(locationRes);
+    } catch (error) {
+      console.error('选择位置失败:', error);
+      
+      // 根据错误类型给出不同提示
+      let errorMessage = '选择位置失败';
+      if (error.errMsg && error.errMsg.includes('auth deny')) {
+        errorMessage = '请允许访问位置信息';
+      } else if (error.errMsg && error.errMsg.includes('cancel')) {
+        console.log('用户取消选择位置');
+        return; // 用户取消，不显示错误提示
+      }
+      
+      wx.showToast({
+        title: errorMessage,
+        icon: 'error'
+      });
+    }
   },
 
   /**
@@ -1496,9 +1540,9 @@ Page({
         to: targetUserID,
         conversationType: wx.TencentCloudChat.TYPES.CONV_C2C,
         payload: {
-          description: location.address || location.name,
-          longitude: location.longitude,
-          latitude: location.latitude
+          description: String(location.name ? `${location.name} - ${location.address || '未知位置'}` : location.address || '未知位置'),
+          longitude: Number(location.longitude),
+          latitude: Number(location.latitude)
         }
       });
 
@@ -1518,7 +1562,8 @@ Page({
         location: {
           latitude: location.latitude,
           longitude: location.longitude,
-          address: location.address || location.name
+          name: location.name || '',
+          address: location.address || '未知位置'
         },
         status: 'sending'
       };
@@ -2153,7 +2198,18 @@ Page({
         }
       }
       
-      const locationRes = await wx.chooseLocation();
+      console.log('开始调用 wx.getLocation 获取当前位置');
+      // 先获取用户当前位置
+      const currentLocation = await wx.getLocation({
+        type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
+        altitude: false
+      });
+      console.log('wx.getLocation 返回结果:', currentLocation);
+      
+      const locationRes = await wx.chooseLocation({
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude
+      });
       
       console.log('选择的位置:', locationRes);
       
@@ -3142,5 +3198,15 @@ Page({
       return conversationID.substring(3); // 移除 'C2C' 前缀
     }
     return null;
+  },
+
+  /**
+   * 打开全屏地图
+   */
+  openLocationMap: function(e) {
+    const location = e.currentTarget.dataset.location;
+    wx.navigateTo({
+      url: `/pages/fullscreen-map/fullscreen-map?longitude=${location.longitude}&latitude=${location.latitude}&name=${encodeURIComponent(location.name || '位置')}&address=${encodeURIComponent(location.address || '')}`
+    });
   },
 });

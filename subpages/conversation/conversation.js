@@ -693,10 +693,22 @@ Page({
       case wx.TencentCloudChat.TYPES.MSG_LOCATION:
         messageInfo.content = '[位置]';
         messageInfo.messageType = 'location';
+        
+        // 解析description，分离name和address
+        let locationName = '';
+        let locationAddress = message.payload.description || '';
+        
+        if (locationAddress.includes(' - ')) {
+          const parts = locationAddress.split(' - ');
+          locationName = parts[0];
+          locationAddress = parts[1] || '';
+        }
+        
         messageInfo.location = {
           latitude: message.payload.latitude,
           longitude: message.payload.longitude,
-          address: message.payload.description || ''
+          name: locationName,
+          address: locationAddress
         };
         break;
         
@@ -2323,10 +2335,18 @@ Page({
         }
       }
       
+      console.log('开始调用 wx.getLocation 获取当前位置');
+      // 先获取用户当前位置
+      const locationRes = await wx.getLocation({
+        type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
+        altitude: false
+      });
+      console.log('wx.getLocation 返回结果:', locationRes);
+      
       console.log('开始调用 wx.chooseLocation');
       const res = await wx.chooseLocation({
-        latitude: 0,
-        longitude: 0
+        latitude: locationRes.latitude,
+        longitude: locationRes.longitude
       });
       console.log('wx.chooseLocation 返回结果:', res);
       
@@ -2400,14 +2420,14 @@ Page({
         throw new Error('IM未初始化');
       }
       
-      // 创建位置消息
+      // 创建位置消息，确保经纬度为数字类型，包含name和address信息
       const message = wx.$TUIKit.createLocationMessage({
         to: targetUserID,
         conversationType: wx.TencentCloudChat.TYPES.CONV_C2C,
         payload: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          description: location.address || location.name || '未知位置'
+          latitude: Number(location.latitude),
+          longitude: Number(location.longitude),
+          description: String(location.name ? `${location.name} - ${location.address || '未知位置'}` : location.address || '未知位置')
         }
       });
       
@@ -2436,7 +2456,8 @@ Page({
         location: {
           latitude: location.latitude,
           longitude: location.longitude,
-          address: location.address || location.name || '未知位置'
+          name: location.name || '',
+          address: location.address || '未知位置'
         }
       };
       
@@ -3121,6 +3142,16 @@ Page({
     this.getTempAvatarUrl(avatarUrl, userId);
     // 立即返回默认头像，异步获取临时URL后会更新
     return '/images/ai.png';
+  },
+
+  /**
+   * 打开全屏地图
+   */
+  openLocationMap: function(e) {
+    const location = e.currentTarget.dataset.location;
+    wx.navigateTo({
+      url: `/pages/fullscreen-map/fullscreen-map?longitude=${location.longitude}&latitude=${location.latitude}&name=${encodeURIComponent(location.name || '位置')}&address=${encodeURIComponent(location.address || '')}`
+    });
   },
 
   /**
