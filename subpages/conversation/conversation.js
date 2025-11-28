@@ -10,6 +10,10 @@ Page({
    * 页面的初始数据
    */
   data: {
+    // 地图是否可滚动
+    mapScroll: true,
+    // 地图是否可缩放
+    mapZoom: true,
     // 聊天消息数据
     messages: [],
     // 输入框内容
@@ -2686,10 +2690,9 @@ Page({
     console.log('chatInfo:', chatInfo)
     const userId = chatInfo.id || chatInfo.name
     wx.navigateTo({
-      url: `/subpages/preview/preview?type=avatar&userId=${userId}`
+      url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=${userId}`
     })
   },
-
   /**
    * 分享名片
    */
@@ -3196,4 +3199,26 @@ Page({
       }
     });
   },
+  onShareAppMessage() {
+    const { chatInfo } = this.data
+    console.log('chatInfo:', chatInfo)
+    const userId = chatInfo.id || chatInfo.name
+    return {
+      title: `${chatInfo.nickname || '用户'}的AI名片`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      // 使用用户头像作为分享图片，若不存在则使用默认图片
+      imageUrl: chatInfo.avatar || '/images/ai.png'
+    }
+  },
+  onShareTimeline() {
+    const { chatInfo } = this.data
+    console.log('chatInfo:', chatInfo)
+    const userId = chatInfo.id || chatInfo.name
+    return {
+      title: `${chatInfo.nickname || '用户'}的AI名片`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      // 使用用户头像作为分享图片，若不存在则使用默认图片
+      imageUrl: chatInfo.avatar || '/images/ai.png'
+    }
+  }
 })

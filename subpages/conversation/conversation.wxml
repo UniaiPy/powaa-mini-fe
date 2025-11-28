@@ -32,14 +32,14 @@
   </view> -->
   <!-- 更多选项菜单 -->
   <view id="moreOptionsMenu" class="more-options-menu {{showMoreOptions ? 'show' : ''}}" wx:if="{{showMoreOptions}}">
-    <view class="option-item" bindtap="navigateToUserProfile">
+    <view class="option-item" bindtap="navigateToPreview">
       <text class="fa fa-address-card text-gray-500 w-5"></text>
       <text class="ml-2 text-gray-700 text-sm">查看名片</text>
     </view>
-    <view class="option-item" bindtap="shareCard">
+    <button class="option-item" open-type="share">
       <text class="fa fa-share-alt text-gray-500 w-5"></text>
       <text class="ml-2 text-gray-700 text-sm">分享名片</text>
-    </view>
+    </button>
     <!-- <view class="option-item" bindtap="reportUser">
       <text class="fa fa-flag text-gray-500 w-5"></text>
       <text class="ml-2 text-gray-700 text-sm">举报用户</text>
@@ -100,7 +100,7 @@
                   {{item.location.name}}
                 </view>
                 <view class="location-address">{{item.location.address}}</view>
-                <map longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 32, iconPath: '/assets/icons/location.png'}]}}" class="location-map"></map>
+                <map enable-scroll="{{mapScroll}}" enable-zoom="{{mapZoom}}" longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 32, iconPath: '/assets/icons/location.png'}]}}" class="location-map"></map>
               </view>
             </block>
             <!-- 表情消息 -->

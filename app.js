@@ -1,5 +1,4 @@
 // app.js
-import TencentCloudChat from '@tencentcloud/chat';
 import imManager from './utils/imManager.js';
 
 App({

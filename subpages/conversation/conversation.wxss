@@ -63,6 +63,7 @@
   width: 144px;
   border: 1px solid #e5e7eb;
   display: none;
+  overflow: hidden;
 }
 
 .more-options-menu.show {
@@ -88,6 +89,10 @@
   align-items: center;
   font-size: 14px;
   color: #374151;
+  background-color: #fff;
+}
+.option-item::after{
+  display: none;
 }
 
 .option-item:active {

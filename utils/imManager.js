@@ -2,11 +2,12 @@
 // IM统一管理器 - 解决页面间状态同步问题
 
 // 从TUIKit中导入TencentCloudChat
-import TencentCloudChat from '@tencentcloud/chat';
+import TencentCloudChat from '/@tencentcloud/lite-chat/professional';
 // 兼容CommonJS模块的导入
 if (typeof TencentCloudChat === 'object' && TencentCloudChat.default) {
   TencentCloudChat = TencentCloudChat.default;
 }
+console.log('TencentCloudChat:', TencentCloudChat);
 
 // 导入上传插件
 import TIMUploadPlugin from 'tim-upload-plugin';
@@ -92,6 +93,7 @@ class IMManager {
         SDKAppID: parseInt(SDKAppID)
       });
       
+
       // 注册上传插件 - 支持图片、音频、视频、文件等消息类型
       try {
         wx.$TUIKit.registerPlugin({'tim-upload-plugin': TIMUploadPlugin});
@@ -107,7 +109,6 @@ class IMManager {
       } catch (filterError) {
         console.warn('⚠️ 敏感词过滤插件注册失败:', filterError);
       }
-      
       // 保存配置
       this.config = { userID, userSig, SDKAppID };
       

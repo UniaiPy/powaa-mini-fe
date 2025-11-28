@@ -1,5 +1,5 @@
 // subpages/preview/preview.js
-import TencentCloudChat from '@tencentcloud/chat';
+import TencentCloudChat from '../../utils/@tencentcloud/lite-chat/professional';
 Page({
   /**
    * 页面的初始数据
@@ -490,11 +490,29 @@ Page({
           // 立即检查好友申请状态
           setTimeout(() => {
             console.log('=== 检查好友申请状态 ===');
-            wx.$TUIKit.getFriendApplicationList().then(appResponse => {
-              console.log('发送方的好友申请列表:', JSON.stringify(appResponse, null, 2));
-            }).catch(err => {
-              console.error('获取发送方好友申请失败:', err);
-            });
+            // 异步函数处理好友申请列表获取
+            const getFriendApplications = async () => {
+              try {
+                let appResponse;
+                if (typeof wx.$TUIKit.getFriendApplicationList === 'function') {
+                  // SDK v3 或兼容版本
+                  appResponse = await wx.$TUIKit.getFriendApplicationList();
+                } else if (typeof wx.$TUIKit.getFriendList === 'function') {
+                  // SDK v4 或其他版本，尝试使用 getFriendList 作为替代
+                  console.log('⚠️ getFriendApplicationList 方法不存在，尝试使用 getFriendList 替代');
+                  appResponse = await wx.$TUIKit.getFriendList();
+                } else {
+                  // 无可用API，返回空列表
+                  console.log('⚠️ 无可用的好友申请列表API');
+                  return;
+                }
+                console.log('发送方的好友申请列表:', JSON.stringify(appResponse, null, 2));
+              } catch (err) {
+                console.error('获取发送方好友申请失败:', err);
+              }
+            };
+            // 调用异步函数
+            getFriendApplications();
           }, 1000);
           
         } else if (res.data.code === 30539) {

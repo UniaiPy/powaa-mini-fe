@@ -20,7 +20,8 @@
   "homepage": "https://github.com/UniaiPy/powaa-mini-fe#readme",
   "dependencies": {
     "@tencentcloud/chat": "^3.2.2",
-    "tim-upload-plugin": "^1.0.55",
-    "tim-profanity-filter-plugin": "^1.0.1"
+    "@tencentcloud/lite-chat": "^4.1.0",
+    "tim-profanity-filter-plugin": "^1.0.1",
+    "tim-upload-plugin": "^1.0.55"
   }
 }

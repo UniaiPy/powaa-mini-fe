@@ -1,0 +1,38 @@
+{
+    "name": "@tencentcloud/lite-chat",
+    "version": "4.1.0",
+    "description": "Tencent Cloud Chat SDK for Web/Mini Program/uni-app/React Native/Donut",
+    "main": "standard.js",
+    "types": "index.d.ts",
+    "exports": {
+      ".": {
+        "default": "./standard.js",
+        "types": "./index.d.ts"
+      },
+      "./basic": {
+        "default": "./basic.js",
+        "types": "./basic.d.ts"
+      },
+      "./standard": {
+        "default": "./standard.js",
+        "types": "./index.d.ts"
+      },
+      "./professional": {
+        "default": "./professional.js",
+        "types": "./professional.d.ts"
+      },
+      "./plugins/*": {
+        "default": "./plugins/*.js",
+        "types": "./plugins/*.d.ts"
+      }
+    },
+    "keywords": ["chat", "real-time chat", "uni-app", "React Native", "Donut", "push", "messaging", "IM", "trtc"],
+    "repository": {
+      "type": "git",
+      "url": "https://trtc.io/products/chat"
+    },
+    "dependencies": {},
+    "author": "Tencent Cloud Terminal R&D Center",
+    "license": "ISC"
+  }
+  

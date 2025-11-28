@@ -9,6 +9,10 @@ Page({
    * 页面的初始数据
    */
   data: {
+    // 地图是否可滚动
+    mapScroll: true,
+    // 地图是否可缩放
+    mapZoom: true,
     // 聊天消息数据
     messages: [],
     // 输入框内容
