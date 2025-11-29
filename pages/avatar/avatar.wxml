@@ -41,6 +41,8 @@
             <!-- 文本消息 -->
             <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
               <text>{{item.content}}</text>
+              <!-- 流式消息指示器 -->
+              <text class="streaming-indicator" wx:if="{{item.isStreaming}}">...</text>
             </block>
             <!-- 图片消息 -->
             <block wx:elif="{{item.messageType === 'image'}}">

@@ -226,9 +226,9 @@ Page({
       try {
         // 解码分块数据
         const uint8Array = new Uint8Array(res.data);
-      let test = String.fromCharCode.apply(null, uint8Array);
-      test = decodeURIComponent(escape(test));
-      let testArr = test.split('data:');
+        let test = String.fromCharCode.apply(null, uint8Array);
+        test = decodeURIComponent(escape(test));
+        let testArr = test.split('data:');
         // console.log(testArr, '====9999===');  // 这里就是服务器推送的原始内容
         testArr.forEach(item => {
           if (item.trim()) {
@@ -247,8 +247,8 @@ Page({
         })
       }
       catch(err){
-      console.error('推送数据结构异常！', err); 
-    }
+        console.error('推送数据结构异常！', err); 
+      }
     })
   },
   
