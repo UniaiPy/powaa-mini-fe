@@ -920,8 +920,9 @@ Page({
       // 用户信息
       const userProfile = conversation.userProfile || {};
 
+      console.log('lastMessage:', conversation.lastMessage);
       // 获取最后一条消息
-      const lastMessage = conversation.lastMessage || {};
+      const lastMessage = this.getMessageDetails(conversation.lastMessage);
       
       // 格式化时间
       const time = this.formatTime(lastMessage.lastTime || Date.now());
@@ -932,7 +933,7 @@ Page({
         name: userProfile.nick,
         avatar: this.processAvatarUrl(userProfile.avatar),
         originalAvatar: userProfile.avatar, // 保存原始头像地址
-        lastMessage:  lastMessage.messageForShow || lastMessage.payload?.text,
+        lastMessage:  lastMessage.content || lastMessage.payload?.text,
         time: time,
         unread: conversation.unreadCount || 0
       };
@@ -2177,6 +2178,242 @@ Page({
         icon: 'none'
       });
     }
+  },
+
+    /**
+   * 获取消息详细信息
+   */
+  getMessageDetails(message) {
+    let messageInfo = {
+      content: '',
+      messageType: 'text',
+      imageUrl: '',
+      fileName: '',
+      fileSize: '',
+      fileUrl: '',
+      location: null,
+      duration: '',
+      audioUrl: '',
+      videoUrl: '',
+      faceData: '',
+      isRevoked: false,
+      type: '',
+      lastTime: message.lastTime || 0,
+    };
+
+    if (!wx.$TUIKit) {
+      return messageInfo;
+    }
+
+    switch (message.type) {
+      case wx.TencentCloudChat.TYPES.MSG_TEXT:
+        messageInfo.content = message.payload.text || '';
+        messageInfo.messageType = 'text';
+        break;
+        
+      case wx.TencentCloudChat.TYPES.MSG_IMAGE:
+        messageInfo.content = '[图片]';
+        messageInfo.messageType = 'image';
+        // 获取图片URL，优先使用原图，其次使用大图（与conversation.js保持一致）
+        messageInfo.imageUrl = message.payload.imageInfoArray?.[0]?.url || 
+                               message.payload.url || 
+                               message.payload.imageUrl || '';
+        console.log('获取的图片URL:', messageInfo.imageUrl);
+        console.log('完整消息对象:', JSON.stringify(messageInfo, null, 2));
+        
+        // 测试图片URL可访问性
+        if (messageInfo.imageUrl) {
+          this.testImageUrl(messageInfo.imageUrl);
+        }
+        break;
+        
+      case wx.TencentCloudChat.TYPES.MSG_AUDIO:
+        messageInfo.content = '[语音]';
+        messageInfo.messageType = 'audio';
+        messageInfo.duration = message.payload.second || 0;
+        messageInfo.audioUrl = message.payload.url || '';
+        break;
+        
+      case wx.TencentCloudChat.TYPES.MSG_VIDEO:
+        messageInfo.content = '[视频]';
+        messageInfo.messageType = 'video';
+        messageInfo.videoUrl = message.payload.videoUrl || '';
+        break;
+        
+      case wx.TencentCloudChat.TYPES.MSG_FILE:
+        messageInfo.content = '[文件]';
+        messageInfo.messageType = 'file';
+        messageInfo.fileName = message.payload.fileName || '';
+        messageInfo.fileSize = this.formatFileSize(message.payload.fileSize || 0);
+        // 修复文件URL获取逻辑，优先使用url字段，其次使用fileUrl字段
+        messageInfo.fileUrl = message.payload.url || message.payload.fileUrl || '';
+        messageInfo.fileTypeInfo = this.getFileTypeInfo(messageInfo.fileName); // 添加文件类型信息
+        break;
+        
+      case wx.TencentCloudChat.TYPES.MSG_FACE:
+        messageInfo.content = '[表情]';
+        messageInfo.messageType = 'face';
+        messageInfo.faceData = message.payload.data || '';
+        break;
+        
+      case wx.TencentCloudChat.TYPES.MSG_LOCATION:
+        messageInfo.content = '[位置]';
+        messageInfo.messageType = 'location';
+        // 从description中分离name和address
+        const description = message.payload.description || '';
+        let name = '';
+        let address = '';
+        if (description.includes(' - ')) {
+          const parts = description.split(' - ');
+          name = parts[0] || '';
+          address = parts[1] || '';
+        } else {
+          address = description;
+        }
+        messageInfo.location = {
+          latitude: message.payload.latitude,
+          longitude: message.payload.longitude,
+          name: name,
+          address: address
+        };
+        break;
+        
+      case wx.TencentCloudChat.TYPES.MSG_CUSTOM:
+        // messageInfo.content = '[自定义消息]';
+        messageInfo.messageType = 'custom';
+        try {
+          const customData = JSON.parse(message.payload.data || '{}');
+          console.log('=== 解析自定义消息内容 ===', customData);
+          
+          // 处理AI下一问的流式消息
+          if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
+            // 提取chunks内容作为消息内容
+            for (const chunk of customData.chunks) {
+              messageInfo.content += chunk || '';
+            }
+            messageInfo.messageType = 'text'; // 标记为文本消息类型，便于显示
+            console.log('=== 提取到流式消息内容 ===', messageInfo.content);
+          } else if (customData.businessID === 'user_defined_status') {
+            // 处理其他类型的自定义消息
+            messageInfo.content = customData.description || '[自定义消息]';
+          }
+        } catch (e) {
+          console.log('解析自定义消息失败:', e);
+        }
+        break;
+        
+      default:
+        messageInfo.content = '[未知消息类型]';
+        messageInfo.messageType = 'text';
+    }
+
+    return messageInfo;
+  },
+
+  
+  /**
+   * 获取文件类型信息
+   */
+  getFileTypeInfo(fileName) {
+    const extension = this.getFileExtension(fileName);
+    console.log('extension', extension);
+    // 文档类型
+    const documentTypes = ['doc', 'docx', 'txt', 'pdf', 'rtf'];
+    // 表格类型
+    const spreadsheetTypes = ['xls', 'xlsx', 'csv'];
+    // 演示文稿类型
+    const presentationTypes = ['ppt', 'pptx'];
+    // 图片类型
+    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    // 音频类型
+    const audioTypes = ['mp3', 'wav', 'aac', 'flac', 'ogg'];
+    // 视频类型
+    const videoTypes = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv'];
+    // 压缩包类型
+    const archiveTypes = ['zip', 'rar', '7z', 'tar', 'gz'];
+    
+    let icon = 'fa-file-o';
+    let color = '#6b7280';
+    let bgColor = '#f3f4f6';
+    
+    if (documentTypes.includes(extension)) {
+      icon = 'fa-file-text-o';
+      color = '#3b82f6';
+      bgColor = '#eff6ff';
+    } else if (spreadsheetTypes.includes(extension)) {
+      icon = 'fa-file-excel-o';
+      color = '#10b981';
+      bgColor = '#ecfdf5';
+    } else if (presentationTypes.includes(extension)) {
+      icon = 'fa-file-powerpoint-o';
+      color = '#f59e0b';
+      bgColor = '#fffbeb';
+    } else if (imageTypes.includes(extension)) {
+      icon = 'fa-file-image-o';
+      color = '#8b5cf6';
+      bgColor = '#f3e8ff';
+    } else if (audioTypes.includes(extension)) {
+      icon = 'fa-file-audio-o';
+      color = '#ef4444';
+      bgColor = '#fef2f2';
+    } else if (videoTypes.includes(extension)) {
+      icon = 'fa-file-video-o';
+      color = '#06b6d4';
+      bgColor = '#ecfeff';
+    } else if (archiveTypes.includes(extension)) {
+      icon = 'fa-file-archive-o';
+      color = '#f97316';
+      bgColor = '#fff7ed';
+    } else if (extension === 'pdf') {
+      icon = 'fa-file-pdf-o';
+      color = '#dc2626';
+      bgColor = '#fef2f2';
+    }
+    
+    return {
+      icon,
+      color,
+      bgColor
+    };
+  },
+
+  /**
+   * 判断是否为图片文件
+   */
+  isImageFile(extension) {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    return imageExtensions.includes(extension);
+  },
+
+  /**
+   * 判断是否为文本文件
+   */
+  isTextFile(extension) {
+    const textExtensions = ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'log', 'csv'];
+    return textExtensions.includes(extension);
+  },
+
+  /**
+   * 获取文件扩展名
+   */
+  getFileExtension(filename) {
+    if (!filename) return '';
+    const lastDotIndex = filename.lastIndexOf('.');
+    return lastDotIndex > -1 ? filename.substring(lastDotIndex + 1).toLowerCase() : '';
+  },
+
+  /**
+   * 格式化文件大小
+   */
+  formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    
+    if (i === 0) return bytes + ' ' + sizes[i];
+    
+    return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
   },
 
   // 发送欢迎消息以创建会话

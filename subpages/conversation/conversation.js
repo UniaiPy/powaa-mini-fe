@@ -58,7 +58,297 @@ Page({
     // 调试模式标志
     isDebugMode: true,
     // 用户是否已被屏蔽
-    isUserBlocked: false
+    isUserBlocked: false,
+    // 流式消息处理相关
+    streamingMessages: {}, // 存储正在处理的流式消息，key为messageID
+  },
+
+  /**
+   * 处理流式消息的辅助函数
+   */
+  handleStreamingMessage(message) {
+    const messageID = message.ID;
+    let streamingMessages = this.data.streamingMessages;
+    let messages = this.data.messages;
+    
+    console.log('=== 处理消息开始 ===', {
+      messageID: messageID,
+      message: message
+    });
+    
+    // 检查是否为流式消息
+    let isStreaming = message.payload?.isStreaming === true;
+    let streamContent = message.payload?.streamContent || '';
+    let streamComplete = message.payload?.streamComplete === true;
+    let streamMessageKey = message.payload?.streamMessageKey || 'stream_' + Math.floor(Date.now() / 1000); // 使用固定的键标识同一个流式消息
+    
+    // 处理自定义消息格式的流式消息（来自后端的下一问接口）
+    if (message.type === wx.TencentCloudChat.TYPES.MSG_CUSTOM) {
+      try {
+        const customData = JSON.parse(message.payload?.data || '{}');
+        console.log('=== 解析自定义消息 ===', customData);
+        
+        // 检查是否为AI下一问的流式消息
+        if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
+          // 提取chunks内容，合并所有chunks
+          const chunkContent = customData.chunks.join('') || '';
+          
+          // 设置流式消息标志
+          isStreaming = true;
+          streamContent = chunkContent;
+          // 对于下一问接口，我们需要将多个片段合并成一个完整的消息
+          // 所以不立即设置为已完成，等待所有片段处理完成后再设置
+          streamComplete = false;
+          
+          // 从message对象中获取MsgKey，这是后端返回的唯一标识
+          // 对于流式消息，所有片段都应该有相同的MsgKey
+          streamMessageKey = message.MsgKey || message.msgKey || message.msg_key;
+          
+          // 如果是通过回调收到的消息，MsgKey可能在message对象的顶层
+          // 如果是通过MESSAGE_MODIFIED事件收到的消息，MsgKey可能在message对象的不同位置
+          if (!streamMessageKey && message.payload && message.payload.MsgKey) {
+            streamMessageKey = message.payload.MsgKey;
+          }
+          
+          // 对于自定义消息，使用message.ID作为主要标识
+          if (!streamMessageKey) {
+            streamMessageKey = messageID || 'stream_' + Math.floor(Date.now() / 1000);
+          }
+          
+          // 对于MESSAGE_MODIFIED事件，确保使用正确的消息ID
+          if (message.isModified) {
+            streamMessageKey = messageID || streamMessageKey;
+          }
+          
+          console.log('=== 自定义流式消息处理 ===', {
+            chunkContent: chunkContent,
+            chunksLength: customData.chunks.length,
+            isStreaming: isStreaming,
+            streamContent: streamContent,
+            streamComplete: streamComplete,
+            streamMessageKey: streamMessageKey,
+            messageMsgKey: message.MsgKey,
+            messageID: messageID,
+            isModified: message.isModified
+          });
+        }
+      } catch (error) {
+        console.error('=== 解析自定义消息失败 ===', error);
+      }
+    }
+    
+    console.log('=== 流式消息判断 ===', {
+      isStreaming: isStreaming,
+      streamContent: streamContent,
+      streamComplete: streamComplete,
+      streamMessageKey: streamMessageKey
+    });
+    
+    // 首先获取完整的消息信息，无论是什么类型的消息
+    const messageInfo = this.getMessageDetails(message);
+    
+    // 对于MESSAGE_MODIFIED事件，直接查找并更新消息 - 实现打印机效果
+    if (message.eventType === 'MESSAGE_MODIFIED' || message.type === 'modified' || message.isModified) {
+      console.log('=== 处理MESSAGE_MODIFIED事件（打印机效果） ===', {
+        messageID: messageID,
+        streamMessageKey: streamMessageKey,
+        messageInfoContent: messageInfo.content
+      });
+      
+      // 查找对应的消息，使用多种匹配方式
+      let messageIndex = messages.findIndex(msg => 
+        // 优先使用消息ID匹配
+        msg.id === messageID || 
+        // 其次使用streamMessageKey匹配
+        msg.id === streamMessageKey ||
+        // 最后尝试匹配messageObj.ID
+        (msg.messageObj && msg.messageObj.ID === messageID)
+      );
+      
+      if (messageIndex !== -1) {
+        // 找到对应的消息，更新内容 - 这是实现打印机效果的关键
+        console.log('=== 找到对应的消息，更新内容（打印机效果） ===', {
+          messageIndex: messageIndex,
+          oldContent: messages[messageIndex].content,
+          newContent: messageInfo.content,
+          streamMessageKey: streamMessageKey
+        });
+        
+        // 更新消息内容 - 直接使用最新的完整内容
+        messages[messageIndex].content = messageInfo.content;
+        messages[messageIndex].messageObj = message;
+        messages[messageIndex].isStreaming = true; // 确保标记为流式消息
+        
+        // 更新数据，触发UI更新
+        this.setData({
+          messages: messages
+        });
+        console.log('=== MESSAGE_MODIFIED事件处理完成 ===', {
+          messageID: messageID,
+          newContent: messageInfo.content
+        });
+        
+        // 滚动到底部
+        setTimeout(() => {
+          this.scrollToBottom();
+        }, 100);
+        
+        return true; // 表示已处理流式消息
+      } else {
+        console.log('=== 没有找到对应的消息，将创建新消息 ===', {
+          streamMessageKey: streamMessageKey,
+          messageID: messageID,
+          messagesCount: messages.length
+        });
+        // 继续执行，创建新消息
+      }
+    }
+    
+    if (isStreaming || streamContent) {
+      console.log('=== 是流式消息，开始处理 ===', {
+        messageID: messageID,
+        streamMessageKey: streamMessageKey,
+        streamingMessages: streamingMessages,
+        messageInfoContent: messageInfo.content
+      });
+      
+      // 检查消息是否已存在于消息列表中，使用多种匹配方式
+      const existingMessageIndex = messages.findIndex(msg => 
+        msg.id === messageID || msg.id === streamMessageKey || (msg.messageObj && msg.messageObj.ID === messageID)
+      );
+      
+      // 更新或创建流式消息记录，使用完整的消息内容
+      streamingMessages[streamMessageKey] = {
+        content: messageInfo.content, // 使用完整的消息内容
+        isComplete: false,
+        messageID: messageID
+      };
+      
+      if (existingMessageIndex === -1) {
+        // 消息不存在，创建新消息
+        let avatarUrl;
+        if (message.flow === 'out') {
+          avatarUrl = this.getOwnAvatarUrl();
+        } else {
+          avatarUrl = this.processAvatarUrl(message.avatar, message.from);
+        }
+        
+        const lastMessage = messages.length > 0 ? 
+          messages[messages.length - 1] : null;
+        const showTimeSeparator = !lastMessage || 
+          shouldShowTimeSeparator(message.time, lastMessage.timeRaw);
+        
+        // 创建包含所有必要字段的消息对象
+        const newMessage = {
+          id: streamMessageKey, // 使用streamMessageKey作为消息ID，便于合并片段
+          type: message.flow === 'out' ? 'user' : 'other',
+          content: messageInfo.content, // 使用完整的消息内容
+          messageType: messageInfo.messageType,
+          time: formatTime(message.time),
+          timeRaw: message.time,
+          showTimeSeparator: showTimeSeparator,
+          avatar: avatarUrl,
+          messageObj: message,
+          isStreaming: true, // 标记为流式消息
+          // 图片相关字段
+          imageUrl: messageInfo.imageUrl || '',
+          // 文件相关字段
+          fileName: messageInfo.fileName || '',
+          fileSize: messageInfo.fileSize || '',
+          fileUrl: messageInfo.fileUrl || '',
+          fileTypeInfo: messageInfo.fileTypeInfo || {}, // 添加文件类型信息
+          // 位置相关字段
+          location: messageInfo.location || null,
+          // 语音相关字段
+          duration: messageInfo.duration || 0,
+          audioUrl: messageInfo.audioUrl || '',
+          // 视频相关字段
+          videoUrl: messageInfo.videoUrl || '',
+          // 表情相关字段
+          faceData: messageInfo.faceData || '',
+          // 撤回状态
+          isRevoked: messageInfo.isRevoked || false
+        };
+        
+        messages = [...messages, newMessage];
+        console.log('=== 创建新的流式消息 ===', {
+          streamMessageKey: streamMessageKey,
+          content: messageInfo.content,
+          messagesLength: messages.length
+        });
+      } else {
+        // 消息已存在，更新内容 - 实现打印机效果
+        console.log('=== 消息已存在，更新内容（打印机效果） ===', {
+          streamMessageKey: streamMessageKey,
+          messageID: messageID,
+          existingMessageIndex: existingMessageIndex,
+          oldContent: messages[existingMessageIndex].content,
+          newContent: messageInfo.content
+        });
+        
+        // 直接更新消息内容
+        messages[existingMessageIndex].content = messageInfo.content;
+        messages[existingMessageIndex].messageObj = message;
+        messages[existingMessageIndex].isStreaming = true;
+      }
+      
+      // 检查流式消息是否完成
+      if (streamComplete) {
+        streamingMessages[streamMessageKey].isComplete = true;
+        
+        // 更新消息列表，移除流式标记并确保完整字段
+        messages = messages.map(msg => {
+          if (msg.id === streamMessageKey) {
+            console.log('=== 流式消息完成 ===', {
+              streamMessageKey: streamMessageKey,
+              content: streamingMessages[streamMessageKey].content
+            });
+            return {
+              ...msg,
+              isStreaming: false, // 标记流式消息已完成
+              // 确保所有字段都使用最新的messageInfo值
+              messageType: messageInfo.messageType,
+              imageUrl: messageInfo.imageUrl || '',
+              fileName: messageInfo.fileName || '',
+              fileSize: messageInfo.fileSize || '',
+              fileUrl: messageInfo.fileUrl || '',
+              fileTypeInfo: messageInfo.fileTypeInfo || {},
+              location: messageInfo.location || null,
+              duration: messageInfo.duration || 0,
+              audioUrl: messageInfo.audioUrl || '',
+              videoUrl: messageInfo.videoUrl || '',
+              faceData: messageInfo.faceData || '',
+              isRevoked: messageInfo.isRevoked || false
+            };
+          }
+          return msg;
+        });
+      }
+      
+      // 更新数据
+      this.setData({
+        messages: messages,
+        streamingMessages: streamingMessages
+      });
+      
+      // 滚动到底部
+      setTimeout(() => {
+        this.scrollToBottom();
+      }, 100);
+      
+      console.log('=== 流式消息处理完成 ===', {
+        messageID: messageID,
+        isComplete: streamComplete
+      });
+      
+      return true; // 表示已处理流式消息
+    } else {
+      console.log('=== 不是流式消息，跳过处理 ===', {
+        messageID: messageID
+      });
+    }
+    
+    return false; // 表示不是流式消息
   },
 
   /**
@@ -174,64 +464,73 @@ Page({
     messageList.forEach((message) => {
       // 只处理当前会话的消息
       if (this.data.conversationID && message.conversationID === this.data.conversationID) {
-        let avatarUrl;
+        console.log('=== 处理新接收的消息 ===', { messageID: message.ID });
         
-        if (message.flow === 'out') {
-          // 自己的消息使用个人信息中的头像
-          avatarUrl = this.getOwnAvatarUrl();
-        } else {
-          // 对方的消息，处理头像URL
-          avatarUrl = this.processAvatarUrl(message.avatar, message.from);
+        // 尝试作为流式消息处理
+        const isStreamingHandled = this.handleStreamingMessage(message);
+        
+        if (!isStreamingHandled) {
+          // 不是流式消息，使用原有逻辑处理
+          let avatarUrl;
+          
+          if (message.flow === 'out') {
+            // 自己的消息使用个人信息中的头像
+            avatarUrl = this.getOwnAvatarUrl();
+          } else {
+            // 对方的消息，处理头像URL
+            avatarUrl = this.processAvatarUrl(message.avatar, message.from);
+          }
+          
+          // 获取消息的详细信息
+          const messageInfo = this.getMessageDetails(message);
+          
+          // 判断是否应该显示时间分隔符
+          const lastMessage = this.data.messages.length > 0 ? 
+            this.data.messages[this.data.messages.length - 1] : null;
+          const showTimeSeparator = !lastMessage || 
+            this.shouldShowMessageTime(message.time, lastMessage.timeRaw);
+          
+          const newMessage = {
+            id: message.ID,
+            type: message.flow === 'out' ? 'user' : 'other',
+            content: messageInfo.content,
+            messageType: messageInfo.messageType,
+            time: this.formatMessageTime(message.time),
+            timeRaw: message.time, // 保存原始时间戳
+            showTimeSeparator: showTimeSeparator, // 是否显示时间分隔符
+            avatar: avatarUrl,
+            messageObj: message,
+            isStreaming: false, // 标记为非流式消息
+            // 图片相关字段
+            imageUrl: messageInfo.imageUrl,
+            // 文件相关字段
+            fileName: messageInfo.fileName,
+            fileSize: messageInfo.fileSize,
+            fileUrl: messageInfo.fileUrl,
+            fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
+            // 位置相关字段
+            location: messageInfo.location,
+            // 语音相关字段
+            duration: messageInfo.duration,
+            audioUrl: messageInfo.audioUrl,
+            // 视频相关字段
+            videoUrl: messageInfo.videoUrl,
+            // 表情相关字段
+            faceData: messageInfo.faceData,
+            // 撤回状态
+            isRevoked: messageInfo.isRevoked
+          };
+          
+          const updatedMessages = [...this.data.messages, newMessage];
+          this.setData({
+            messages: updatedMessages
+          });
+          
+          // 滚动到底部
+          setTimeout(() => {
+            this.scrollToBottom();
+          }, 100);
         }
-        
-        // 获取消息的详细信息
-        const messageInfo = this.getMessageDetails(message);
-        
-        // 判断是否应该显示时间分隔符
-        const lastMessage = this.data.messages.length > 0 ? 
-          this.data.messages[this.data.messages.length - 1] : null;
-        const showTimeSeparator = !lastMessage || 
-          this.shouldShowMessageTime(message.time, lastMessage.timeRaw);
-        
-        const newMessage = {
-          id: message.ID,
-          type: message.flow === 'out' ? 'user' : 'other',
-          content: messageInfo.content,
-          messageType: messageInfo.messageType,
-          time: this.formatMessageTime(message.time),
-          timeRaw: message.time, // 保存原始时间戳
-          showTimeSeparator: showTimeSeparator, // 是否显示时间分隔符
-          avatar: avatarUrl,
-          messageObj: message,
-          // 图片相关字段
-          imageUrl: messageInfo.imageUrl,
-          // 文件相关字段
-          fileName: messageInfo.fileName,
-          fileSize: messageInfo.fileSize,
-          fileUrl: messageInfo.fileUrl,
-          fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
-          // 位置相关字段
-          location: messageInfo.location,
-          // 语音相关字段
-          duration: messageInfo.duration,
-          audioUrl: messageInfo.audioUrl,
-          // 视频相关字段
-          videoUrl: messageInfo.videoUrl,
-          // 表情相关字段
-          faceData: messageInfo.faceData,
-          // 撤回状态
-          isRevoked: messageInfo.isRevoked
-        };
-        
-        const updatedMessages = [...this.data.messages, newMessage];
-        this.setData({
-          messages: updatedMessages
-        });
-        
-        // 滚动到底部
-        setTimeout(() => {
-          this.scrollToBottom();
-        }, 100);
       }
     });
   },
@@ -240,43 +539,59 @@ Page({
    * 消息变更处理函数
    */
   onMessageModified(event) {
-    const message = event.data;
-    console.log('消息变更:', message);
+    let messages = event.data;
+    console.log('消息变更:', messages);
     
-    // 获取消息的详细信息
-    const messageInfo = this.getMessageDetails(message);
+    // 处理消息数组的情况（TUIKit可能会发送数组）
+    if (Array.isArray(messages)) {
+      messages.forEach(msg => {
+        this._handleSingleModifiedMessage(msg);
+      });
+    } else {
+      // 处理单个消息的情况
+      this._handleSingleModifiedMessage(messages);
+    }
+  },
+  
+  /**
+   * 处理单个变更的消息
+   */
+  _handleSingleModifiedMessage(message) {
+    if (!message) return;
     
-    // 更新本地消息列表
-    const updatedMessages = this.data.messages.map(msg => 
-      msg.id === message.ID ? { 
-        ...msg, 
-        content: messageInfo.content,
-        messageType: messageInfo.messageType,
-        messageObj: message,
-        // 图片相关字段
-        imageUrl: messageInfo.imageUrl,
-        // 文件相关字段
-        fileName: messageInfo.fileName,
-        fileSize: messageInfo.fileSize,
-        fileUrl: messageInfo.fileUrl,
-        fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
-        // 位置相关字段
-        location: messageInfo.location,
-        // 语音相关字段
-        duration: messageInfo.duration,
-        audioUrl: messageInfo.audioUrl,
-        // 视频相关字段
-        videoUrl: messageInfo.videoUrl,
-        // 表情相关字段
-        faceData: messageInfo.faceData,
-        // 撤回状态
-        isRevoked: messageInfo.isRevoked
-      } : msg
-    );
+    console.log('=== 处理单个变更消息 ===', { messageID: message.ID, messageType: message.type });
     
-    this.setData({
-      messages: updatedMessages
-    });
+    // 先尝试作为流式消息处理
+    const isStreamingHandled = this.handleStreamingMessage(message);
+    
+    if (!isStreamingHandled) {
+      // 不是流式消息，使用原有逻辑处理
+      // 更新本地消息列表
+      const messageInfo = this.getMessageDetails(message);
+      const updatedMessages = this.data.messages.map(msg => 
+        msg.id === message.ID ? { 
+          ...msg, 
+          content: messageInfo.content,
+          messageType: messageInfo.messageType,
+          messageObj: message,
+          imageUrl: messageInfo.imageUrl,
+          fileName: messageInfo.fileName,
+          fileSize: messageInfo.fileSize,
+          fileUrl: messageInfo.fileUrl,
+          fileTypeInfo: messageInfo.fileTypeInfo, // 添加文件类型信息
+          location: messageInfo.location,
+          duration: messageInfo.duration,
+          audioUrl: messageInfo.audioUrl,
+          videoUrl: messageInfo.videoUrl,
+          faceData: messageInfo.faceData,
+          isRevoked: messageInfo.isRevoked
+        } : msg
+      );
+      
+      this.setData({
+        messages: updatedMessages
+      });
+    }
   },
 
   /**
@@ -627,6 +942,7 @@ Page({
    * 获取消息详细信息
    */
   getMessageDetails(message) {
+    
     let messageInfo = {
       content: '',
       messageType: 'text',
@@ -642,6 +958,10 @@ Page({
       isRevoked: false
     };
 
+    if (!wx.$TUIKit) {
+      return messageInfo;
+    }
+
     switch (message.type) {
       case wx.TencentCloudChat.TYPES.MSG_TEXT:
         messageInfo.content = message.payload.text || '';
@@ -651,10 +971,17 @@ Page({
       case wx.TencentCloudChat.TYPES.MSG_IMAGE:
         messageInfo.content = '[图片]';
         messageInfo.messageType = 'image';
-        // 获取图片URL，优先使用原图，其次使用大图
+        // 获取图片URL，优先使用原图，其次使用大图（与conversation.js保持一致）
         messageInfo.imageUrl = message.payload.imageInfoArray?.[0]?.url || 
                                message.payload.url || 
                                message.payload.imageUrl || '';
+        console.log('获取的图片URL:', messageInfo.imageUrl);
+        console.log('完整消息对象:', JSON.stringify(messageInfo, null, 2));
+        
+        // 测试图片URL可访问性
+        if (messageInfo.imageUrl) {
+          this.testImageUrl(messageInfo.imageUrl);
+        }
         break;
         
       case wx.TencentCloudChat.TYPES.MSG_AUDIO:
@@ -675,17 +1002,9 @@ Page({
         messageInfo.messageType = 'file';
         messageInfo.fileName = message.payload.fileName || '';
         messageInfo.fileSize = this.formatFileSize(message.payload.fileSize || 0);
-        // 修复文件URL获取逻辑，优先使用url字段
+        // 修复文件URL获取逻辑，优先使用url字段，其次使用fileUrl字段
         messageInfo.fileUrl = message.payload.url || message.payload.fileUrl || '';
-        // 添加调试日志
-        // console.log('文件消息详情:', {
-        //   fileName: messageInfo.fileName,
-        //   fileUrl: messageInfo.fileUrl,
-        //   fileTypeInfo: messageInfo.fileTypeInfo,
-        //   payload: message.payload
-        // });
-        // 添加文件类型信息
-        messageInfo.fileTypeInfo = this.getFileTypeInfo(messageInfo.fileName);
+        messageInfo.fileTypeInfo = this.getFileTypeInfo(messageInfo.fileName); // 添加文件类型信息
         break;
         
       case wx.TencentCloudChat.TYPES.MSG_FACE:
@@ -697,52 +1016,47 @@ Page({
       case wx.TencentCloudChat.TYPES.MSG_LOCATION:
         messageInfo.content = '[位置]';
         messageInfo.messageType = 'location';
-        
-        // 解析description，分离name和address
-        let locationName = '';
-        let locationAddress = message.payload.description || '';
-        
-        if (locationAddress.includes(' - ')) {
-          const parts = locationAddress.split(' - ');
-          locationName = parts[0];
-          locationAddress = parts[1] || '';
+        // 从description中分离name和address
+        const description = message.payload.description || '';
+        let name = '';
+        let address = '';
+        if (description.includes(' - ')) {
+          const parts = description.split(' - ');
+          name = parts[0] || '';
+          address = parts[1] || '';
+        } else {
+          address = description;
         }
-        
         messageInfo.location = {
           latitude: message.payload.latitude,
           longitude: message.payload.longitude,
-          name: locationName,
-          address: locationAddress
+          name: name,
+          address: address
         };
         break;
         
       case wx.TencentCloudChat.TYPES.MSG_CUSTOM:
-        messageInfo.content = '[自定义消息]';
+        // messageInfo.content = '[自定义消息]';
         messageInfo.messageType = 'custom';
-        // 可以根据自定义消息的具体内容进一步处理
         try {
           const customData = JSON.parse(message.payload.data || '{}');
-          if (customData.businessID === 'user_defined_status') {
+          console.log('=== 解析自定义消息内容 ===', customData);
+          
+          // 处理AI下一问的流式消息
+          if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
+            // 提取chunks内容作为消息内容
+            for (const chunk of customData.chunks) {
+              messageInfo.content += chunk || '';
+            }
+            messageInfo.messageType = 'text'; // 标记为文本消息类型，便于显示
+            console.log('=== 提取到流式消息内容 ===', messageInfo.content);
+          } else if (customData.businessID === 'user_defined_status') {
+            // 处理其他类型的自定义消息
             messageInfo.content = customData.description || '[自定义消息]';
           }
         } catch (e) {
           console.log('解析自定义消息失败:', e);
         }
-        break;
-        
-      case wx.TencentCloudChat.TYPES.MSG_MERGER:
-        messageInfo.content = '[合并消息]';
-        messageInfo.messageType = 'system';
-        break;
-        
-      case wx.TencentCloudChat.TYPES.MSG_GRP_TIP:
-        messageInfo.content = '[群提示消息]';
-        messageInfo.messageType = 'system';
-        break;
-        
-      case wx.TencentCloudChat.TYPES.MSG_GRP_SYS_NOTICE:
-        messageInfo.content = '[群系统通知]';
-        messageInfo.messageType = 'system';
         break;
         
       default:
@@ -758,6 +1072,31 @@ Page({
 
     return messageInfo;
   },
+  
+  /**
+   * 测试图片URL可访问性
+   */
+  testImageUrl(url) {
+    wx.request({
+      url: url,
+      method: 'HEAD',
+      success: (res) => {
+        console.log('图片URL可访问:', url, '状态码:', res.statusCode);
+      },
+      fail: (error) => {
+        console.error('图片URL不可访问:', url, error);
+      }
+    });
+  },
+
+  /**
+   * 获取文件扩展名
+   */
+  getFileExtension(filename) {
+    if (!filename) return '';
+    const lastDotIndex = filename.lastIndexOf('.');
+    return lastDotIndex > -1 ? filename.substring(lastDotIndex + 1).toLowerCase() : '';
+  },
 
   /**
    * 格式化文件大小
@@ -771,38 +1110,6 @@ Page({
     if (i === 0) return bytes + ' ' + sizes[i];
     
     return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
-  },
-
-  /**
-   * 获取消息内容
-   */
-  getMessageContent(message) {
-    switch (message.type) {
-      case wx.TencentCloudChat.TYPES.MSG_TEXT:
-        return message.payload.text;
-      case wx.TencentCloudChat.TYPES.MSG_IMAGE:
-        return '[图片]';
-      case wx.TencentCloudChat.TYPES.MSG_AUDIO:
-        return '[语音]';
-      case wx.TencentCloudChat.TYPES.MSG_VIDEO:
-        return '[视频]';
-      case wx.TencentCloudChat.TYPES.MSG_FILE:
-        return '[文件]';
-      case wx.TencentCloudChat.TYPES.MSG_FACE:
-        return '[表情]';
-      case wx.TencentCloudChat.TYPES.MSG_LOCATION:
-        return '[位置]';
-      case wx.TencentCloudChat.TYPES.MSG_CUSTOM:
-        return '[自定义消息]';
-      case wx.TencentCloudChat.TYPES.MSG_MERGER:
-        return '[合并消息]';
-      case wx.TencentCloudChat.TYPES.MSG_GRP_TIP:
-        return '[群提示消息]';
-      case wx.TencentCloudChat.TYPES.MSG_GRP_SYS_NOTICE:
-        return '[群系统通知]';
-      default:
-        return '[未知消息类型]';
-    }
   },
 
   /**

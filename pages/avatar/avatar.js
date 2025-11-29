@@ -60,7 +60,8 @@ Page({
     refreshing: false,
     // 流式消息处理相关
     streamingMessages: {}, // 存储正在处理的流式消息，key为messageID
- },
+  },
+  
   /**
    * 处理流式消息的辅助函数
    */
@@ -75,32 +76,155 @@ Page({
     });
     
     // 检查是否为流式消息
-    const isStreaming = message.payload?.isStreaming === true;
-    const streamContent = message.payload?.streamContent || '';
-    const streamComplete = message.payload?.streamComplete === true;
+    let isStreaming = message.payload?.isStreaming === true;
+    let streamContent = message.payload?.streamContent || '';
+    let streamComplete = message.payload?.streamComplete === true;
+    let streamMessageKey = message.payload?.streamMessageKey || 'stream_' + Math.floor(Date.now() / 1000); // 使用固定的键标识同一个流式消息
+    
+    // 处理自定义消息格式的流式消息（来自后端的下一问接口）
+    if (message.type === wx.TencentCloudChat.TYPES.MSG_CUSTOM) {
+      try {
+        const customData = JSON.parse(message.payload?.data || '{}');
+        console.log('=== 解析自定义消息 ===', customData);
+        
+        // 检查是否为AI下一问的流式消息
+        if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
+          // 提取chunks内容，合并所有chunks
+          const chunkContent = customData.chunks.join('') || '';
+          
+          // 设置流式消息标志
+          isStreaming = true;
+          streamContent = chunkContent;
+          // 对于下一问接口，我们需要将多个片段合并成一个完整的消息
+          // 所以不立即设置为已完成，等待所有片段处理完成后再设置
+          streamComplete = false;
+          
+          // 从message对象中获取MsgKey，这是后端返回的唯一标识
+          // 对于流式消息，所有片段都应该有相同的MsgKey
+          streamMessageKey = message.MsgKey || message.msgKey || message.msg_key;
+          
+          // 如果是通过回调收到的消息，MsgKey可能在message对象的顶层
+          // 如果是通过MESSAGE_MODIFIED事件收到的消息，MsgKey可能在message对象的不同位置
+          if (!streamMessageKey && message.payload && message.payload.MsgKey) {
+            streamMessageKey = message.payload.MsgKey;
+          }
+          
+          // 对于自定义消息，使用message.ID作为主要标识
+          if (!streamMessageKey) {
+            streamMessageKey = messageID || 'stream_' + Math.floor(Date.now() / 1000);
+          }
+          
+          // 对于MESSAGE_MODIFIED事件，确保使用正确的消息ID
+          if (message.isModified) {
+            streamMessageKey = message.ID || streamMessageKey;
+          }
+          
+          console.log('=== 自定义流式消息处理 ===', {
+            chunkContent: chunkContent,
+            chunksLength: customData.chunks.length,
+            isStreaming: isStreaming,
+            streamContent: streamContent,
+            streamComplete: streamComplete,
+            streamMessageKey: streamMessageKey,
+            messageMsgKey: message.MsgKey,
+            messageID: messageID,
+            isModified: message.isModified
+          });
+        }
+      } catch (error) {
+        console.error('=== 解析自定义消息失败 ===', error);
+      }
+    }
     
     console.log('=== 流式消息判断 ===', {
       isStreaming: isStreaming,
       streamContent: streamContent,
-      streamComplete: streamComplete
+      streamComplete: streamComplete,
+      streamMessageKey: streamMessageKey
     });
+    
+    // 首先获取完整的消息信息，无论是什么类型的消息
+    const messageInfo = this.getMessageDetails(message);
+    
+    // 对于MESSAGE_MODIFIED事件，直接查找并更新消息 - 实现打印机效果
+    if (message.eventType === 'MESSAGE_MODIFIED' || message.type === 'modified' || message.isModified) {
+      console.log('=== 处理MESSAGE_MODIFIED事件（打印机效果） ===', {
+        messageID: messageID,
+        streamMessageKey: streamMessageKey,
+        messageInfoContent: messageInfo.content
+      });
+      
+      // 查找对应的消息，使用多种匹配方式
+      let messageIndex = messages.findIndex(msg => 
+        // 优先使用消息ID匹配
+        msg.id === messageID || 
+        // 其次使用streamMessageKey匹配
+        msg.id === streamMessageKey ||
+        // 最后尝试匹配messageObj.ID
+        (msg.messageObj && msg.messageObj.ID === messageID)
+      );
+      
+      if (messageIndex !== -1) {
+        // 找到对应的消息，更新内容 - 这是实现打印机效果的关键
+        console.log('=== 找到对应的消息，更新内容（打印机效果） ===', {
+          messageIndex: messageIndex,
+          oldContent: messages[messageIndex].content,
+          newContent: messageInfo.content,
+          streamMessageKey: streamMessageKey
+        });
+        
+        // 更新消息内容 - 直接使用最新的完整内容
+        messages[messageIndex].content = messageInfo.content;
+        messages[messageIndex].messageObj = message;
+        messages[messageIndex].isStreaming = true; // 确保标记为流式消息
+        
+        // 更新数据，触发UI更新
+        this.setData({
+          messages: messages
+        });
+        console.log('=== MESSAGE_MODIFIED事件处理完成 ===', {
+          messageID: messageID,
+          newContent: messageInfo.content
+        });
+        
+        // 滚动到底部
+        setTimeout(() => {
+          this.scrollToBottom();
+        }, 100);
+        
+        return true; // 表示已处理流式消息
+      } else {
+        console.log('=== 没有找到对应的消息，将创建新消息 ===', {
+          streamMessageKey: streamMessageKey,
+          messageID: messageID,
+          messagesCount: messages.length
+        });
+        // 继续执行，创建新消息
+      }
+    }
     
     if (isStreaming || streamContent) {
       console.log('=== 是流式消息，开始处理 ===', {
         messageID: messageID,
-        streamingMessages: streamingMessages
+        streamMessageKey: streamMessageKey,
+        streamingMessages: streamingMessages,
+        messageInfoContent: messageInfo.content
       });
-      // 获取完整的消息信息
-      const messageInfo = this.getMessageDetails(message);
       
-      // 如果是流式消息，更新或创建流式消息记录
-      if (!streamingMessages[messageID]) {
-        // 新的流式消息，创建初始记录
-        streamingMessages[messageID] = {
-          content: streamContent,
-          isComplete: false
-        };
-        
+      // 检查消息是否已存在于消息列表中，使用多种匹配方式
+      const existingMessageIndex = messages.findIndex(msg => 
+        msg.id === messageID || msg.id === streamMessageKey || (msg.messageObj && msg.messageObj.ID === messageID)
+      );
+      
+      // 更新或创建流式消息记录，使用完整的消息内容
+      streamingMessages[streamMessageKey] = {
+        content: messageInfo.content, // 使用完整的消息内容
+        isComplete: false,
+        messageID: messageID
+      };
+      
+      if (existingMessageIndex === -1) {
+        // 消息不存在，创建新消息
         let avatarUrl;
         if (message.flow === 'out') {
           avatarUrl = this.getOwnAvatarUrl();
@@ -115,9 +239,9 @@ Page({
         
         // 创建包含所有必要字段的消息对象
         const newMessage = {
-          id: messageID,
+          id: streamMessageKey, // 使用streamMessageKey作为消息ID，便于合并片段
           type: message.flow === 'out' ? 'user' : 'ai',
-          content: streamContent,
+          content: messageInfo.content, // 使用完整的消息内容
           messageType: messageInfo.messageType,
           time: formatTime(message.time),
           timeRaw: message.time,
@@ -146,30 +270,38 @@ Page({
         };
         
         messages = [...messages, newMessage];
-      } else {
-        // 已有流式消息，更新内容
-        streamingMessages[messageID].content += streamContent;
-        
-        // 更新消息列表中的对应消息
-        messages = messages.map(msg => {
-          if (msg.id === messageID) {
-            return {
-              ...msg,
-              content: streamingMessages[messageID].content,
-              messageObj: message
-            };
-          }
-          return msg;
+        console.log('=== 创建新的流式消息 ===', {
+          streamMessageKey: streamMessageKey,
+          content: messageInfo.content,
+          messagesLength: messages.length
         });
+      } else {
+        // 消息已存在，更新内容 - 实现打印机效果
+        console.log('=== 消息已存在，更新内容（打印机效果） ===', {
+          streamMessageKey: streamMessageKey,
+          messageID: messageID,
+          existingMessageIndex: existingMessageIndex,
+          oldContent: messages[existingMessageIndex].content,
+          newContent: messageInfo.content
+        });
+        
+        // 直接更新消息内容
+        messages[existingMessageIndex].content = messageInfo.content;
+        messages[existingMessageIndex].messageObj = message;
+        messages[existingMessageIndex].isStreaming = true;
       }
       
       // 检查流式消息是否完成
       if (streamComplete) {
-        streamingMessages[messageID].isComplete = true;
+        streamingMessages[streamMessageKey].isComplete = true;
         
         // 更新消息列表，移除流式标记并确保完整字段
         messages = messages.map(msg => {
-          if (msg.id === messageID) {
+          if (msg.id === streamMessageKey) {
+            console.log('=== 流式消息完成 ===', {
+              streamMessageKey: streamMessageKey,
+              content: streamingMessages[streamMessageKey].content
+            });
             return {
               ...msg,
               isStreaming: false, // 标记流式消息已完成
@@ -217,6 +349,7 @@ Page({
     
     return false; // 表示不是流式消息
   },
+
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
@@ -475,17 +608,45 @@ Page({
         // 格式化消息
         const formattedMessages = this.formatMessages(messageList);
         
+        // 初始化流式消息数据
+        const streamingMessages = {};
+        
+        // 检查历史消息中是否有未完成的流式消息
+        messageList.forEach(message => {
+          try {
+            // 检查是否为自定义消息
+            if (message.type === wx.TencentCloudChat.TYPES.MSG_CUSTOM) {
+              const customData = JSON.parse(message.payload.data || '{}');
+              // 检查是否为AI下一问的流式消息
+              if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
+                // 使用固定的streamMessageKey来标识同一个流式消息
+                const streamMessageKey = 'stream_ai_next_query';
+                // 初始化流式消息记录
+                streamingMessages[streamMessageKey] = {
+                  content: customData.chunks[0] || '',
+                  isComplete: false,
+                  messageID: message.ID
+                };
+              }
+            }
+          } catch (e) {
+            console.log('解析历史消息中的自定义消息失败:', e);
+          }
+        });
+        
         // 更新数据
         this.setData({
           messages: formattedMessages,
           nextReqMessageID: nextReqMessageID || '',
           isCompleted: isCompleted || false,
           conversationProfile: conversationProfile.data.conversation,
-          loading: false
+          loading: false,
+          streamingMessages: streamingMessages // 初始化流式消息数据
         });
 
         console.log(`加载了 ${formattedMessages.length} 条AI分身历史消息`);
         console.log('是否还有更多消息:', !isCompleted);
+        console.log('初始化的流式消息数据:', streamingMessages);
         
         // 滚动到底部（显示最新消息）
         setTimeout(() => {
@@ -692,7 +853,9 @@ Page({
     messageList.forEach((message) => {
       // 只处理AI分身会话的消息
       if (message.conversationID === this.data.conversationID) {
-        // 先尝试作为流式消息处理
+        console.log('=== 处理新接收的消息 ===', { messageID: message.ID });
+        
+        // 尝试作为流式消息处理
         const isStreamingHandled = this.handleStreamingMessage(message);
         
         if (!isStreamingHandled) {
@@ -765,8 +928,27 @@ Page({
    * 消息变更处理函数
    */
   onMessageModified(event) {
-    const message = event.data;
-    console.log('消息变更:', message);
+    let messages = event.data;
+    console.log('消息变更:', messages);
+    
+    // 处理消息数组的情况（TUIKit可能会发送数组）
+    if (Array.isArray(messages)) {
+      messages.forEach(msg => {
+        this._handleSingleModifiedMessage(msg);
+      });
+    } else {
+      // 处理单个消息的情况
+      this._handleSingleModifiedMessage(messages);
+    }
+  },
+  
+  /**
+   * 处理单个变更的消息
+   */
+  _handleSingleModifiedMessage(message) {
+    if (!message) return;
+    
+    console.log('=== 处理单个变更消息 ===', { messageID: message.ID, messageType: message.type });
     
     // 先尝试作为流式消息处理
     const isStreamingHandled = this.handleStreamingMessage(message);
@@ -934,11 +1116,22 @@ Page({
         break;
         
       case wx.TencentCloudChat.TYPES.MSG_CUSTOM:
-        messageInfo.content = '[自定义消息]';
+        // messageInfo.content = '[自定义消息]';
         messageInfo.messageType = 'custom';
         try {
           const customData = JSON.parse(message.payload.data || '{}');
-          if (customData.businessID === 'user_defined_status') {
+          console.log('=== 解析自定义消息内容 ===', customData);
+          
+          // 处理AI下一问的流式消息
+          if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
+            // 提取chunks内容作为消息内容
+            for (const chunk of customData.chunks) {
+              messageInfo.content += chunk || '';
+            }
+            messageInfo.messageType = 'text'; // 标记为文本消息类型，便于显示
+            console.log('=== 提取到流式消息内容 ===', messageInfo.content);
+          } else if (customData.businessID === 'user_defined_status') {
+            // 处理其他类型的自定义消息
             messageInfo.content = customData.description || '[自定义消息]';
           }
         } catch (e) {
@@ -2651,17 +2844,45 @@ Page({
    * 点击AI报告图标
    */
 
-  openAIReport() {
-    // 检查训练状态
-    if (this.data.aiTrainingStatus === 'active') {
-      // 跳转到AI报告页面
-      wx.navigateTo({
-        url: '/subpages/ai-report/ai-report',
+  async openAIReport() {
+    try {
+      // 获取当前AI分身的训练状态
+      const app = getApp();
+      const result = await new Promise((resolve, reject) => {
+        app.request({
+          url: '/api/ai-avatars/is_trained',
+          method: 'GET',
+          success: (res) => {
+            resolve(res);
+          },
+          fail: (error) => {
+            reject(error);
+          }
+        });
       });
-    } else {
-      // 显示提示信息
+      
+      // 检查训练状态
+      if (result.success && result.data && result.data.status === 'active') {
+        // 训练已完成，跳转到AI报告页面
+        wx.navigateTo({
+          url: '/subpages/ai-report/ai-report',
+        });
+      } else {
+        // 训练未完成，显示提示信息
+        wx.showToast({
+          title: '完成五轮对话，即可生成AI分身报告',
+          icon: 'none',
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      // 关闭加载提示
+      wx.hideLoading();
+      
+      // 处理请求错误
+      console.error('获取AI训练状态失败:', error);
       wx.showToast({
-        title: '请先完成训练',
+        title: '完成五轮对话，即可生成AI分身报告',
         icon: 'none',
         duration: 2000
       });
