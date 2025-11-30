@@ -26,13 +26,13 @@
     <!-- 头像和基本信息 -->
     <view class="flex justify-center pt-2 pb-2">
       <view class="relative px-4" bindtap="showProfileEditModal">
-        <image src="{{avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'}}" mode="widthFix" class="w-32 h-32 rounded-full"></image>
+        <image src="{{avatarUrl || '/images/default-avatar.png'}}" mode="widthFix" class="w-32 h-32 rounded-full"></image>
         <view class="absolute right-0 bottom-0 items-center justify-center cursor-pointer">
-          <text class="fa fa-edit text-gray-500 text-lg"></text>
+          <text wx:if="{{isLoggedIn}}" class="fa fa-edit text-gray-500 text-lg"></text>
         </view>
       </view>
     </view>
-    <view class="text-center mb-3" bindtap="showProfileEditModal">
+    <view class="text-center mb-3" wx:if="{{isLoggedIn}}" bindtap="showProfileEditModal">
       <view class="flex items-center justify-center gap-2">
         <text class="text-lg font-semibold text-gray-900">{{userInfo.name}}</text>
         <view class="flex items-center gap-1">
@@ -57,7 +57,7 @@
           <view class="space-item mb-5 border-b border-gray-100 py-2 relative">
             <view class="flex items-center justify-between">
               <view class="block text-sm font-medium text-gray-700 mb-2">头像</view>
-              <image src="{{tempAvatarUrl || avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'}}" mode="widthFix" class="w-16 h-16 rounded-full mr-4"></image>
+              <image src="{{tempAvatarUrl || avatarUrl || '/images/default-avatar.png'}}" mode="widthFix" class="w-16 h-16 rounded-full mr-4"></image>
             </view>
             <button class="opacity-0 absolute w-full right-0 top-0 bg-purple-600 text-white rounded-lg text-sm px-4" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
               选择头像
@@ -91,16 +91,16 @@
             个人资料
             <text class="text-purple-600 ml-1">*</text>
           </view>
-          <view class="flex items-center space-x-2">
-            <view class="text-xs text-purple-600 bg-purple-100 px-3 py-15 rounded-full flex items-center shadow-sm" bindtap="showInfoEditModal">
+          <view class="flex items-center space-x-2" wx:if="{{isLoggedIn}}">
+            <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showInfoEditModal">
               <text class="fa fa-edit mr-1.5"></text>
               编辑
             </view>
           </view>
         </view>
-        <text class="text-sm text-gray-700" style="line-height: 1.6;">
+        <view class="text-sm text-gray-700" style="line-height: 1.6;">
           {{userInfo.description}}
-        </text>
+        </view>
       </view>
       <!-- 联系信息 -->
       <view class="bg-white p-4 border-b border-gray-100">
@@ -109,7 +109,7 @@
             联系信息
             <text class="text-purple-600 ml-1">*</text>
           </view>
-          <view class="flex items-center space-x-2">
+          <view class="flex items-center space-x-2" wx:if="{{isLoggedIn}}">
             <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showContactEditModal">
               <text class="fa fa-edit mr-1.5"></text>
               编辑
@@ -137,7 +137,7 @@
       <view class="bg-white p-4 border-b border-gray-100">
         <view class="flex items-center justify-between">
           <view class="text-sm font-semibold text-gray-700 flex items-center">对外媒体</view>
-          <view class="flex items-center space-x-2">
+          <view class="flex items-center space-x-2" wx:if="{{isLoggedIn}}">
             <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showSocialMediaEditModal">
               <text class="fa fa-plus mr-1.5"></text>
               添加
@@ -170,9 +170,13 @@
     </view>
     <!-- 悬浮分享按钮 -->
     <view class="share-btn2">
-      <button class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="openShare">
+      <button wx:if="{{isLoggedIn}}" class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="openShare">
         <text class="fa fa-paper-plane mr-4"></text>
         分享名片
+      </button>
+      <button wx:else class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="createProfile">
+        <text class="fa fa-edit mr-4"></text>
+        创建我的名片
       </button>
     </view>
   </view>

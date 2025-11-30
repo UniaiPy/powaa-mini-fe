@@ -26,10 +26,7 @@
         <view class="mb-6">
           <view class="text-sm font-medium text-gray-700 mb-3">AI分身说明</view>
           <view class="text-xs text-gray-700">
-            <view class="mb-2">基于多维度数据综合分析，您的人格画像展现出高度开放性思维和创新设计能力，善于用设计思维解决复杂问题。</view>
-            <view class="mb-2">在社交互动中，您表现出良好的连接动因和深度交流偏好，倾向于建立有意义的专业关系。</view>
-            <view class="mb-2">您具备强烈的成长导向，持续追求自我提升和技能发展，在团队协作中展现出优秀的领导潜质。</view>
-            <view class="mb-0">情绪管理能力突出，在压力环境下保持冷静理性，这使您成为团队中值得信赖的核心成员。</view>
+            <view>{{reportSummary}}</view>
           </view>
         </view>
         <!-- 人格画像 -->

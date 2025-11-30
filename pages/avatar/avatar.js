@@ -3,7 +3,7 @@
 import imManager from '../../utils/imManager.js';
 // 导入时间格式化工具
 import { formatTime, shouldShowTimeSeparator, getCurrentTimestamp } from '../../utils/timeFormat.js';
-
+const app = getApp();
 Page({
   /**
    * 页面的初始数据
@@ -362,7 +362,9 @@ Page({
    */
   onLoad(options) {
     console.log('AI分身页面加载');
-    
+    if (!app.isLoggedIn()) {
+      return;
+    }
     // 初始化聊天数据
     this.initializeChat();
     
@@ -1162,10 +1164,36 @@ Page({
     });
   },
 
+  checkLoginStatus() {
+    const app = getApp();
+    if (!app.isLoggedIn()) {
+      wx.showModal({
+        title: '提示',
+        content: 'AI分身相关功能需要先登录',
+        showCancel: true,
+        cancelText: '取消',
+        confirmText: '去登录',
+        success: (res) => {
+          if (res.confirm) {
+            // 导航到登录页面
+            wx.navigateTo({
+              url: '/pages/login/login'
+            });
+          }
+        }
+      })
+      return false;
+    }
+    return true;
+  },
   /**
    * 发送消息
    */
   async sendMessage() {
+    if (!this.checkLoginStatus()) {
+      return;
+    }
+   
     const message = this.data.inputValue.trim();
     if (!message) {
       wx.showToast({
@@ -2170,6 +2198,9 @@ Page({
    * 切换AI菜单显示
    */
   toggleAIMenu() {
+    if (!this.checkLoginStatus()) {
+      return;
+    }
     this.setData({
       showAIMenu: !this.data.showAIMenu,
       showFunctionMenu: false,
@@ -2181,6 +2212,9 @@ Page({
    * 切换模型菜单显示
    */
   toggleModelMenu() {
+    if (!this.checkLoginStatus()) {
+      return;
+    }
     this.setData({
       showModelMenu: !this.data.showModelMenu,
       showFunctionMenu: false,
@@ -2353,6 +2387,9 @@ Page({
    * 点击功能项
    */
   onFunctionItemClick(e) {
+    if (!this.checkLoginStatus()) {
+      return;
+    }
     const functionType = e.currentTarget.dataset.type;
     console.log('=== 点击功能项 ===');
     console.log('功能类型:', functionType);
@@ -2845,6 +2882,10 @@ Page({
    */
 
   async openAIReport() {
+    if (!this.checkLoginStatus()) {
+      return;
+    }
+
     try {
       // 获取当前AI分身的训练状态
       const app = getApp();

@@ -18,60 +18,6 @@ App({
 
   onLaunch: function () {
     this.initializeApp();
-    // wx.login({
-    //   success: (res) => {
-    //     if (res.code) {
-    //       console.log('获取登录code成功:', res.code)
-    //       // 2. 调用全局登录方法，传入code
-    //       this.login(res.code)
-    //         .then((userInfo) => {
-    //           console.log('登录成功', userInfo)
-    //           wx.hideLoading()
-    //           this.setData({ loading: false })
-    //           console.log('检查用户信息完整性:', userInfo)
-    //           // 检查用户信息是否完整（头像、昵称、手机号）
-    //           // 调用app.js中的checkUserInfoComplete方法检查用户信息完整性
-              
-    //           const isUserInfoComplete = app.checkUserInfoComplete();
-              
-    //           if (isUserInfoComplete) {
-    //           // 如果用户信息完整，继续后续流程
-    //             // 老用户，直接跳转到聊天页面
-    //              console.log('老用户')
-    //             wx.switchTab({
-    //               url: '/pages/chat/chat'
-    //             })
-    //           }
-    //         })
-    //         .catch((error) => {
-    //           console.error('登录失败', error)
-    //           wx.hideLoading()
-    //           this.setData({ loading: false })
-    //           wx.showToast({
-    //             title: error.message || '登录失败，请重试',
-    //             icon: 'none'
-    //           })
-    //         })
-    //     } else {
-    //       console.error('获取登录code失败:', res)
-    //       wx.hideLoading()
-    //       this.setData({ loading: false })
-    //       wx.showToast({
-    //         title: '登录失败，请重试',
-    //         icon: 'none'
-    //       })
-    //     }
-    //   },
-    //   fail: (err) => {
-    //     console.error('微信登录接口调用失败:', err)
-    //     wx.hideLoading()
-    //     this.setData({ loading: false })
-    //     wx.showToast({
-    //       title: '网络异常，请检查',
-    //       icon: 'none'
-    //     })
-    //   }
-    // })
   },
 
   onShow: function () {
@@ -338,14 +284,14 @@ App({
   },
 
   onPageShow: function(page) {
-    if (this.isLoggedIn() && page) {
-      const isLoginPage = page.route === 'pages/login/login'
-      console.log('当前页面:', page.route, '是否登录页面:', isLoginPage)
+    // if (this.isLoggedIn() && page) {
+    //   const isLoginPage = page.route === 'pages/login/login'
+    //   console.log('当前页面:', page.route, '是否登录页面:', isLoginPage)
       
-      if (!isLoginPage) {
-        this.checkUserInfoComplete()
-      }
-    }
+    //   if (!isLoginPage) {
+    //     this.checkUserInfoComplete()
+    //   }
+    // }
   },
 
   checkUserInfoComplete: function(options = {}) {
@@ -432,6 +378,8 @@ App({
       
       if (response.code === 200 && response.data) {
         const config = response.data
+        console.log('IM配置:', config)
+        
         console.log('获取到的IM配置:', {
           SDKAppID: config.SDKAppID,
           userID: config.userID,

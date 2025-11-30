@@ -65,7 +65,8 @@ Page({
         that.setData({
           reportData: res,
           reportTime: res.reportTime || that.formatCurrentTime(),
-          isLoading: false
+          isLoading: false,
+          reportSummary: res.report_summary || 'AI分析中...'
         });
         // 数据加载完成后初始化雷达图
         that.initializeRadarChart();

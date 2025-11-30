@@ -1,4 +1,4 @@
-{  "pages": [    "pages/login/login",    "pages/chat/chat",    "pages/avatar/avatar",    "pages/profile/profile",    "pages/fullscreen-map/fullscreen-map"  ],  "subpackages": [    {
+{  "pages": [   "pages/chat/chat", "pages/login/login", "pages/avatar/avatar",    "pages/profile/profile",    "pages/fullscreen-map/fullscreen-map"  ],  "subpackages": [    {
       "root": "subpages",
       "pages": [
         "conversation/conversation",

@@ -6,7 +6,7 @@ Page({
   data: {
     // 用户基本信息
     userInfo: {
-      name: '',
+      name: '点击设置昵称',
       aiStatus: '在线',
       description: ''
     },
@@ -67,7 +67,9 @@ Page({
    */
   fetchSocialPlatforms() {
     const app = getApp();
-    
+    if (!app.isLoggedIn()) {
+      return;
+    }
     // 使用全局request方法发送请求
     app.request({
       url: '/api/users/social-platforms',
@@ -98,6 +100,16 @@ Page({
   onShow() {
     // 从全局数据获取用户信息
     const app = getApp()
+    if (!app.isLoggedIn()) {
+      console.warn('用户未登录，无法获取用户信息')
+      this.setData({
+        isLoggedIn: false
+      })
+      return;
+    }
+    this.setData({
+        isLoggedIn: true
+      })
     const globalUserInfo = app.globalData.userInfo
     
     console.log('从全局获取用户信息:', globalUserInfo)
@@ -365,11 +377,14 @@ Page({
       icon: 'success'
     })
   },
-  
   /**
    * 显示头像昵称编辑弹窗
    */
   showProfileEditModal() {
+    if (!this.data.isLoggedIn) {
+      console.log("000")
+      return;
+    }
     console.log('显示头像昵称编辑弹窗')
     this.setData({
       showProfileAuthModal: true,
@@ -377,7 +392,22 @@ Page({
       tempNickname: this.data.userInfo.name
     })
   },
-  
+  createProfile(){
+    wx.showModal({
+      title: '请登录',
+      content: '您需要先登录才能创建名片',
+      showCancel: true,
+      cancelText: '取消',
+      confirmText: '去登录',
+      success: (res) => {
+        if (res.confirm) {
+          wx.navigateTo({
+            url: '/pages/login/login'
+          })
+        }
+      }
+    })
+  },
   /**
    * 同步用户信息到IM
    */
@@ -1276,30 +1306,31 @@ Page({
   /**
    * 用户点击右上角分享
    */
-  onShareAppMessage() {
-    const app = getApp();
-    // 用户名片信息不完整时，点击无效
-    if (!app.checkUserInfoComplete()) {
-      return
-    }
-    const userId = app.globalData.userInfo.id;
-    return {
-      title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: this.data.avatarUrl || '/images/ai.png'
-    }
-  },
-  onShareTimeline() {
-    const app = getApp();
-    // 用户名片信息不完整时，点击无效
-    if (!app.checkUserInfoComplete()) {
-      return
-    }
-    const userId = app.globalData.userInfo.id;
-    return {
-      title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: '/images/ai.png'
-    }
-  }
+  // onShareAppMessage() {
+  //   const app = getApp();
+  //   // 用户名片信息不完整时，点击无效
+  //   if (!app.checkUserInfoComplete() || !app.isLoggedIn()) {
+  //     console.log('用户未登录或用户名片信息不完整')
+  //     return
+  //   }
+  //   const userId = app.globalData.userInfo.id;
+  //   return {
+  //     title: `${this.data.userInfo.name}的AI名片`,
+  //     path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+  //     imageUrl: this.data.avatarUrl || '/images/ai.png'
+  //   }
+  // },
+  // onShareTimeline() {
+  //   const app = getApp();
+  //   // 用户名片信息不完整时，点击无效
+  //   if (!app.checkUserInfoComplete() || !app.isLoggedIn()) {
+  //     return
+  //   }
+  //   const userId = app.globalData.userInfo.id;
+  //   return {
+  //     title: `${this.data.userInfo.name}的AI名片`,
+  //     path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+  //     imageUrl: '/images/ai.png'
+  //   }
+  // }
 })

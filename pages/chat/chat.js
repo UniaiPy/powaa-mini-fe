@@ -1,5 +1,6 @@
 // pages/chat/chat.js
 import imManager from '../../utils/imManager.js';
+const app = getApp();
 
 Page({
 
@@ -26,6 +27,9 @@ Page({
    */
   onLoad: function (options) {
     // 检查TUIKit是否已在app.js中初始化
+    if (!app.isLoggedIn()) {
+      return;
+    }
     this.checkTUIKitStatus();
   },
   
@@ -44,13 +48,12 @@ Page({
       
       // 检查是否已登录
       if (!app.globalData.token || !app.globalData.userInfo) {
-        console.error('❌ 用户未登录或信息不完整', {
+        console.log('ℹ️ 用户未登录或信息不完整，跳过IM初始化，直接进入聊天页面', {
           hasToken: !!app.globalData.token,
           hasUserInfo: !!app.globalData.userInfo
         });
-        // 立即跳转到登录页面，不使用setTimeout避免延迟
-        wx.reLaunch({
-          url: '/pages/login/login'
+        this.setData({
+          isImInitialized: false
         });
         return;
       }
@@ -113,17 +116,7 @@ Page({
       icon: 'none',
       duration: 2000
     });
-    
-    // 延迟后跳转到登录页面
-    setTimeout(() => {
-      try {
-        wx.reLaunch({
-          url: '/pages/login/login'
-        });
-      } catch (error) {
-        console.error('❌ 跳转到登录页失败:', error);
-      }
-    }, 2500);
+    // 移除自动跳转到登录页面的逻辑，允许用户继续使用小程序
   },
   
   // 增量更新会话信息（避免频繁全量刷新）
@@ -267,7 +260,7 @@ Page({
   },
   
   // 使用imManager初始化IM
-  initIMWithManager: function() {
+  initIMWithManager: async function() {
     console.log('📱 开始IM初始化流程');
     
     try {
@@ -304,40 +297,60 @@ Page({
           hasUserID: !!app.globalData.userInfo?.userId
         });
         wx.hideLoading();
-        // wx.showToast({
-        //   title: '用户信息不完整',
-        //   icon: 'none'
-        // });
-        // 立即跳转到登录页面，不使用setTimeout避免延迟
-        setTimeout(() => {
-          wx.reLaunch({
-            url: '/pages/login/login'
-          });
-        }, 1000);
+        wx.showToast({
+          title: '用户信息不完整，跳过IM初始化',
+          icon: 'none'
+        });
+        this.setData({
+          isImInitialized: false
+        });
         return;
       }
       
       // 从app.js获取IM配置
       const userID = app.globalData.userInfo.id.toString();
-      const userSig = app.globalData.userSig;
-      const SDKAppID = app.globalData.SDKAppID;
+      let userSig = app.globalData.userSig;
+      let SDKAppID = app.globalData.SDKAppID;
       
       if (!userSig || !SDKAppID) {
-        console.error('❌ 缺少IM配置信息:', { 
+        console.warn('⚠️ 缺少IM配置信息，尝试主动获取:', { 
+          userSig: !!userSig, 
+          SDKAppID: !!SDKAppID,
+          userID: userID
+        });
+        
+        try {
+          // 主动调用app.js的方法获取IM配置
+          await app.getIMConfigFromServer();
+          
+          // 重新获取配置
+          userSig = app.globalData.userSig;
+          SDKAppID = app.globalData.SDKAppID;
+          
+          console.log('🔄 重新获取IM配置后:', { 
+            userSig: !!userSig, 
+            SDKAppID: !!SDKAppID
+          });
+        } catch (error) {
+          console.error('❌ 主动获取IM配置失败:', error);
+        }
+      }
+      
+      if (!userSig || !SDKAppID) {
+        console.error('❌ 仍然缺少IM配置信息，跳过IM初始化:', { 
           userSig: !!userSig, 
           SDKAppID: !!SDKAppID,
           userID: userID
         });
         wx.hideLoading();
         wx.showToast({
-          title: 'IM配置不完整',
-          icon: 'none'
+          title: 'IM配置不完整，跳过IM初始化',
+          icon: 'none',
+          duration: 2000
         });
-        setTimeout(() => {
-          wx.reLaunch({
-            url: '/pages/login/login'
-          });
-        }, 1000);
+        this.setData({
+          isImInitialized: false
+        });
         return;
       }
       
@@ -408,27 +421,14 @@ Page({
           if (isKickoutError) {
             console.log('⚠️ 检测到账号在其他设备登录或被踢出');
             this.handleKickedOut();
-          } else if (error.message && error.message.includes('用户未登录')) {
-            wx.showToast({
-              title: '请先登录',
-              icon: 'none'
-            });
-            setTimeout(() => {
-              wx.reLaunch({
-                url: '/pages/login/login'
-              });
-            }, 1000);
           } else {
             wx.showToast({
-              title: 'IM初始化失败',
+              title: 'IM初始化失败，跳过IM功能',
               icon: 'none'
             });
-            // 初始化失败时跳转到登录页面
-            setTimeout(() => {
-              wx.reLaunch({
-                url: '/pages/login/login'
-              });
-            }, 1000);
+            this.setData({
+              isImInitialized: false
+            });
           }
         });
     } catch (error) {
@@ -1595,7 +1595,10 @@ Page({
       }
     } else {
       // 如果没有初始化，则重新检查TUIKit状态
-      this.checkTUIKitStatus();
+      if (app.isLoggedIn()) {
+        this.checkTUIKitStatus();
+      }
+      
       // 重置刷新时间，确保下次初始化后能正常加载数据
       this.setData({
         lastRefreshTime: 0
