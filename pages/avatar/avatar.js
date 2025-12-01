@@ -9,10 +9,14 @@ Page({
    * 页面的初始数据
    */
   data: {
+    // 是否启用滚动动画
+    scrollWithAnimation: false,
+    // 是否显示滚动条
+    showScrollbar: false,
     // 地图是否可滚动
-    mapScroll: true,
+    mapScroll: false,
     // 地图是否可缩放
-    mapZoom: true,
+    mapZoom: false,
     // 聊天消息数据
     messages: [],
     // 输入框内容
@@ -1353,41 +1357,7 @@ Page({
     });
   },
 
-  /**
-   * 点击菜单项
-   */
-  onActionMenuTap(e) {
-    const { action } = e.currentTarget.dataset;
-    
-    switch (action) {
-      case 'photo':
-        this.chooseImage();
-        break;
-      case 'camera':
-        this.takePhoto();
-        break;
-      case 'file':
-        this.selectFile();
-        break;
-      case 'location':
-        this.chooseLocation();
-        break;
-      case 'voice':
-        this.startRecording();
-        break;
-      case 'video':
-        this.chooseVideo();
-        break;
-      case 'contact':
-        this.shareContact();
-        break;
-    }
-    
-    // 隐藏菜单
-    this.setData({
-      showActionMenu: false
-    });
-  },
+
 
   /**
    * 选择图片
@@ -1837,83 +1807,6 @@ Page({
           duration: 3000
         });
       }
-    }
-  },
-
-  /**
-   * 选择位置
-   */
-  chooseLocation() {
-    // 调用前检查授权
-    wx.getSetting({
-      success: async (res) => {
-        // 若未授权，先请求授权
-        if (!res.authSetting['scope.userLocation']) {
-          try {
-            await wx.authorize({
-              scope: 'scope.userLocation'
-            });
-            console.log('位置权限授权成功');
-            await this.handleChooseLocation();
-          } catch (authError) {
-            console.log('位置权限授权失败，引导用户手动开启');
-            wx.showModal({
-              title: '位置权限',
-              content: '需要位置权限来发送位置信息，请在设置中开启',
-              confirmText: '去设置',
-              success: (res) => {
-                if (res.confirm) {
-                  wx.openSetting();
-                }
-              }
-            });
-          }
-        } else {
-          // 已授权，直接调用
-          await this.handleChooseLocation();
-        }
-      }
-    });
-  },
-
-  /**
-   * 处理选择位置的逻辑
-   */
-  async handleChooseLocation() {
-    try {
-      console.log('开始调用 wx.getLocation 获取当前位置');
-      // 先获取用户当前位置
-      const currentLocation = await wx.getLocation({
-        type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
-        altitude: false
-      });
-      console.log('wx.getLocation 返回结果:', currentLocation);
-      
-      const locationRes = await wx.chooseLocation({
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude
-      });
-      
-      console.log('选择的位置:', locationRes);
-      
-      // 发送位置消息
-      await this.sendLocationMessage(locationRes);
-    } catch (error) {
-      console.error('选择位置失败:', error);
-      
-      // 根据错误类型给出不同提示
-      let errorMessage = '选择位置失败';
-      if (error.errMsg && error.errMsg.includes('auth deny')) {
-        errorMessage = '请允许访问位置信息';
-      } else if (error.errMsg && error.errMsg.includes('cancel')) {
-        console.log('用户取消选择位置');
-        return; // 用户取消，不显示错误提示
-      }
-      
-      wx.showToast({
-        title: errorMessage,
-        icon: 'error'
-      });
     }
   },
 
@@ -2603,17 +2496,17 @@ Page({
         }
       }
       
-      console.log('开始调用 wx.getLocation 获取当前位置');
-      // 先获取用户当前位置
-      const currentLocation = await wx.getLocation({
-        type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
-        altitude: false
-      });
-      console.log('wx.getLocation 返回结果:', currentLocation);
+      // console.log('开始调用 wx.getLocation 获取当前位置');
+      // // 先获取用户当前位置
+      // const currentLocation = await wx.getLocation({
+      //   type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
+      //   altitude: false
+      // });
+      // console.log('wx.getLocation 返回结果:', currentLocation);
       
       const locationRes = await wx.chooseLocation({
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude
+        latitude: 0,
+        longitude: 0
       });
       
       console.log('选择的位置:', locationRes);

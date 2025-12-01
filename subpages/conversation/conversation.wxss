@@ -91,7 +91,8 @@
   color: #374151;
   background-color: #fff;
 }
-.option-item::after{
+
+.option-item::after {
   display: none;
 }
 
@@ -811,8 +812,8 @@
 
 /* 图片消息样式 - 完全移除背景、边框、倒角和阴影 */
 .message-image {
-  max-width: 200px;
-  max-height: 200px;
+  max-width: 100px;
+  max-height: 150px;
   border-radius: 0;
   display: block;
   background: transparent;
@@ -861,6 +862,10 @@
   font-size: 16px;
   padding: 8px 10px;
   display: block;
+}
+
+.location-map-cover {
+  height: 100%;
 }
 
 .location-address {

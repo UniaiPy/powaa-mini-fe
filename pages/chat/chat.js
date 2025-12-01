@@ -2130,9 +2130,8 @@ Page({
             title: `已同意与${name}的好友请求`,
             icon: 'success'
           });
-          
-          // 刷新联系人列表，这样新好友就会出现在列表中
-          this.loadConversationList();
+          // 刷新联系人列表的逻辑已移至sendWelcomeMessage方法中，确保会话创建完成后再刷新
+          // 避免因异步操作导致的更新不及时问题
         })
         .catch((error) => {
           console.error('IM同意好友申请失败:', error);
@@ -2313,6 +2312,21 @@ Page({
     return messageInfo;
   },
 
+   /**
+   * 测试图片URL可访问性
+   */
+  testImageUrl(url) {
+    wx.request({
+      url: url,
+      method: 'HEAD',
+      success: (res) => {
+        console.log('图片URL可访问:', url, '状态码:', res.statusCode);
+      },
+      fail: (error) => {
+        console.error('图片URL不可访问:', url, error);
+      }
+    });
+  },
   
   /**
    * 获取文件类型信息
@@ -2448,6 +2462,10 @@ Page({
       .then((res) => {
         console.log('欢迎消息发送成功:', res);
         console.log('会话已创建，新好友将出现在会话列表中');
+        // 消息发送成功后，延迟刷新会话列表，确保会话已创建
+        setTimeout(() => {
+          this.loadConversationList();
+        }, 1000);
       })
       .catch((error) => {
         console.error('欢迎消息发送失败:', error);

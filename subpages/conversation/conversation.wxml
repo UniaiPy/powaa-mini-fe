@@ -12,7 +12,7 @@
         </view>
       </view>
       <view id="moreOptionsBtn" class="more-options-btn" bindtap="toggleMoreOptions">
-        <text class="fa fa-ellipsis-v"></text>
+        <text class="fa fa-ellipsis-v text-lg"></text>
       </view>
     </view>
   </custom-navigation-bar>
@@ -50,7 +50,7 @@
     </view>
   </view>
   <!-- 聊天容器 -->
-  <scroll-view class="chat-container" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="false" bindtap="hideAllMenus" refresher-enabled="{{true}}" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onPullDownRefresh" bindrefresherrestore="onPullDownRefreshComplete" show-scrollbar="false" enhanced="true">
+  <scroll-view class="chat-container" scroll-with-animation="{{scrollWithAnimation}}" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="false" bindtap="hideAllMenus" refresher-enabled="{{true}}" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onPullDownRefresh" bindrefresherrestore="onPullDownRefreshComplete" show-scrollbar="{{showScrollbar}}" enhanced="true">
     <!-- 加载状态 -->
     <view class="loading-container" wx:if="{{loading}}">
       <text class="loading-text">加载中...</text>
@@ -81,7 +81,7 @@
             </block>
             <!-- 图片消息 -->
             <block wx:elif="{{item.messageType === 'image'}}">
-              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
+              <image src="{{item.imageUrl}}" mode="aspectFill" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
             </block>
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
@@ -102,7 +102,9 @@
                   {{item.location.name}}
                 </view>
                 <view class="location-address">{{item.location.address}}</view>
-                <map enable-scroll="{{mapScroll}}" enable-zoom="{{mapZoom}}" longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 32, iconPath: '/assets/icons/location.png'}]}}" class="location-map"></map>
+                <map enable-scroll="{{mapScroll}}" enable-zoom="{{mapZoom}}" longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 32, iconPath: '/assets/icons/location.png'}]}}" class="location-map">
+                  <cover-view bindtap="openLocationMap" data-location="{{item.location}}" class="location-map-cover"></cover-view>
+                </map>
               </view>
             </block>
             <!-- 表情消息 -->
@@ -147,7 +149,7 @@
             </block>
             <!-- 图片消息 -->
             <block wx:elif="{{item.messageType === 'image'}}">
-              <image src="{{item.imageUrl}}" mode="aspectFit" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
+              <image src="{{item.imageUrl}}" mode="aspectFill" class="message-image message-type-image" bindtap="previewImage" data-src="{{item.imageUrl}}"></image>
             </block>
             <!-- 文件消息 -->
             <block wx:elif="{{item.messageType === 'file'}}">
@@ -168,7 +170,9 @@
                   {{item.location.name}}
                 </view>
                 <view class="location-address">{{item.location.address}}</view>
-                <map enable-scroll="false" longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 24, iconPath: '/assets/icons/location.png'}]}}" class="location-map"></map>
+                <map enable-scroll="{{mapScroll}}" enable-zoom="{{mapZoom}}" longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 24, iconPath: '/assets/icons/location.png'}]}}" class="location-map">
+                  <cover-view bindtap="openLocationMap" data-location="{{item.location}}" class="location-map-cover"></cover-view>
+                </map>
               </view>
             </block>
             <!-- 表情消息 -->

@@ -10,10 +10,14 @@ Page({
    * 页面的初始数据
    */
   data: {
+    // 是否启用滚动动画
+    scrollWithAnimation: false,
+    // 是否显示滚动条
+    showScrollbar: false,
     // 地图是否可滚动
-    mapScroll: true,
+    mapScroll: false,
     // 地图是否可缩放
-    mapZoom: true,
+    mapZoom: false,
     // 聊天消息数据
     messages: [],
     // 输入框内容
@@ -2646,17 +2650,17 @@ Page({
         }
       }
       
-      console.log('开始调用 wx.getLocation 获取当前位置');
-      // 先获取用户当前位置
-      const locationRes = await wx.getLocation({
-        type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
-        altitude: false
-      });
-      console.log('wx.getLocation 返回结果:', locationRes);
+      // console.log('开始调用 wx.getLocation 获取当前位置');
+      // // 先获取用户当前位置
+      // const locationRes = await wx.getLocation({
+      //   type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
+      //   altitude: false
+      // });
+      // console.log('wx.getLocation 返回结果:', locationRes);
       
       console.log('开始调用 wx.chooseLocation');
       const res = await wx.chooseLocation({
-        latitude: locationRes.latitude,
+        latitude: 0,
         longitude: locationRes.longitude
       });
       console.log('wx.chooseLocation 返回结果:', res);

@@ -23,7 +23,7 @@
   <!-- 主内容区域 -->
   <view class="content-container">
     <scroll-view class="content-with-fixed-nav" scroll-y="true">
-      <view class="py-2">
+      <view>
         <!-- 分组标题行 -->
         <view class="flex bg-gray-50 rounded-lg shadow-sm mb-3">
           <view class="flex-1 chat-section-title {{activeSection === 'contacts' ? 'active' : ''}}" bindtap="toggleSection" data-section="contacts">

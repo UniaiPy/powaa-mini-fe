@@ -1284,7 +1284,7 @@ Page({
       return
     }
     const userId = app.globalData.userInfo.id;
-    // const userId = 5;
+    // const userId = 20;
     wx.navigateTo({
       url: `/subpages/preview/preview?isFromProfile=true&type=profile&userId=${userId}`
     })

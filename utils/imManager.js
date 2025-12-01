@@ -2,7 +2,7 @@
 // IM统一管理器 - 解决页面间状态同步问题
 
 // 从TUIKit中导入TencentCloudChat
-import TencentCloudChat from '/@tencentcloud/lite-chat/professional';
+import TencentCloudChat from '@tencentcloud/lite-chat/professional';
 // 兼容CommonJS模块的导入
 if (typeof TencentCloudChat === 'object' && TencentCloudChat.default) {
   TencentCloudChat = TencentCloudChat.default;

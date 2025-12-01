@@ -44,7 +44,7 @@
   },
   "sitemapLocation": "sitemap.json",
   "renderer": "webview",
-  "requiredPrivateInfos": ["chooseLocation", "getLocation"],
+  "requiredPrivateInfos": ["chooseLocation"],
   "permission": {
     "scope.userLocation": {
       "desc": "您的位置信息将用于选择地点"
