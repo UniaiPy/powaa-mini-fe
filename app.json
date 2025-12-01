@@ -1,4 +1,13 @@
-{  "pages": [   "pages/chat/chat", "pages/login/login", "pages/avatar/avatar",    "pages/profile/profile",    "pages/fullscreen-map/fullscreen-map"  ],  "subpackages": [    {
+{  
+  "pages": [
+    "pages/chat/chat",
+    "pages/login/login",
+    "pages/avatar/avatar",
+    "pages/profile/profile",
+    "pages/fullscreen-map/fullscreen-map"
+  ], 
+  "subpackages": [
+    {
       "root": "subpages",
       "pages": [
         "conversation/conversation",
@@ -49,5 +58,7 @@
     "scope.userLocation": {
       "desc": "您的位置信息将用于选择地点"
     }
-  }
+  },
+  "version":"1.0.1",
+  "lazyCodeLoading":"requiredComponents"
 }

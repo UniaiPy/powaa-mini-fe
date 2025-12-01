@@ -1,4 +1,4 @@
-// app.js
+// // app.js
 import imManager from './utils/imManager.js';
 
 App({
@@ -17,6 +17,7 @@ App({
   },
 
   onLaunch: function () {
+    console.log('App Launch')
     this.initializeApp();
   },
 

@@ -1561,6 +1561,9 @@ Page({
     // 页面显示时的操作
     // 调用全局的页面显示钩子函数
     const app = getApp();
+    if (!app.isLoggedIn()) {
+      return;
+    }
     if (app.onPageShow) {
       app.onPageShow(this);
     }
