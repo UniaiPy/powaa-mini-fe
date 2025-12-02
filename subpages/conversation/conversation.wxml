@@ -6,13 +6,13 @@
       <view class="user-info flex-1">
         <view class="flex items-center justify-center">
           <view id="userName" class="user-name text-base font-bold text-gray-900">
-            {{chatInfo.name || chatInfo.nick || chatInfo.nickname || ''}}
+            {{chatInfo.name}}
           </view>
           <view class="user-status ml-2 flex items-center"></view>
         </view>
       </view>
       <view id="moreOptionsBtn" class="more-options-btn" bindtap="toggleMoreOptions">
-        <text class="fa fa-ellipsis-v text-lg"></text>
+        <image src="/assets/icons/card.png" mode="widthFix" class="w-6" />
       </view>
     </view>
   </custom-navigation-bar>
@@ -258,33 +258,33 @@
         <text>按住说话</text>
       </view> -->
     </view>
-  </view>
-  <!-- 功能菜单 -->
-  <view class="function-menu {{showFunctionMenu ? 'show' : ''}}" wx:if="{{showFunctionMenu}}">
-    <view class="function-grid">
-      <view class="function-item" bindtap="onFunctionItemClick" data-type="image">
-        <view class="function-icon image">
-          <i class="fa fa-image"></i>
+    <!-- 功能菜单 -->
+    <view class="function-menu {{showFunctionMenu ? 'show' : ''}}" wx:if="{{showFunctionMenu}}">
+      <view class="function-grid">
+        <view class="function-item" bindtap="onFunctionItemClick" data-type="image">
+          <view class="function-icon image">
+            <i class="fa fa-image"></i>
+          </view>
+          <view class="function-label">图片</view>
         </view>
-        <view class="function-label">图片</view>
-      </view>
-      <view class="function-item" bindtap="onFunctionItemClick" data-type="file">
-        <view class="function-icon file">
-          <i class="fa fa-file"></i>
+        <view class="function-item" bindtap="onFunctionItemClick" data-type="file">
+          <view class="function-icon file">
+            <i class="fa fa-file"></i>
+          </view>
+          <view class="function-label">文件</view>
         </view>
-        <view class="function-label">文件</view>
-      </view>
-      <view class="function-item" bindtap="onFunctionItemClick" data-type="location">
-        <view class="function-icon location">
-          <i class="fa fa-map-marker"></i>
+        <view class="function-item" bindtap="onFunctionItemClick" data-type="location">
+          <view class="function-icon location">
+            <i class="fa fa-map-marker"></i>
+          </view>
+          <view class="function-label">位置</view>
         </view>
-        <view class="function-label">位置</view>
-      </view>
-      <view class="function-item" bindtap="onFunctionItemClick" data-type="emoji">
-        <view class="function-icon emoji">
-          <i class="fa fa-smile-o"></i>
+        <view class="function-item" bindtap="onFunctionItemClick" data-type="emoji">
+          <view class="function-icon emoji">
+            <i class="fa fa-smile-o"></i>
+          </view>
+          <view class="function-label">表情</view>
         </view>
-        <view class="function-label">表情</view>
       </view>
     </view>
   </view>

@@ -769,14 +769,6 @@ Page({
       }
     })
   },
-   /**
-   * 打开分享
-   */
-  openShare() {
-    wx.navigateTo({
-      url: '/subpages/share/share'
-    })
-  },
   /**
    * 用户点击右上角分享
    */

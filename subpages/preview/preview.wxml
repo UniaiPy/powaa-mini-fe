@@ -13,15 +13,15 @@
   <view class="content-with-fixed-nav flex-1 content-card px-3 py-3 space-y-4 relative">
     <view class="bg-white rounded-lg overflow-hidden shadow-sm">
       <!-- 悬浮按钮 - 仅当不是查看自己的名片时显示 -->
-      <view class="bottom-btns bottom-20 left-0 right-0 z-30 px-4 pb-2 floating-button" wx:if="{{!isOwnProfile}}">
+      <view class="bottom-btns bottom-20 left-0 right-0 z-30 pb-2 floating-button" wx:if="{{!isOwnProfile}}">
         <view class="max-w-md mx-auto">
           <!-- 一排两个按钮：匹配度说明 + 与ta聊天 -->
-          <view class="flex space-x-2">
+          <view class="">
             <view class="flex-1 py-3 text-purple-500 rounded-xl text-base font-bold flex items-center justify-center shadow-lg bg-purple-100" bindtap="showMatchDegree">
               <text class="fa fa-book mr-2"></text>
               匹配度说明
             </view>
-            <view class="flex-1 py-3 rounded-xl text-base font-bold flex items-center justify-center shadow-lg btn-primary" bindtap="startChat">
+            <view class="mt-6 flex-1 py-3 rounded-xl text-base font-bold flex items-center justify-center shadow-lg btn-primary" bindtap="startChat">
               <text class="fa fa-comments mr-2"></text>
               与ta聊天
             </view>
@@ -74,14 +74,14 @@
         </view>
       </view>
       <!-- 对外媒体 -->
-      <view class="bg-white p-4 border-b border-gray-100 media-section">
+      <view class="bg-white p-4 border-b border-gray-100 media-section" wx:if="{{socialMediaList.length > 0}}">
         <view class="flex items-center justify-between mb-3">
           <view class="text-sm font-semibold text-gray-700">对外媒体</view>
         </view>
         <view id="socialMediaContent">
           <view id="socialMediaList" class="space-y-1 text-sm text-gray-600">
             <!-- 社交媒体列表 -->
-            <view class="space-y-1 text-sm text-gray-600" wx:if="{{socialMediaList.length > 0}}">
+            <view class="space-y-1 text-sm text-gray-600">
               <view class="flex items-center justify-between p-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
                 <view class="flex items-center">
                   <!-- <text class="fa fa-{{item.icon}} {{item.iconColor}} mr-3"></text> -->

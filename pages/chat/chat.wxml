@@ -10,7 +10,7 @@
           </view>
         </view>
         <view class="flex-1 text-c">
-          <text class="text-base font-bold text-gray-900">聊天</text>
+          <!-- <text class="text-base font-bold text-gray-900">聊天</text> -->
         </view>
         <view class="text-r">
           <view bindtap="openSearch">

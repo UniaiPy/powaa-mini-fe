@@ -17,13 +17,6 @@
           "query": "",
           "launchMode": "default",
           "scene": null
-        },
-        {
-          "name": "subpages/share/share",
-          "pathName": "subpages/share/share",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
         }
       ]
     }

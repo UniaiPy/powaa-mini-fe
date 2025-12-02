@@ -37,13 +37,14 @@
   justify-content: center;
   font-size: 30rpx;
   margin-top: 20rpx;
+  padding: 0 20rpx;
 }
 
 
 .share-btn2 button {
-  width: 300rpx;
+  width: 100%;
   height: 80rpx;
-  border-radius: 40rpx;
+  border-radius: 20rpx;
 }
 
 .fixed-nav .left-half {
@@ -102,11 +103,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding-bottom: 20px;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   z-index: 9999;
   animation: fadeIn 0.3s ease-out;
 }
@@ -116,7 +117,7 @@
   border-radius: 16px 16px 0 0;
   padding: 20px;
   max-height: 80vh;
-  animation: slideUp 0.3s ease-out;
+  /* animation: slideUp 0.3s ease-out; */
 }
 
 /* 动画 */
@@ -150,9 +151,6 @@
   overflow-y: auto;
 }
 
-.bottom-modal {
-  margin-left: 5%;
-}
 
 .modal-content input {
   padding: 0 20rpx;

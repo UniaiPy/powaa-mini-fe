@@ -876,10 +876,10 @@ Page({
             console.log('⚠️ 检测到账号被踢出，直接跳转到登录页面');
             this.handleKickedOut();
           } else {
-            wx.showToast({
-              title: '重新登录失败，请重试',
-              icon: 'none'
-            });
+            // wx.showToast({
+            //   title: '重新登录失败，请重试',
+            //   icon: 'none'
+            // });
           }
         });
       } else {
@@ -1743,16 +1743,6 @@ Page({
    */
   onReachBottom: function () {
     // 加载更多数据
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage: function () {
-    return {
-      title: '聊天列表',
-      path: '/pages/chat/chat'
-    };
   },
 
   // 切换分组（联系人/待联系）

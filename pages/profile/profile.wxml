@@ -3,19 +3,19 @@
   <!-- 顶部导航 -->
   <custom-navigation-bar id="customNavigationBar" bar-style="1" background='#fff' color='#000'>
     <view class="flex items-center justify-between w-full h-full">
-      <view class="flex items-center gap-3">
-        <view class="w-16 rounded-lg flex items-center justify-center" bindtap="navigateToAbout">
-          <image src="/images/ai.png" mode="widthFix"></image>
+      <view class="">
+        <view class="w-16 h-16" bindtap="navigateToAbout">
+          <image src="/images/ai.png" class="w-full h-full rounded-lg" mode="aspectFill"></image>
         </view>
       </view>
       <view class=" ">
-        <text class="text-base font-bold text-gray-900">我的名片</text>
+        <!-- <text class="text-base font-bold text-gray-900">我的名片</text> -->
       </view>
       <view class="flex items-center">
         <view class="text-xl text-black cursor-pointer" bindtap="openPreview">
           <text class="fa fa-eye"></text>
         </view>
-        <button class="share-btn text-xl text-black cursor-pointer ml-7" bindtap="openShare">
+        <button class="share-btn text-xl text-black cursor-pointer ml-7" open-type="share">
           <text class="fa fa-share-alt"></text>
         </button>
       </view>
@@ -73,12 +73,12 @@
           </view>
           <!-- 按钮区域 -->
           <view class="flex pt-2 gap-3">
-            <button class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm" bindtap="closeProfileAuthModal">
+            <view class="flex items-center justify-center flex-1 px-4 p-3 bg-gray-200 text-gray-700 rounded-lg text-sm no-border shadow-md" bindtap="closeProfileAuthModal">
               取消
-            </button>
-            <button class="flex-1 px-4 py-1 bg-purple-600 text-white rounded-lg text-sm" bindtap="saveProfileAuth">
+            </view>
+            <view class="flex items-center justify-center flex-1 px-4 p-3 bg-purple-600 text-white rounded-lg text-sm shadow-md" bindtap="saveProfileAuth">
               确定
-            </button>
+            </view>
           </view>
         </view>
       </view>
@@ -99,7 +99,7 @@
           </view>
         </view>
         <view class="text-sm text-gray-700" style="line-height: 1.6;">
-          {{userInfo.description}}
+          <text>{{userInfo.description}}</text>
         </view>
       </view>
       <!-- 联系信息 -->
@@ -170,7 +170,7 @@
     </view>
     <!-- 悬浮分享按钮 -->
     <view class="share-btn2">
-      <button wx:if="{{isLoggedIn}}" class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="openShare">
+      <button wx:if="{{isLoggedIn}}" class="w-full btn-primary text-white text-base font-medium flex items-center justify-center shadow-md" open-type="share">
         <text class="fa fa-paper-plane mr-4"></text>
         分享名片
       </button>
@@ -238,7 +238,7 @@
             <input value="{{editContactAddress}}" placeholder="请输入地址" class="border border-gray-300 rounded-lg" bindinput="onContactAddressInput"></input>
           </view>
           <view class="flex pt-2">
-            <button class="flex-1 px-4 py-1 bg-purple-600 text-white rounded-lg" bindtap="saveContactEdit">
+            <button class="flex-1 px-4 bg-purple-600 text-white rounded-lg" bindtap="saveContactEdit">
               保存
             </button>
           </view>
@@ -296,7 +296,7 @@
             <view wx:if="{{isEditingSocial}}" class="flex items-center justify-center flex-1 px-4 py-2 text-red-600 bg-red-100 rounded-lg mr-3" bindtap="deleteSocialMediaFromModal">
               删除
             </view>
-            <view class="flex items-center justify-center flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg" bindtap="saveSocialMediaEdit">
+            <view class="flex items-center justify-center flex-1 px-4 p-3 bg-purple-600 text-white rounded-lg" bindtap="saveSocialMediaEdit">
               保存
             </view>
           </view>

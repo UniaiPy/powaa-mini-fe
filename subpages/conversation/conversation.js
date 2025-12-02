@@ -3004,14 +3004,6 @@ Page({
       url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=${userId}`
     })
   },
-  /**
-   * 分享名片
-   */
-  shareCard() {
-    wx.navigateTo({
-      url: '/subpages/share/share'
-    })
-  },
 
   /**
    * 屏蔽用户

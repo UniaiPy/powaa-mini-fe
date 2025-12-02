@@ -535,7 +535,12 @@ Page({
       wx.$TUIKit.on(wx.TencentCloudChat.EVENT.MESSAGE_REVOKED, this.onMessageRevoked, this);
     }
   },
-
+  // 导航到关于页面
+  navigateToAbout: function() {
+    wx.navigateTo({
+      url: '/subpages/about/about'
+    });
+  },
   /**
    * 获取用户信息
    */

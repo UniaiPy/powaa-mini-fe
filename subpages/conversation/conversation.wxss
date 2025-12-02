@@ -285,14 +285,11 @@
 
 /* 输入区域 */
 .input-area {
-  /* position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0; */
+  position: relative;
   background: white;
   border-top: 1px solid #e5e7eb;
-  padding: 16px;
-  z-index: 10;
+  padding: 16px 16px 32px 16px;
+  z-index: 1001;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
   box-sizing: border-box;
@@ -380,26 +377,25 @@
 
 /* 功能菜单 */
 .function-menu {
-  position: fixed;
-  bottom: 80px;
+  position: absolute;
+  transform: translateY(-100%);
+  top: 0;
   left: 0;
   right: 0;
   background: white;
-  border-radius: 0;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-  z-index: 1001;
+  padding: 10px;
   display: none;
   animation: slideInUp 0.2s ease-out;
   border-top: 1px solid #e5e7eb;
-  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .function-menu.show {
   display: block;
 }
-
-@keyframes slideInUp {
+@keyframes slideInUp2 {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -408,6 +404,17 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-100%);
   }
 }
 
@@ -535,7 +542,7 @@
 /* AI分身开关菜单 */
 .ai-menu {
   position: fixed;
-  bottom: 180px;
+  bottom: 170px;
   right: 20px;
   background: white;
   border-radius: 16px;
@@ -543,7 +550,7 @@
   padding: 16px 20px;
   z-index: 999;
   display: none;
-  animation: slideInUp 0.3s ease-out;
+  animation: slideInUp2 0.3s ease-out;
   border: 1px solid #e5e7eb;
   min-width: 160px;
   margin-right: 0;
@@ -660,6 +667,10 @@
 
 .w-5 {
   width: 20px;
+}
+
+.w-6 {
+  width: 25px;
 }
 
 .text-black {

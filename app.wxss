@@ -243,6 +243,10 @@ navigator {
   background-color: #f3f4f6;
 }
 
+.bg-gray-200 {
+  background-color: #f8f8f8;
+}
+
 .bg-gray-400 {
   background-color: #6b7280;
 }
