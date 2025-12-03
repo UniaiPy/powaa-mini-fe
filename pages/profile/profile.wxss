@@ -253,7 +253,7 @@
 }
 
 .space-y-3 .space-item {
-  margin-bottom: 12px;
+  margin-bottom: 15px;
 }
 
 .space-y-3 .space-item:last-child {
@@ -414,6 +414,15 @@
 
 .h-32 {
   height: 180rpx;
+}
+
+.min-h-200 {
+  /* height: auto; */
+  height: 250rpx;
+}
+
+.max-h-400 {
+  max-height: 400rpx;
 }
 
 .bg-white {

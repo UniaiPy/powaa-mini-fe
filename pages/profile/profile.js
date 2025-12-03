@@ -4,6 +4,9 @@ Page({
    * 页面的初始数据
    */
   data: {
+    // 编辑状态
+    isEditing: false,
+    
     // 用户基本信息
     userInfo: {
       name: '点击设置昵称',
@@ -142,7 +145,11 @@ Page({
     // 获取最新的用户名片数据
     this.fetchUserProfileData();
   },
-
+  toggleEditing() {
+    this.setData({
+      isEditing: !this.data.isEditing
+    })
+  },
   /**
    * 从后台获取用户名片数据
    */
@@ -691,14 +698,14 @@ Page({
       }
     })
   },
-
   /**
    * 显示个人资料编辑模态框
    */
   showInfoEditModal() {
     this.setData({
-      editProfileDescription: this.data.userInfo.description,
-      showProfileModal: true
+      // editProfileDescription: this.data.userInfo.description,
+      showProfileModal: true,
+      showContactModal: false
     })
   },
 
@@ -776,10 +783,8 @@ Page({
    */
   showContactEditModal() {
     this.setData({
-      editContactPhone: this.data.contactInfo.phone,
-      editContactWechat: this.data.contactInfo.wechat,
-      editContactAddress: this.data.contactInfo.address,
-      showContactModal: true
+      showContactModal: true,
+      showProfileModal: false
     })
   },
 

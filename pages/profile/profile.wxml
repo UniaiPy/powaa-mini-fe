@@ -43,6 +43,16 @@
         <!-- 编辑提示图标 -->
       </view>
     </view>
+    <!-- <view class="flex justify-center">
+      <view wx:if="{{isLoggedIn && !isEditing}}" class="w-32 text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center justify-center shadow-sm" bindtap="toggleEditing">
+        <text class="fa fa-edit mr-1.5"></text>
+        编辑名片
+      </view>
+      <view wx:if="{{isEditing}}" class="w-32 text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center justify-center shadow-sm" bindtap="saveProfile">
+        <text class="fa fa-save mr-1.5"></text>
+        保存
+      </view>
+    </view> -->
     <!-- 底部弹窗 - 头像昵称授权 -->
     <view class="bottom-modal-overlay" wx:if="{{showProfileAuthModal}}" bindtap="closeProfileAuthModal">
       <view class="modal-content bottom-modal" catchtap="preventBubbling">
@@ -92,14 +102,23 @@
             <text class="text-purple-600 ml-1">*</text>
           </view>
           <view class="flex items-center space-x-2" wx:if="{{isLoggedIn}}">
-            <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showInfoEditModal">
+            <view wx:if="{{!showProfileModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showInfoEditModal">
               <text class="fa fa-edit mr-1.5"></text>
               编辑
             </view>
+            <view wx:if="{{showProfileModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="saveProfileEdit">
+              <text class="fa fa-save mr-1.5"></text>
+              保存
+            </view>
+            <view wx:if="{{showProfileModal}}" class="ml-4 text-xs text-gray-400 bg-gray-200 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="closeProfileEditModal">
+              <text class="fa fa-close mr-1.5"></text>
+              取消
+            </view>
           </view>
         </view>
-        <view class="text-sm text-gray-700" style="line-height: 1.6;">
-          <text>{{userInfo.description}}</text>
+        <view class="text-sm text-gray-700">
+          <text wx:if="{{!showProfileModal}}">{{userInfo.description}}</text>
+          <textarea wx:else value="{{editProfileDescription}}" placeholder="请输入您的个人简介..." class="w-full py-2 rounded-lg  resize-y min-h-200" bindinput="onProfileDescriptionInput"></textarea>
         </view>
       </view>
       <!-- 联系信息 -->
@@ -110,14 +129,22 @@
             <text class="text-purple-600 ml-1">*</text>
           </view>
           <view class="flex items-center space-x-2" wx:if="{{isLoggedIn}}">
-            <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showContactEditModal">
+            <view wx:if="{{!showContactModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="showContactEditModal">
               <text class="fa fa-edit mr-1.5"></text>
               编辑
+            </view>
+            <view wx:if="{{showContactModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="saveContactEdit">
+              <text class="fa fa-save mr-1.5"></text>
+              保存
+            </view>
+            <view wx:if="{{showContactModal}}" class="ml-4 text-xs text-gray-400 bg-gray-200 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="closeContactEditModal">
+              <text class="fa fa-close mr-1.5"></text>
+              取消
             </view>
           </view>
         </view>
         <view class="mt-3">
-          <view class="space-y-3 text-sm text-gray-600">
+          <view class="space-y-3 text-sm text-gray-600" wx:if="{{!showContactModal}}">
             <view class="flex items-center space-item">
               <text class="fa fa-phone text-blue-600 mr-3 w-8"></text>
               <text>{{contactInfo.phone}}</text>
@@ -129,6 +156,24 @@
             <view class="flex items-center">
               <text class="fa fa-map-marker text-blue-600 mr-3 w-8"></text>
               <text>{{contactInfo.address}}</text>
+            </view>
+          </view>
+          <view class="space-y-3 text-sm text-gray-600" wx:if="{{showContactModal}}">
+            <view class="flex items-center space-item">
+              <text class="fa fa-phone text-blue-600 mr-3 w-8"></text>
+              <input value="{{editContactPhone}}" placeholder="请输入手机号" class="h-full flex-1" bindinput="onContactPhoneInput"></input>
+              <button class="px-3 bg-green-600 text-white rounded-lg text-sm" open-type="getPhoneNumber" bindgetphonenumber="getWechatPhoneNumber">
+                <text class="fa fa-wechat mr-1"></text>
+                微信授权
+              </button>
+            </view>
+            <view class="flex items-center space-item">
+              <text class="fa fa-wechat text-green-600 mr-3 w-8"></text>
+              <input value="{{editContactWechat}}" placeholder="请输入微信号" bindinput="onContactWechatInput"></input>
+            </view>
+            <view class="flex items-center">
+              <text class="fa fa-map-marker text-blue-600 mr-3 w-8"></text>
+              <input value="{{editContactAddress}}" placeholder="请输入地址" bindinput="onContactAddressInput"></input>
             </view>
           </view>
         </view>
@@ -181,7 +226,7 @@
     </view>
   </view>
   <!-- 个人资料编辑模态框 -->
-  <view class="modal-overlay" wx:if="{{showProfileModal}}" bindtap="closeProfileEditModal">
+  <!-- <view class="modal-overlay" wx:if="{{showProfileModal}}" bindtap="closeProfileEditModal">
     <view class="modal-content profile-modal" catchtap="preventBubbling">
       <view class="modal-header">
         <text class="text-lg font-semibold text-gray-900">编辑个人资料</text>
@@ -201,9 +246,9 @@
         </view>
       </view>
     </view>
-  </view>
+  </view> -->
   <!-- 联系信息编辑模态框 -->
-  <view class="modal-overlay" wx:if="{{showContactModal}}" bindtap="closeContactEditModal">
+  <!-- <view class="modal-overlay" wx:if="{{showContactModal}}" bindtap="closeContactEditModal">
     <view class="modal-content contact-modal" catchtap="preventBubbling">
       <view class="modal-header">
         <text class="text-lg font-semibold text-gray-900">编辑联系信息</text>
@@ -245,7 +290,7 @@
         </view>
       </view>
     </view>
-  </view>
+  </view> -->
   <!-- 社交媒体编辑模态框 -->
   <view class="modal-overlay" wx:if="{{showSocialMediaModal}}" bindtap="closeSocialMediaEditModal">
     <view class="modal-content social-modal" catchtap="preventBubbling">

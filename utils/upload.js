@@ -2,80 +2,10 @@
  * 文件上传工具
  * 支持图片和通用文件上传到OSS
  * 支持获取私有图片临时访问URL
- * 使用ECS扮演RAM角色获取STS临时凭证直接上传到OSS
  */
 
 /**
- * 获取STS临时访问凭证
- * @param {string} type - 上传类型，'file'或'image'
- * @returns {Promise} - 返回Promise对象，包含STS临时凭证
- */
-async function getSTSCredentials(type = 'file') {
-  const app = getApp();
-  const token = app.globalData.token;
-  const isValidToken = token && typeof token === 'string' && token.trim().length > 0;
-
-  return new Promise((resolve, reject) => {
-    // 调用后端API获取STS临时凭证
-    wx.request({
-      url: app.globalData.baseUrl + '/api/upload/credentials',
-      method: 'GET',
-      data: {
-        type: type
-      },
-      header: {
-        'Authorization': isValidToken ? `Bearer ${token}` : ''
-      },
-      success: (res) => {
-        try {
-          const responseData = res.data;
-          
-          if (responseData && responseData.success && responseData.data) {
-            resolve({
-              accessKeyId: responseData.data.accessKeyId,
-              accessKeySecret: responseData.data.accessKeySecret,
-              securityToken: responseData.data.securityToken,
-              bucket: responseData.data.bucket,
-              endpoint: responseData.data.endpoint,
-              region: responseData.data.region,
-              expiration: responseData.data.expiration
-            });
-          } else {
-            const errorMsg = responseData && responseData.message 
-              ? `获取STS凭证失败: ${responseData.message}` 
-              : '获取STS凭证失败: 服务器返回数据格式不正确';
-            reject(new Error(errorMsg));
-          }
-        } catch (error) {
-          console.error('处理STS凭证响应时发生异常:', error);
-          reject(new Error('处理STS凭证响应失败'));
-        }
-      },
-      fail: (err) => {
-        console.error('获取STS凭证失败:', err);
-        reject(new Error('网络错误，获取STS凭证失败'));
-      }
-    });
-  });
-}
-
-/**
- * 生成OSS上传路径
- * @param {string} filePath - 本地文件路径
- * @param {string} folder - 存储文件夹
- * @returns {string} - 返回OSS上传路径
- */
-function generateOssKey(filePath, folder = 'images') {
-  // 从文件路径中提取文件名
-  const fileName = filePath.substr(filePath.lastIndexOf('/') + 1);
-  // 生成唯一文件名，避免重复
-  const timestamp = new Date().getTime();
-  const random = Math.floor(Math.random() * 10000);
-  return `${folder}/${timestamp}_${random}_${fileName}`;
-}
-
-/**
- * 通用文件上传方法 - 使用STS临时凭证直接上传到OSS
+ * 通用文件上传方法
  * @param {Object} options - 上传配置
  * @param {string} options.filePath - 要上传的文件路径
  * @param {string} [options.type='file'] - 上传类型，'file'或'image'
@@ -84,7 +14,7 @@ function generateOssKey(filePath, folder = 'images') {
  * @param {string} [options.loadingTitle='上传中...'] - 加载提示文字
  * @returns {Promise} - 返回Promise对象
  */
-async function uploadFile(options) {
+function uploadFile(options) {
   const {
     filePath,
     type = 'file', // 'file' 或 'image'
@@ -93,12 +23,21 @@ async function uploadFile(options) {
     loadingTitle = '上传中...'
   } = options;
 
-  // 验证参数
-  if (!filePath) {
-    throw new Error('文件路径不能为空');
-  }
+  return new Promise((resolve, reject) => {
+    // 验证参数
+    if (!filePath) {
+      reject(new Error('文件路径不能为空'));
+      return;
+    }
 
-  try {
+    // 获取应用实例和token
+    const app = getApp();
+    const token = app.globalData.token;
+    const isValidToken = token && typeof token === 'string' && token.trim().length > 0;
+
+    // 确定上传接口
+    const uploadUrl = app.globalData.baseUrl + `/api/upload/${type}`;
+
     // 显示加载提示
     if (showLoading) {
       wx.showLoading({
@@ -106,70 +45,66 @@ async function uploadFile(options) {
       });
     }
 
-    // 1. 获取STS临时凭证
-    const stsCredentials = await getSTSCredentials(type);
-    console.log('✅ 获取STS临时凭证成功:', stsCredentials);
-
-    // 2. 生成OSS上传路径
-    const ossKey = generateOssKey(filePath, folder);
-    console.log('✅ 生成OSS上传路径:', ossKey);
-
-    // 3. 直接上传到OSS
-    return new Promise((resolve, reject) => {
-      wx.uploadFile({
-        url: `https://${stsCredentials.bucket}.${stsCredentials.endpoint}`,
-        filePath: filePath,
-        name: 'file',
-        formData: {
-          'key': ossKey,
-          'policy': stsCredentials.policy || '',
-          'OSSAccessKeyId': stsCredentials.accessKeyId,
-          'success_action_status': '200',
-          'signature': stsCredentials.signature || '',
-          'x-oss-security-token': stsCredentials.securityToken
-        },
-        success: (res) => {
+    // 执行上传
+    wx.uploadFile({
+      url: uploadUrl,
+      filePath: filePath,
+      name: 'file', // 必须与后端参数名一致
+      formData: {
+        folder: folder
+      },
+      header: {
+        'Authorization': isValidToken ? `Bearer ${token}` : ''
+      },
+      success: (res) => {
+        try {
+          // 解析响应数据
+          let responseData;
           try {
-            if (res.statusCode === 200) {
-              // 上传成功
-              const ossUrl = `https://${stsCredentials.bucket}.${stsCredentials.endpoint}/${ossKey}`;
-              resolve({
-                success: true,
-                url: ossUrl,
-                key: ossKey,
-                message: '上传成功',
-                data: {
-                  url: ossUrl,
-                  key: ossKey
-                }
-              });
-            } else {
-              // 上传失败
-              reject(new Error(`OSS上传失败，状态码: ${res.statusCode}`));
-            }
-          } catch (error) {
-            reject(error);
+            responseData = JSON.parse(res.data);
+          } catch (e) {
+            throw new Error('无效的响应格式');
           }
-        },
-        fail: (err) => {
-          console.error('OSS上传失败:', err);
-          reject(new Error('网络错误，OSS上传失败'));
-        },
-        complete: () => {
-          // 隐藏加载提示
-          if (showLoading) {
-            wx.hideLoading();
+
+          // 处理响应
+          if (responseData.success && responseData.data && responseData.data.url) {
+            // 上传成功 - 格式1: {success: true, data: {url: 'xxx', key: 'xxx'}}
+            resolve({
+              success: true,
+              url: responseData.data.url,
+              key: responseData.data.key || null, // 获取OSS文件键
+              message: responseData.message || '上传成功',
+              data: responseData.data
+            });
+          } else if (responseData.success && responseData.url) {
+            // 上传成功 - 格式2: {success: true, url: 'xxx', key: 'xxx'}
+            resolve({
+              success: true,
+              url: responseData.url,
+              key: responseData.key || null, // 获取OSS文件键
+              message: responseData.message || '上传成功',
+              data: responseData
+            });
+          } else {
+            // 上传失败
+            reject(new Error(responseData.message || '上传失败'));
           }
+        } catch (error) {
+          reject(error);
         }
-      });
+      },
+      fail: (err) => {
+        console.error('上传失败:', err);
+        reject(new Error('网络错误，上传失败'));
+      },
+      complete: () => {
+        // 隐藏加载提示
+        if (showLoading) {
+          wx.hideLoading();
+        }
+      }
     });
-  } catch (error) {
-    // 隐藏加载提示
-    if (showLoading) {
-      wx.hideLoading();
-    }
-    throw error;
-  }
+  });
 }
 
 /**
