@@ -147,8 +147,8 @@
 
 /* 头像样式 */
 .avatar-circle {
-  width: 80rpx;
-  height: 80rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
   overflow: hidden;
   background-color: #e0e0e0;

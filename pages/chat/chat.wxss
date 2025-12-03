@@ -127,11 +127,11 @@ page {
 }
 
 .w-24 {
-  width: 96rpx;
+  width: 100rpx;
 }
 
 .h-24 {
-  height: 96rpx;
+  height: 100rpx;
 }
 
 .w-40 {

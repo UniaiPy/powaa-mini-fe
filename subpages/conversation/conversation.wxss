@@ -210,8 +210,8 @@
 
 /* 头像样式 */
 .avatar-circle {
-  width: 40px;
-  height: 40px;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;

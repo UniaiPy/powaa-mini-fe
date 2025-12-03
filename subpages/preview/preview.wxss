@@ -87,11 +87,11 @@
 
 /* 头像样式 */
 .w-16 {
-  width: 4rem;
+  width: 180rpx;
 }
 
 .h-16 {
-  height: 4rem;
+  height: 180rpx;
 }
 
 .rounded-full {

@@ -409,11 +409,11 @@
 }
 
 .w-32 {
-  width: 128rpx;
+  width: 180rpx;
 }
 
 .h-32 {
-  height: 128rpx;
+  height: 180rpx;
 }
 
 .bg-white {
