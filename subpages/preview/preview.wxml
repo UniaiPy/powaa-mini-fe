@@ -50,7 +50,7 @@
           <view class="text-sm font-semibold text-gray-700">个人资料</view>
         </view>
         <view class="text-sm text-gray-700 leading-relaxed">
-          {{userInfo.description || '暂无个人简介'}}
+          <text>{{userInfo.description || '暂无个人简介'}}</text>
         </view>
       </view>
       <!-- 联系信息 -->
