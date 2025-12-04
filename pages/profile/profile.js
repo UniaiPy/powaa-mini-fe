@@ -1287,8 +1287,8 @@ Page({
     if (!app.checkUserInfoComplete()) {
       return
     }
-    const userId = app.globalData.userInfo.id;
-    // const userId = 21;
+    // const userId = app.globalData.userInfo.id;
+    const userId = 26;
     wx.navigateTo({
       url: `/subpages/preview/preview?isFromProfile=true&type=profile&userId=${userId}`
     })

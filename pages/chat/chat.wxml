@@ -77,7 +77,7 @@
             <block wx:for="{{pendingList}}" wx:key="id">
               <view class="chat-card">
                 <view class="flex items-center">
-                  <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
+                  <view class="w-24 h-24 rounded-full overflow-hidden mr-6" bindtap="navigateToPreview" data-user="{{item}}">
                     <image src="{{item.avatar}}" class="w-full h-full object-cover"></image>
                   </view>
                   <view class="flex-1">

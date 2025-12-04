@@ -201,7 +201,7 @@
       </view>
     </view>
     <view class="text-xs text-tertiary flex items-center justify-center py-2">
-      <text class="fa fa-info-circle"></text>
+      <text class="fa fa-info-circle mr-2"></text>
       <text>内容由 AI 生成，仅供参考</text>
     </view>
     <!-- 功能菜单 -->

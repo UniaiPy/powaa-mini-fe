@@ -70,6 +70,15 @@ Page({
    * 处理流式消息的辅助函数
    */
   handleStreamingMessage(message) {
+    // 检查会话ID，确保只处理当前AI分身会话的消息
+    if (message.conversationID !== this.data.conversationID) {
+      console.log('=== 非当前会话的流式消息，忽略 ===', {
+        receivedConversationID: message.conversationID,
+        currentConversationID: this.data.conversationID
+      });
+      return false;
+    }
+    
     const messageID = message.ID;
     let streamingMessages = this.data.streamingMessages;
     let messages = this.data.messages;
@@ -376,7 +385,7 @@ Page({
     this.setupMessageListener();
     
     // 获取用户信息
-    this.getUserInfo();
+    // this.getUserInfo();
     
     // 获取AI分身会话信息
     this.fetchConversationInfo();
@@ -420,7 +429,12 @@ Page({
   onShow() {
     
      // 页面显示时，滚动到底部
-    this.scrollToBottom();
+    // this.scrollToBottom();
+    if (!app.isLoggedIn()) {
+      return;
+    }
+    // 获取用户信息
+    this.getUserInfo();
   },
 
   /**

@@ -1105,13 +1105,13 @@ Page({
           this.batchGetAvatarUrls(pendingList, 2);
           
           // 如果有待处理的好友请求，自动切换到待联系标签
-          if (pendingList.length > 0 && this.data.activeSection === 'contacts') {
-            console.log('🔄 发现好友请求，自动切换到待联系标签');
-            this.setData({
-              activeSection: 'pending'
-            });
-            console.log(`收到${pendingList.length}个好友申请`);
-          }
+          // if (pendingList.length > 0 && this.data.activeSection === 'contacts') {
+          //   console.log('🔄 发现好友请求，自动切换到待联系标签');
+          //   this.setData({
+          //     activeSection: 'pending'
+          //   });
+          //   console.log(`收到${pendingList.length}个好友申请`);
+          // }
         });
 
         // 显示通知
@@ -2007,14 +2007,6 @@ Page({
     });
   },
 
-  // 导航到用户预览页
-  navigateToPreview: function(e) {
-    const user = e.currentTarget.dataset.user;
-    wx.navigateTo({
-      url: `/subpages/preview/preview?user=${encodeURIComponent(JSON.stringify(user))}`
-    });
-  },
-
   // 导航到聊天会话页
   navigateToConversation: function(e) {
     let user = e.currentTarget.dataset.user;
@@ -2858,5 +2850,16 @@ Page({
       console.log('🏁 handleKickedOut方法执行完成');
       // 注意：不在这里清除_isHandlingKickout标志，因为页面跳转后这个值不再重要
     }
-  }
+  },
+    /**
+   * 导航到预览页面
+   */
+  navigateToPreview(e) {
+    const { user } = e.currentTarget.dataset
+    console.log('user:', user)
+    const userId = user.id
+    wx.navigateTo({
+      url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=${userId}`
+    })
+  },
 });

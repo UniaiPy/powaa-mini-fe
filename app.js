@@ -215,8 +215,6 @@ App({
           ...options.header
         },
         success: (res) => {
-          console.log('API响应:', res)
-          
           // 处理401未授权错误，但允许匿名访问的请求除外
           if ((res.statusCode === 401 || (res.data && res.data.error && 
               (res.data.error.includes('认证令牌无效') || 
