@@ -1758,7 +1758,7 @@ Page({
         messageType: 'file',
         fileName: file.tempFiles[0].name,
         fileSize: this.formatFileSize(file.tempFiles[0].size),
-        fileUrl: imResponse.data.message.payload.url, // 修复文件URL获取
+        fileUrl: imResponse.data.message.payload.fileUrl, // 修复文件URL获取
         fileTypeInfo: this.getFileTypeInfo(file.tempFiles[0].name) // 添加文件类型信息
       };
       
