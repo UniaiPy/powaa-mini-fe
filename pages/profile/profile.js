@@ -1,4 +1,5 @@
 // pages/profile/profile.js
+import TencentCloudChat from '../../utils/@tencentcloud/lite-chat/professional';
 Page({
   /**
    * 页面的初始数据
@@ -383,6 +384,9 @@ Page({
       title: '保存成功',
       icon: 'success'
     })
+    
+    // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
+    this.checkAndSendAutoFriendRequest()
   },
   /**
    * 显示头像昵称编辑弹窗
@@ -758,6 +762,9 @@ Page({
             title: '保存成功',
             icon: 'success'
           })
+          // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
+          this.checkAndSendAutoFriendRequest()
+
         } else {
           wx.showToast({
             title: res.message || res.error || '保存失败',
@@ -855,6 +862,9 @@ Page({
             title: '保存成功',
             icon: 'success'
           })
+          
+          // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
+          this.checkAndSendAutoFriendRequest()
         } else {
           wx.showToast({
             title: res.message || res.error || '保存失败',
@@ -1241,6 +1251,71 @@ Page({
       editContactAddress: e.detail.value
     })
   },
+  
+  /**
+   * 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
+   */
+  checkAndSendAutoFriendRequest() {
+    const app = getApp()
+    
+    // 检查用户是否已登录且信息完整
+    if (app.isLoggedIn() && app.checkUserInfoComplete({ redirect: false, message: '' })) {
+      console.log('用户信息完整，检查分享者ID')
+      // 检查是否有来自分享的userId
+      const sharedUserId = wx.getStorageSync('sharedUserId')
+      console.log('分享者ID:', sharedUserId)
+      if (sharedUserId) {
+        
+        // 检查是否已经发送过好友请求（避免重复发送）
+        const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${sharedUserId}`)
+        console.log('是否已发送好友请求:', hasSentRequest)
+        if (!hasSentRequest) {
+          // 发送好友请求
+          this.sendAutoFriendRequest(sharedUserId)
+        }
+      }
+    }
+  },
+  
+  /**
+   * 自动发送好友请求
+   */
+  sendAutoFriendRequest(sharedUserId) {
+    const app = getApp()
+    
+    // 显示加载状态
+    // wx.showLoading({
+    //   title: '处理中...',
+    // })
+    
+    // 调用后端API，触发分享者发送好友请求给新用户
+    app.request({
+      url: '/api/friendships/request',
+      method: 'POST',
+      data: {
+        receiver_id: sharedUserId,
+        reverse: true
+      },
+      success: (res) => {
+        console.log('触发好友请求成功:', res)
+        // wx.hideLoading()
+        
+        // 标记已触发好友请求，避免重复触发
+        wx.setStorageSync(`sentFriendRequest_${sharedUserId}`, true)
+        
+        // 清除临时存储的分享者ID
+        wx.removeStorageSync('sharedUserId')
+      },
+      fail: (error) => {
+        console.error('触发好友请求失败:', error)
+        // wx.hideLoading()
+      },
+      complete: () => {
+        // 确保加载状态被隐藏
+        // wx.hideLoading()
+      }
+    })
+  },
 
   /**
    * 处理社交媒体用户名输入
@@ -1299,11 +1374,6 @@ Page({
    */
   onShareAppMessage() {
     const app = getApp();
-    // 用户名片信息不完整时，点击无效
-    if (!app.checkUserInfoComplete() || !app.isLoggedIn()) {
-      console.log('用户未登录或用户名片信息不完整')
-      return
-    }
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
@@ -1313,15 +1383,11 @@ Page({
   },
   onShareTimeline() {
     const app = getApp();
-    // 用户名片信息不完整时，点击无效
-    if (!app.checkUserInfoComplete() || !app.isLoggedIn()) {
-      return
-    }
     const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: '/images/ai.png'
+      imageUrl: this.data.avatarUrl || '/images/ai.png'
     }
   }
 })

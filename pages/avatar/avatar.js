@@ -373,7 +373,7 @@ Page({
   /**
    * 生命周期函数--监听页面加载
    */
-  onLoad(options) {
+  onShow() {
     console.log('AI分身页面加载');
     if (!app.isLoggedIn()) {
       return;
@@ -385,7 +385,7 @@ Page({
     this.setupMessageListener();
     
     // 获取用户信息
-    // this.getUserInfo();
+    this.getUserInfo();
     
     // 获取AI分身会话信息
     this.fetchConversationInfo();
@@ -426,16 +426,16 @@ Page({
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow() {
+  // onShow() {
     
-     // 页面显示时，滚动到底部
-    // this.scrollToBottom();
-    if (!app.isLoggedIn()) {
-      return;
-    }
-    // 获取用户信息
-    this.getUserInfo();
-  },
+  //    // 页面显示时，滚动到底部
+  //   // this.scrollToBottom();
+  //   if (!app.isLoggedIn()) {
+  //     return;
+  //   }
+  //   // 获取用户信息
+  //   this.getUserInfo();
+  // },
 
   /**
    * 生命周期函数--监听页面隐藏

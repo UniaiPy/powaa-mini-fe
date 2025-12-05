@@ -30,8 +30,8 @@ Page({
     const app = getApp();
     const currentUserId = app.globalData.userInfo?.id;
     const targetUserId = options.userId || '';
+
     const type = options.type || '';
-    console.log('options:', options.isFromProfile);
     if(options.isFromProfile){
       this.setData({
         isFromShare: false
@@ -40,6 +40,10 @@ Page({
       this.setData({
         isFromShare: true
       });
+      // 如果是通过分享进入页面，将分享者的userId存储到本地缓存
+      if (currentUserId !== targetUserId) {
+        wx.setStorageSync('sharedUserId', targetUserId);
+      }
     }
     
     
@@ -600,7 +604,7 @@ Page({
       url: '/api/friendships/request',
       method: 'POST',
       data: {
-        toUserId: targetUser.userID,
+        id: targetUser.userID,
         message: message,
         source: 'preview_page'
       },
@@ -773,20 +777,16 @@ Page({
    * 用户点击右上角分享
    */
   onShareAppMessage() {
-    const app = getApp()
-    const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}`,
       imageUrl: this.data.avatarUrl
     }
   },
   onShareTimeline() {
-    const app = getApp()
-    const userId = app.globalData.userInfo.id;
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}`,
       imageUrl: this.data.avatarUrl
     }
   }
