@@ -544,6 +544,20 @@ Page({
             this.scrollToBottom();
           }, 100);
         }
+        
+        // 标记会话已读，清除未读数
+        if (wx.$TUIKit) {
+          console.log('onMessageReceived: 标记会话已读', { conversationID: this.data.conversationID });
+          wx.$TUIKit.setMessageRead({
+            conversationID: this.data.conversationID
+          }).then(() => {
+            console.log('onMessageReceived: 标记会话已读成功');
+          }).catch((error) => {
+            console.error('onMessageReceived: 标记会话已读失败', error);
+          });
+        } else {
+          console.warn('onMessageReceived: wx.$TUIKit 未初始化，无法标记消息已读');
+        }
       }
     });
   },
@@ -3053,25 +3067,53 @@ Page({
                 userIDList: [targetUserID]
               });
 
-              console.log('添加黑名单成功:', imResponse);
-
               wx.hideLoading();
               
-              // 更新本地状态
-              this.setData({
-                isUserBlocked: true
-              });
-              
-              // 显示成功提示
-              wx.showToast({
-                title: '已屏蔽用户',
-                icon: 'success'
-              });
+              if (imResponse.code === 0) {
+                console.log('添加黑名单成功:', imResponse);
+                
+                // 更新本地状态
+                this.setData({
+                  isUserBlocked: true
+                });
+                
+                // 显示成功提示
+                wx.showToast({
+                  title: '已屏蔽用户',
+                  icon: 'success'
+                });
 
-              // 可选：离开当前聊天页面
-              setTimeout(() => {
-                wx.navigateBack();
-              }, 1500);
+                // 可选：离开当前聊天页面
+                setTimeout(() => {
+                  wx.navigateBack();
+                }, 1500);
+              } else {
+                console.error('添加黑名单失败:', imResponse);
+                
+                // 根据错误码给出具体提示
+                let errorMessage = '屏蔽失败，请重试';
+                if (imResponse.code) {
+                  switch (imResponse.code) {
+                    case 20007:
+                      errorMessage = '无法屏蔽自己';
+                      break;
+                    case 50001:
+                      errorMessage = '参数错误';
+                      break;
+                    case 70401:
+                      errorMessage = '黑名单数量已达上限（1000人）';
+                      break;
+                    default:
+                      errorMessage = `屏蔽失败：${imResponse.message || '未知错误'}`;
+                  }
+                }
+
+                wx.showToast({
+                  title: errorMessage,
+                  icon: 'error',
+                  duration: 3000
+                });
+              }
 
             } catch (error) {
               wx.hideLoading();
@@ -3133,8 +3175,12 @@ Page({
       console.log('获取黑名单列表成功:', blacklistResponse);
 
       if (blacklistResponse.code === 0 && blacklistResponse.data) {
+        // 根据日志，blacklistResponse.data是用户ID字符串数组，而不是对象数组
+        console.log('黑名单列表:', blacklistResponse.data);
+        console.log('目标用户ID:', targetUserID);
+        
         // 检查目标用户是否在黑名单中
-        const isBlocked = blacklistResponse.data.some(user => user.userID === targetUserID);
+        const isBlocked = blacklistResponse.data.includes(targetUserID);
         console.log('用户屏蔽状态:', isBlocked);
 
         this.setData({

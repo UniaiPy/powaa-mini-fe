@@ -203,7 +203,6 @@ Page({
 
       // 使用TUIKit API获取好友申请列表，与loadFriendRequests保持一致
       wx.$TUIKit.getFriendApplicationList().then((friendApplicationList) => {
-        console.log('📬 获取好友申请列表成功');
 
         if (friendApplicationList.code === 0) {
           // 解析数据结构，复用loadFriendRequests中的逻辑
@@ -343,11 +342,6 @@ Page({
           userID: userID
         });
         wx.hideLoading();
-        wx.showToast({
-          title: 'IM配置不完整，跳过IM初始化',
-          icon: 'none',
-          duration: 2000
-        });
         this.setData({
           isImInitialized: false
         });
