@@ -374,6 +374,13 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onShow() {
+    if (!app.isLoggedIn()) {
+      return;
+    }
+     // 获取用户信息
+    this.getUserInfo();
+  },
+  onLoad() {
     console.log('AI分身页面加载');
     if (!app.isLoggedIn()) {
       return;
@@ -383,13 +390,12 @@ Page({
     
     // 设置消息接收监听器
     this.setupMessageListener();
-    
-    // 获取用户信息
-    this.getUserInfo();
-    
     // 获取AI分身会话信息
     this.fetchConversationInfo();
   },
+  
+
+
   
   /**
    * 获取AI分身会话信息
@@ -592,6 +598,7 @@ Page({
         this.setData({
           aiOnline: userInfo.ai_online,
           aiStatus: userInfo.ai_status,
+          is_create_ai_avatar: userInfo.is_create_ai_avatar
         });
       }
     } catch (error) {
@@ -1215,6 +1222,32 @@ Page({
   async sendMessage() {
     if (!this.checkLoginStatus()) {
       return;
+    } else {
+      if(this.data.is_create_ai_avatar != 2){
+        await this.getUserInfo();
+        if(this.data.is_create_ai_avatar == 0 || this.data.is_create_ai_avatar == 3){
+          wx.showToast({
+            title: "请先完善个人资料",
+            icon: 'none',
+            duration: 1500
+          });
+          
+          setTimeout(() => {
+            wx.switchTab({
+              url: '/pages/profile/profile'
+            });
+          }, 1500);
+          return;
+
+        } else if (this.data.is_create_ai_avatar == 1) {
+          wx.showToast({
+            title: "AI分身生在生成，请稍等再试",
+            icon: 'none',
+            duration: 1500
+          });
+          return;
+        }
+      }
     }
    
     const message = this.data.inputValue.trim();
