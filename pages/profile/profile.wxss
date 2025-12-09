@@ -32,6 +32,9 @@
 }
 
 .share-btn2 {
+  position: fixed;
+  bottom:20px;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,7 +57,7 @@
 }
 
 .content-with-fixed-nav {
-  padding: 44px 0 20px 0;
+  padding: 44px 0 60px 0;
 }
 
 /* 头像样式 */

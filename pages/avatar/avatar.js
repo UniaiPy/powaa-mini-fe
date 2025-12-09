@@ -2131,7 +2131,36 @@ Page({
   /**
    * 切换功能菜单显示
    */
-  showPlusMenu() {
+  async showPlusMenu() {
+    if (!this.checkLoginStatus()) {
+      return;
+    } else {
+      if(this.data.is_create_ai_avatar != 2){
+        await this.getUserInfo();
+        if(this.data.is_create_ai_avatar == 0 || this.data.is_create_ai_avatar == 3){
+          wx.showToast({
+            title: "请先完善个人资料",
+            icon: 'none',
+            duration: 1500
+          });
+          
+          setTimeout(() => {
+            wx.switchTab({
+              url: '/pages/profile/profile'
+            });
+          }, 1500);
+          return;
+
+        } else if (this.data.is_create_ai_avatar == 1) {
+          wx.showToast({
+            title: "AI分身生在生成，请稍等再试",
+            icon: 'none',
+            duration: 1500
+          });
+          return;
+        }
+      }
+    }
     this.setData({
       showFunctionMenu: !this.data.showFunctionMenu,
       showAIMenu: false,

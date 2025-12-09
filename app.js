@@ -101,6 +101,7 @@ App({
         method: 'POST',
         data: { code }
       }).then(response => {
+        console.log('原始登录响应:', response)
         const userData = this.processLoginResponse(response)
         this.saveLoginState(userData.token, userData.user)
         resolve(userData.user)
@@ -134,8 +135,9 @@ App({
     // 确保用户信息包含必要字段
     const safeUser = {
       id: user.id || '',
-      nickname: user.nickname || '小瓦' + user.id,
+      nickname: user.nickname || '',
       phone_number: user.phone || '',
+      description: user.intro || ''
     }
     
     console.log('准备保存的用户信息:', safeUser)
@@ -306,7 +308,8 @@ App({
     const checkConditions = [
       !!userInfo,
       !!userInfo?.nickname,
-      !!userInfo?.phone_number
+      !!userInfo?.phone_number,
+      !!userInfo?.description
     ];
     
     const isUserInfoComplete = checkConditions.every(condition => condition);

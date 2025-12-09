@@ -65,6 +65,7 @@ Page({
     });
     // 加载用户个人资料数据
     this.loadProfileData();
+    this.checkIsTrained();
   },
 
   /**
@@ -81,35 +82,58 @@ Page({
     // 每次显示页面时更新未读消息数
     this.updateUnreadCount();
   },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide: function () {
-    
+  showToastInfo: function() {
+    wx.showToast({
+        title: '请先完成AI分身训练',
+        icon: 'none'
+      })
+      setTimeout(() => {
+        wx.switchTab({
+          url: '/pages/avatar/avatar'
+        })
+      }, 2000)
+      return
   },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload: function () {
-    
+  // 检查AI分身是否已完成训练
+  async checkIsTrained() {
+    try {
+      // 获取当前AI分身的训练状态
+      const app = getApp();
+      const result = await new Promise((resolve, reject) => {
+        app.request({
+          url: '/api/ai-avatars/is_trained',
+          method: 'GET',
+          success: (res) => {
+            resolve(res);
+          },
+          fail: (error) => {
+            reject(error);
+          }
+        });
+      });
+      // 检查训练状态
+      if (result.success && result.data && result.data.status === 'active') {
+        // 训练已完成
+        this.setData({
+          isTrained: true
+        })
+        wx.showShareMenu({
+          menus: ['shareAppMessage', 'shareTimeline']
+        })
+      } else {
+        // 训练未完成
+        this.setData({
+          isTrained: false
+        })
+        wx.hideShareMenu({
+          menus: ['shareAppMessage', 'shareTimeline']
+        })
+      }
+    } catch (error) {
+      // 处理请求错误
+      console.error('获取AI训练状态失败:', error);
+    }
   },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh: function () {
-    
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom: function () {
-    
-  },
-
   /**
    * 导航到个人资料页面
    */

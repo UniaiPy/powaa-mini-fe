@@ -15,7 +15,10 @@
         <view class="text-xl text-black cursor-pointer" bindtap="openPreview">
           <text class="fa fa-eye"></text>
         </view>
-        <button class="share-btn text-xl text-black cursor-pointer ml-7" open-type="share">
+        <button wx:if="{{isLoggedIn && isTrained && isUserInfoComplete}}" class="share-btn text-xl text-black cursor-pointer ml-7" open-type="share">
+          <text class="fa fa-share-alt"></text>
+        </button>
+        <button wx:else class="share-btn text-xl text-black cursor-pointer ml-7" bindtap="showToastInfo">
           <text class="fa fa-share-alt"></text>
         </button>
       </view>
@@ -215,13 +218,17 @@
     </view>
     <!-- 悬浮分享按钮 -->
     <view class="share-btn2">
-      <button wx:if="{{isLoggedIn}}" class="w-full btn-primary text-white text-base font-medium flex items-center justify-center shadow-md" open-type="share">
+      <button wx:if="{{isLoggedIn && isTrained && isUserInfoComplete}}" class="w-full btn-primary text-white text-base font-medium flex items-center justify-center shadow-md" open-type="share">
         <text class="fa fa-paper-plane mr-4"></text>
         分享名片
       </button>
-      <button wx:else class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="createProfile">
+      <button wx:if="{{!isLoggedIn}}" class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="createProfile">
         <text class="fa fa-edit mr-4"></text>
         创建我的名片
+      </button>
+      <button wx:if="{{isLoggedIn && !isUserInfoComplete || isLoggedIn && !isTrained}}" class="w-full btn-primary text-white text-base font-medium flex items-center justify-center" bindtap="showToastInfo">
+        <text class="fa fa-edit mr-4"></text>
+        分享名片
       </button>
     </view>
   </view>

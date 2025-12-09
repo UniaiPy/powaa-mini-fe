@@ -85,21 +85,21 @@ Page({
           
           // 定义特质名称映射
           const traitNameMapping = {
-              'openness': '开放性',
-              'conscientiousness': '尽责性',
-              'extraversion': '外向性',
-              'agreeableness': '亲和性',
-              'emotionalStability': '情绪稳定性',
-              'engagement': '参与度',
-              'socialMotivation': '社交动机',
-              'quality': '质量导向',
-              'resonance': '情感共鸣'
+            'extraversion': '外向性',
+            'openness': '开放性',
+            'conscientiousness': '尽责性',
+            'agreeableness': '宜人性',
+            'emotionalStability': '情绪稳定性',
+            'engagement': '投入度',
+            'quality': '优质性',
+            'resonance': '同频度',
+            'socialMotivation': '社交目的'
           };
           
           // 按特定顺序组织特质
-          const orderedTraits = ['openness', 'conscientiousness', 'extraversion',
+          const orderedTraits = ['extraversion', 'openness', 'conscientiousness',
                                'agreeableness', 'emotionalStability', 'engagement',
-                               'socialMotivation', 'quality', 'resonance'];
+                               'quality', 'resonance', 'socialMotivation'];
           
           // 构建前端所需的personality_traits和personality_scores
           const personality_traits = [];

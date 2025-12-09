@@ -112,12 +112,10 @@ Page({
       return;
     }
     this.setData({
-        isLoggedIn: true
-      })
+      isLoggedIn: true
+    })
     const globalUserInfo = app.globalData.userInfo
-    
     console.log('从全局获取用户信息:', globalUserInfo)
-    
     if (globalUserInfo) {
       // 准备更新的数据
       const updateData = {}
@@ -143,8 +141,101 @@ Page({
         this.setData(updateData)
       }
     }
+
     // 获取最新的用户名片数据
     this.fetchUserProfileData();
+    //控制右上角。。。中的分享按钮的显示
+    this.checkIsTrained();
+    this.checkUserInfoComplete();
+  },
+  async checkIsTrained() {
+    try {
+      // 获取当前AI分身的训练状态
+      const app = getApp();
+      const result = await new Promise((resolve, reject) => {
+        app.request({
+          url: '/api/ai-avatars/is_trained',
+          method: 'GET',
+          success: (res) => {
+            resolve(res);
+          },
+          fail: (error) => {
+            reject(error);
+          }
+        });
+      });
+      // 检查训练状态
+      if (result.success && result.data && result.data.status === 'active') {
+        // 训练已完成
+        this.setData({
+          isTrained: true
+        })
+        wx.showShareMenu({
+          menus: ['shareAppMessage', 'shareTimeline']
+        })
+      } else {
+        // 训练未完成
+        this.setData({
+          isTrained: false
+        })
+        wx.hideShareMenu({
+          menus: ['shareAppMessage', 'shareTimeline']
+        })
+      }
+    } catch (error) {
+      // 处理请求错误
+      console.error('获取AI训练状态失败:', error);
+    }
+  },
+  checkUserInfoComplete() {
+    const app = getApp()
+    if (!app.checkUserInfoComplete({ redirect: false })) {
+      this.setData({
+        isUserInfoComplete: false
+      })
+    }else{
+      this.setData({
+        isUserInfoComplete: true
+      })
+    }
+    
+  },
+  showToastInfo() {
+    const app = getApp()
+    if (!app.isLoggedIn()) {
+      // 用户未登录，提示登录
+      wx.showModal({
+      title: '请登录',
+      content: '您需要先登录才能分享名片',
+      showCancel: true,
+      cancelText: '取消',
+      confirmText: '去登录',
+      success: (res) => {
+        if (res.confirm) {
+          wx.navigateTo({
+            url: '/pages/login/login'
+          })
+        }
+      }
+    })
+      return;
+    }
+    if (!app.checkUserInfoComplete()) {
+      return
+    }
+    if (!this.data.isTrained) {
+      // AI分身未训练，提示训练
+      wx.showToast({
+        title: '请先完成AI分身训练',
+        icon: 'none'
+      })
+      setTimeout(() => {
+        wx.switchTab({
+          url: '/pages/avatar/avatar'
+        })
+      }, 2000)
+      return
+    }
   },
   toggleEditing() {
     this.setData({
@@ -752,6 +843,8 @@ Page({
             userInfo: updatedUserInfo,
             showProfileModal: false
           })
+          app.globalData.userInfo.description = intro
+          wx.setStorageSync('userInfo', app.globalData.userInfo)
           
           // 同步更新IM中的个人简介
           this.syncProfileToIM({

@@ -4,7 +4,10 @@
   <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000' showBack="{{!isFromShare}}" showHome="{{isFromShare}}">
     <view class="fixed-nav flex items-center justify-center gap-2 w-full">
       <view class="text-base font-bold text-gray-900">名片预览</view>
-      <button class="cursor-pointer share-btn" open-type="share">
+      <button wx:if="{{isTrained}}" class="cursor-pointer share-btn" open-type="share">
+        <text class="fa fa-share-alt text-black text-xl"></text>
+      </button>
+      <button wx:else class="cursor-pointer share-btn" bindtap="showToastInfo">
         <text class="fa fa-share-alt text-black text-xl"></text>
       </button>
     </view>
@@ -121,7 +124,8 @@
           </view>
           <!-- 匹配度内容 -->
           <view class="text-gray-800 text-sm leading-relaxed" wx:if="{{matchDegreeContent !== ''}}">
-            <rich-text nodes="{{matchDegreeContent}}"></rich-text>
+            <!-- <rich-text nodes="{{matchDegreeContent}}"></rich-text> -->
+            <text>{{matchDegreeContent}}</text>
           </view>
           <!-- 无内容提示 -->
           <view class="text-gray-600 text-sm text-center py-12" wx:if="{{!isLoadingMatchDegree && matchDegreeContent === ''}}">
