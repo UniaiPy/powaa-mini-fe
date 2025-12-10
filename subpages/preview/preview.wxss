@@ -156,6 +156,12 @@
   padding: 1rem;
 }
 
+.p-5 {
+  padding: 1rem 1rem 2rem 1rem;
+}
+
+
+
 /* 边框 */
 .border-b {
   border-bottom-width: 1px;
@@ -374,6 +380,10 @@
 
 .text-blue-600 {
   color: #2563eb;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
 }
 
 .py-3 {

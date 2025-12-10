@@ -105,7 +105,7 @@
     </view>
     <!-- 匹配度说明弹窗 -->
     <view id="matchDegreeModal" class="matchDegreeModal absolute inset-0 bg-primary bg-opacity-0 z-9999" wx:if="{{showMatchDegreeModal}}">
-      <view class="bg-white w-full h-full">
+      <view class="bg-white w-full h-full flex flex-col">
         <!-- 弹窗头部 -->
         <view class="flex items-center justify-between p-4 border-b border-gray-100">
           <view class="text-base font-semibold text-gray-900">匹配度说明</view>
@@ -114,7 +114,7 @@
           </view>
         </view>
         <!-- 弹窗内容 -->
-        <view class="p-4">
+        <view class="p-5 flex-1 overflow-y-auto">
           <!-- 加载状态 -->
           <view class="flex justify-center items-center py-12" wx:if="{{isLoadingMatchDegree && matchDegreeContent === ''}}">
             <view class="text-center">
@@ -124,8 +124,25 @@
           </view>
           <!-- 匹配度内容 -->
           <view class="text-gray-800 text-sm leading-relaxed" wx:if="{{matchDegreeContent !== ''}}">
-            <!-- <rich-text nodes="{{matchDegreeContent}}"></rich-text> -->
-            <text>{{matchDegreeContent}}</text>
+            <view wx:if="{{highMatchUser}}" class="mb-4 border-b border-gray-100 py-3">
+              <view class="font-semibold mb-3">高匹配用户</view>
+              <view class="text-gray-600">
+                <text class="fa fa-star text-red-500 font-bold">高匹配用户：</text>
+                <text class="text-blue-500 font-bold">【{{userInfo.name}}】</text>
+                是你的精准目标对象，建议你直接联系对方本人，建立深度关系!
+              </view>
+            </view>
+            <view wx:if="{{highPotentialUser}}" class="mb-4 border-b border-gray-100 py-3">
+              <view class="font-semibold mb-3">高潜力用户</view>
+              <view class="text-gray-600">
+                <text class="fa fa-arrow-up text-green-600 font-bold">高潜力用户：</text>
+                <text class="text-blue-500 font-bold">【{{userInfo.name}}】</text>
+                是高潜力目标对象，但你的信息不足，建议你本人和他多聊。
+              </view>
+            </view>
+            <view class="font-semibold mb-3">匹配度评分</view>
+            <rich-text nodes="{{matchDegreeContent}}"></rich-text>
+            <!-- <text>{{matchDegreeContent}}</text> -->
           </view>
           <!-- 无内容提示 -->
           <view class="text-gray-600 text-sm text-center py-12" wx:if="{{!isLoadingMatchDegree && matchDegreeContent === ''}}">

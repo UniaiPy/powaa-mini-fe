@@ -217,79 +217,130 @@ Page({
     const app = getApp();
     const baseUrl = 'http://ai.powaa.cn';
     const url = `${baseUrl}/ai/match/compare`;
-    let accumulatedContent = ''; // 累计的内容
     
     const requestData = {
       userId: userId,
       targetUserId: targetUserId
     };
     
-    // 轮询终止函数
-    const stopPolling = (reason) => {
-      console.log(`轮询终止，原因: ${reason}`);
-      this.setData({ isLoadingMatchDegree: false });
-      
-      // 保存缓存
-      if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
-        this.cacheMatchDegree(cacheKey, accumulatedContent);
-      } else if (!accumulatedContent) {
-        // 如果没有任何内容，显示默认文本
-        const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
-        this.setData({ matchDegreeContent: defaultContent });
-      }
-      return;
-    };
-    
-
-    const requestTask = wx.request({
+    wx.request({
       timeout: 100000,
       responseType: 'text',
       url: url,
       method: 'POST',
       data: requestData,
-      enableChunked: true,
       header: {
         'content-type': 'application/json',
-        'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : '',
-        'Accept': 'text/event-stream' // 添加流式响应请求头
-      }
-    })
-
-// 返回的 requestTask  拥有一个 onChunkReceived 监听回调
-// onChunkReceived 的回调参数：
-// res:data (ArrayBuffer)：接收到的分块数据。
-
-    requestTask.onChunkReceived(res => {
-      // res 流式数据  注意：这里可能是多块数据，服务推送多次信息，onChunkReceived只响应一次，则该次监听的内容就是服务器推送多次拼接在一起的字符串，需要单独裁剪额外处理
-      try {
-        // 解码分块数据
-        const uint8Array = new Uint8Array(res.data);
-        let test = String.fromCharCode.apply(null, uint8Array);
-        test = decodeURIComponent(escape(test));
-        let testArr = test.split('data:');
-        // console.log(testArr, '====9999===');  // 这里就是服务器推送的原始内容
-        testArr.forEach(item => {
-          if (item.trim()) {
-            // 处理每个数据块
-            const parsedBlock = JSON.parse(item);
-            // 检查是否有content字段
-            if (parsedBlock.content) {
-              // 立即添加到累计内容中并更新页面
-              accumulatedContent += parsedBlock.content;
-              this.setData({ matchDegreeContent: accumulatedContent });
-            }
-            if(parsedBlock.done){
-                stopPolling('检测到done:true，处理完成');
+        'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : ''
+      },
+      success: (res) => {
+        this.setData({ isLoadingMatchDegree: false });
+        try {
+          // 处理完整的响应数据
+          let accumulatedContent = '';
+          if (res.data) {
+            // 如果响应是字符串类型，尝试解析
+            if (typeof res.data === 'string') {
+              // 检查是否是 SSE 格式数据
+              if (res.data.includes('data:')) {
+                const testArr = res.data.split('data:');
+                testArr.forEach(item => {
+                  if (item.trim()) {
+                    const parsedBlock = JSON.parse(item);
+                    if (parsedBlock.content) {
+                      accumulatedContent += parsedBlock.content;
+                    }
+                  }
+                });
+              } else {
+                // 直接使用响应内容
+                accumulatedContent = res.data;
               }
+            } else if (res.data.content) {
+              // 如果响应是对象且包含 content 字段
+              accumulatedContent = res.data.content;
+              
+            }
           }
-        })
-      }
-      catch(err){
-        console.error('推送数据结构异常！', err); 
+          
+          
+          // 更新页面内容
+          if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
+            const processedContent = this.processMatchDegreeContent(accumulatedContent);
+            this.setData({ matchDegreeContent: processedContent });
+            // 保存缓存
+            this.cacheMatchDegree(cacheKey, processedContent);
+          } else {
+            // 如果没有有效内容，显示默认文本
+            const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
+            this.setData({ matchDegreeContent: defaultContent });
+          }
+        } catch (err) {
+          console.error('处理响应数据异常！', err);
+          // 发生错误时显示默认文本
+          const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">匹配度数据加载失败</div>';
+          this.setData({ matchDegreeContent: defaultContent });
+        }
+      },
+      fail: (err) => {
+        console.error('请求匹配度数据失败！', err);
+        this.setData({ 
+          isLoadingMatchDegree: false,
+          matchDegreeContent: '<div style="text-align: center; color: #666; padding: 20px 0;">匹配度数据加载失败</div>'
+        });
       }
     })
   },
-  
+  // 处理匹配度内容格式
+  processMatchDegreeContent(content) {
+        // 将换行符替换为<br/>标签
+        content = content.replace(/\n/g, '<br/>');
+        // 将指定文本改为加粗体
+        content = content.replace(/匹配点：/g, '<span class="font-bold">匹配点</span>');
+        content = content.replace(/分歧点：/g, '<span class="font-bold">分歧点</span>');
+        content = content.replace(/分析说明：/g, '<span class="font-bold">分析说明</span>');
+    // 提取总体匹配度数值
+    const totalMatchRegex = /总体匹配度：(\d+)\s*\/\s*(\d+)/;
+    const totalMatchMatch = content.match(totalMatchRegex);
+    console.log(totalMatchMatch);
+    let totalMatchPercent = 0;
+    
+    if (totalMatchMatch) {
+      const total = parseInt(totalMatchMatch[1]);
+      const max = parseInt(totalMatchMatch[2]);
+      totalMatchPercent = Math.round((total / max) * 100);
+      // 替换为百分比格式并添加紫色样式
+      content = content.replace(totalMatchRegex, `总体匹配度：<span class="text-purple-500 font-bold">${totalMatchPercent}%</span>`);
+    }
+    
+    // 提取人格契合度数值
+    const personalityMatchRegex = /人格契合度：(\d+)\s*\/\s*(\d+)/;
+    const personalityMatchMatch = content.match(personalityMatchRegex);
+    
+    if (personalityMatchMatch) {
+      const total = parseInt(personalityMatchMatch[1]);
+      const max = parseInt(personalityMatchMatch[2]);
+      const personalityMatchPercent = Math.round((total / max) * 100);
+      // 替换为百分比格式并添加蓝色样式
+      content = content.replace(personalityMatchRegex, `人格契合度：<span class="text-blue-500 font-bold">${personalityMatchPercent}%</span>`);
+    }
+    
+    // 根据总体匹配度标记用户类型
+    if (totalMatchPercent >= 90) {
+      // 标记为高匹配户
+      this.setData({
+        highMatchUser: true
+      });
+    } else if (totalMatchPercent >= 80 && totalMatchPercent < 90) {
+      // 标记为高潜力用户
+      this.setData({
+        highPotentialUser: true
+      });
+    }
+    
+    return content;
+  },
+
   /**
    * 缓存匹配度结果
    */
