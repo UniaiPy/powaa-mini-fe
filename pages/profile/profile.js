@@ -1370,45 +1370,7 @@ Page({
     }
   },
   
-  /**
-   * 自动发送好友请求
-   */
-  sendAutoFriendRequest(sharedUserId) {
-    const app = getApp()
-    
-    // 显示加载状态
-    // wx.showLoading({
-    //   title: '处理中...',
-    // })
-    
-    // 调用后端API，触发分享者发送好友请求给新用户
-    app.request({
-      url: '/api/friendships/request',
-      method: 'POST',
-      data: {
-        receiver_id: sharedUserId,
-        reverse: true
-      },
-      success: (res) => {
-        console.log('触发好友请求成功:', res)
-        // wx.hideLoading()
-        
-        // 标记已触发好友请求，避免重复触发
-        wx.setStorageSync(`sentFriendRequest_${sharedUserId}`, true)
-        
-        // 清除临时存储的分享者ID
-        wx.removeStorageSync('sharedUserId')
-      },
-      fail: (error) => {
-        console.error('触发好友请求失败:', error)
-        // wx.hideLoading()
-      },
-      complete: () => {
-        // 确保加载状态被隐藏
-        // wx.hideLoading()
-      }
-    })
-  },
+
 
   /**
    * 处理社交媒体用户名输入
@@ -1456,7 +1418,7 @@ Page({
       return
     }
     const userId = app.globalData.userInfo.id;
-    // const userId = 26;
+    // const userId = 51;
     wx.navigateTo({
       url: `/subpages/preview/preview?isFromProfile=true&type=profile&userId=${userId}`
     })

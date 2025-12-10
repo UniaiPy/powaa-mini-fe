@@ -30,6 +30,20 @@ Page({
     if (!app.isLoggedIn()) {
       return;
     }
+    // 检查activeSection参数
+    const activeSection = options.activeSection || 'contacts';
+    console.log('activeSection', activeSection);
+    if (activeSection !== 'contacts' && activeSection !== 'pending') {
+      console.warn('⚠️ 无效的activeSection参数，默认使用contacts');
+      this.setData({
+        activeSection: 'contacts'
+      });
+    } else {
+      this.setData({
+        activeSection: activeSection
+      });
+    }
+
     this.checkTUIKitStatus();
   },
   
@@ -1553,6 +1567,19 @@ Page({
    */
   onShow: function () {
     // 页面显示时的操作
+    const params = getApp().globalData.tabParams;
+    if (params) {
+      // 使用参数进行逻辑判断
+      // 切换到指定tab
+      if (params.activeSection) {
+        this.setData({
+          activeSection: params.activeSection
+        });
+      }
+      // 使用完后清理，避免下次进入时仍持有旧数据
+      getApp().globalData.tabParams = null;
+    }
+
     // 调用全局的页面显示钩子函数
     const app = getApp();
     if (!app.isLoggedIn()) {

@@ -30,9 +30,19 @@ Page({
     const app = getApp();
     const currentUserId = app.globalData.userInfo?.id;
     const targetUserId = options.userId || '';
-
     const type = options.type || '';
-    if(options.isFromProfile){
+    const fromElseCard = options.shareElseCard || false;
+    const isFromProfile = options.isFromProfile || false;
+    console.log('options:', options);
+    this.setData({
+      fromElseCard: fromElseCard
+    })
+    if (currentUserId !== targetUserId) {
+      this.setData({
+        shareElseCard: true
+      })
+    }
+    if(isFromProfile){
       this.setData({
         isFromShare: false
       });
@@ -40,21 +50,14 @@ Page({
       this.setData({
         isFromShare: true
       });
-      // 如果是通过分享进入页面，将分享者的userId存储到本地缓存
-      if (currentUserId !== targetUserId) {
+      // 如果是通过分享进入页面并且是分享者自己的名片时，将分享者的userId存储到本地缓存
+      if (currentUserId !== targetUserId && !fromElseCard) {
         wx.setStorageSync('sharedUserId', targetUserId);
+        console.log('sharedUserId:', targetUserId);
       }
     }
-    
-    
-    
-    // 判断是否通过分享进入页面
-    // const enterOptions = wx.getEnterOptionsSync();
-    // const scene = enterOptions.scene;
-    // console.log('scene:', scene);
-    // 分享场景值：1007(单人聊天)、1008(群聊)、1011(朋友圈)、1012(历史分享页)、1013(公众号文章)、1025(扫码)等
-    // const isFromShare = [1007, 1008, 1011, 1012, 1013, 1025].includes(scene);
-    // console.log('isFromShare:', isFromShare);
+
+
     this.setData({
       userId: targetUserId,
       type: type,
@@ -163,6 +166,13 @@ Page({
           url: '/pages/login/login'
         });
       }, 1500);
+      return;
+    }
+    if(!app.checkUserInfoComplete()){
+      return;
+    }
+    if(!this.data.isTrained){
+      this.showToastInfo();
       return;
     }
     
@@ -371,6 +381,13 @@ Page({
       }, 1500);
       return;
     }
+    if(!app.checkUserInfoComplete()){
+      return;
+    }
+    if(!this.data.isTrained){
+      this.showToastInfo();
+      return;
+    }
     
     // 调用后端接口检查好友关系
     app.request({
@@ -384,10 +401,40 @@ Page({
             url: `/subpages/conversation/conversation?conversationID=C2C${targetUserId}`
           });
         } else {
-          // 不是好友，显示打招呼弹窗
-          this.setData({
-            showChatModal: true
-          });
+          // 不是好友，并且不是分享者自己名片时  显示打招呼弹窗
+          if(this.data.fromElseCard){
+            this.setData({
+              showChatModal: true
+            });
+          }else{
+            //不是好友，并且是分享者自己名片时,跳转到chat页面展示待联系tab 并切换到pending tab  tab页面不能带参数，使用全局变量传递
+            // 检查是否有来自分享的userId
+            const sharedUserId = wx.getStorageSync('sharedUserId')
+            console.log('分享者ID:', sharedUserId)
+            if (sharedUserId) {
+              // 检查是否已经发送过好友请求（避免重复发送）
+              const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${sharedUserId}`)
+              console.log('是否已发送好友请求:', hasSentRequest)
+              if (!hasSentRequest) {
+                // 发送好友请求
+                app.sendAutoFriendRequest(sharedUserId).then(isSuccess => {
+                  console.log('是否成功发送好友请求:', isSuccess)
+                  if(isSuccess){
+                    app.globalData.tabParams = { activeSection: 'pending'};
+                    wx.switchTab({
+                      url: '/pages/chat/chat'
+                    });
+                  }
+                })
+              }else{
+                //已经收到发送好友请求，并且还没有同意好友申请
+                app.globalData.tabParams = { activeSection: 'pending'};
+                wx.switchTab({
+                  url: '/pages/chat/chat'
+                });
+              }
+            }
+          }
         }
       },
       fail: (error) => {
@@ -801,16 +848,17 @@ Page({
    * 用户点击右上角分享
    */
   onShareAppMessage() {
+    console.log('shareElseCard:', this.data.shareElseCard)
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}&shareElseCard=${this.data.shareElseCard}`,
       imageUrl: this.data.avatarUrl
     }
   },
   onShareTimeline() {
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}&shareElseCard=${this.data.shareElseCard}`,
       imageUrl: this.data.avatarUrl
     }
   }

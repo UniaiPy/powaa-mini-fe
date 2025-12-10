@@ -476,5 +476,40 @@ App({
   wxLogin: function() {
     console.warn('wxLogin方法已弃用，请使用新的login方法')
     return this.login()
-  }
+  },
+    /**
+   * 自动发送好友请求
+   */
+  async sendAutoFriendRequest(sharedUserId) {
+    const app = getApp()
+    // 调用后端API，触发分享者发送好友请求给新用户
+    app.request({
+      url: '/api/friendships/request',
+      method: 'POST',
+      data: {
+        receiver_id: sharedUserId,
+        reverse: true
+      },
+      success: (res) => {
+        console.log('触发好友请求成功:', res)
+        // wx.hideLoading()
+        
+        // 标记已触发好友请求，避免重复触发
+        wx.setStorageSync(`sentFriendRequest_${sharedUserId}`, true)
+        
+        // 清除临时存储的分享者ID
+        wx.removeStorageSync('sharedUserId')
+        return true
+      },
+      fail: (error) => {
+        console.error('触发好友请求失败:', error)
+        // wx.hideLoading()
+        return false
+      },
+      complete: () => {
+        // 确保加载状态被隐藏
+        // wx.hideLoading()
+      }
+    })
+  },
 })

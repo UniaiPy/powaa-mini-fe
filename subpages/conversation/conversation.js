@@ -3323,17 +3323,6 @@ Page({
   },
 
   /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-    const { chatInfo } = this.data
-    return {
-      title: `与${chatInfo.name}的对话`,
-      path: `/subpages/conversation/conversation?userName=${encodeURIComponent(chatInfo.name)}`
-    }
-  },
-
-  /**
    * 导航到用户资料页面
    */
   navigateToUserProfile() {
@@ -3563,7 +3552,7 @@ Page({
     const userId = chatInfo.id || chatInfo.name
     return {
       title: `${chatInfo.nickname || '用户'}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}&shareElseCard=true`,
       // 使用用户头像作为分享图片，若不存在则使用默认图片
       imageUrl: chatInfo.avatar || '/images/ai.png'
     }
@@ -3574,7 +3563,7 @@ Page({
     const userId = chatInfo.id || chatInfo.name
     return {
       title: `${chatInfo.nickname || '用户'}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+      path: `/subpages/preview/preview?type=profile&userId=${userId}&shareElseCard=true`,
       // 使用用户头像作为分享图片，若不存在则使用默认图片
       imageUrl: chatInfo.avatar || '/images/ai.png'
     }
