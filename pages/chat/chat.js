@@ -19,7 +19,11 @@ Page({
     lastRefreshTime: 0, // 上次刷新时间
     MIN_REFRESH_INTERVAL: 5000, // 最小刷新间隔（毫秒）
     avatarUrlCache: {}, // 头像URL缓存
-    CACHE_EXPIRY_TIME: 30 * 60 * 1000 // 缓存过期时间（30分钟）
+    CACHE_EXPIRY_TIME: 30 * 60 * 1000, // 缓存过期时间（30分钟）
+    slideButtons: [
+      { text: '置顶',type:'warn'}
+    ],
+    currentItemIndex: null
   },
 
   /**
@@ -943,7 +947,8 @@ Page({
         originalAvatar: userProfile.avatar, // 保存原始头像地址
         lastMessage:  lastMessage.content || lastMessage.payload?.text,
         time: time,
-        unread: conversation.unreadCount || 0
+        unread: conversation.unreadCount || 0,
+        isPinned: conversation.isPinned || false
       };
       
       return contact;
@@ -1638,10 +1643,15 @@ Page({
     this.setData({
       showSearch: false,
       searchText: '',
-      showSearchResults: false
+      showSearchResults: false,
+      currentItemIndex: null
     });
   },
-
+  onPageScroll() {
+    this.setData({
+      currentItemIndex: null
+    })
+  },
   /**
    * 生命周期函数--监听页面卸载
    */
@@ -2881,6 +2891,85 @@ Page({
     const userId = user.id
     wx.navigateTo({
       url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=${userId}`
+    })
+  },
+  slideButtonTap(e) {
+    const { user } = e.currentTarget.dataset
+    const id = user.id
+    const index = e.detail.index
+    const conversation = this.data.contactsList.find(contact => contact.id === id)
+    
+    if (index === 0) {
+      // 如果当前是置顶按钮
+      if (conversation && conversation.isPinned) {
+        // 如果已经置顶，则取消置顶
+        this.unpinConversation(id)
+      } else {
+        // 否则置顶
+        this.pinConversation(id)
+      }
+    }
+    this.setData({
+      currentItemIndex: null
+    })
+  },
+  //置顶会话
+  pinConversation(id) {
+    let promise = wx.$TUIKit.pinConversation(
+      { conversationID: id, isPinned: true }
+    );
+    promise.then(imResponse => {
+      // 置顶会话成功
+      const { conversationID } = imResponse.data; // 被置顶的会话 ID
+      console.log('pinConversation success:', imResponse); // 置顶会话成功的相关信息
+      // 更新本地数据
+      this.updateConversationPinStatus(conversationID, true)
+    }).catch(imError => {
+      const { code } = imError;
+      // code - 50002 会话 ID 无效
+      console.warn('pinConversation error:', imError); // 置顶会话失败的相关信息
+    });
+  },
+  
+  // 更新会话置顶状态
+  updateConversationPinStatus(conversationID, isPinned) {
+    // 更新contactsList中的会话状态
+    const updatedContactsList = this.data.contactsList.map(contact => {
+      if (contact.id === conversationID) {
+        return {
+          ...contact,
+          isPinned: isPinned
+        };
+      }
+      return contact;
+    });
+    
+    this.setData({
+      contactsList: updatedContactsList
+    });
+  },
+  //取消置顶
+  unpinConversation(id) {
+    let promise = wx.$TUIKit.pinConversation({ conversationID: id, isPinned: false });
+    promise.then(imResponse => {
+      // 取消置顶会话成功
+      const { conversationID } = imResponse.data; // 被取消置顶的会话 ID
+      console.log('unpinConversation success:', imResponse);
+      // 更新本地数据
+      this.updateConversationPinStatus(conversationID, false)
+    }).catch(imError => {
+      console.warn('unpinConversation error:', imError); // 取消置顶会话失败的相关信息
+    });
+  },
+  handleShow(e) {
+    const { index } = e.currentTarget.dataset
+    this.setData({
+      currentItemIndex: index
+    })
+  },
+  closeSlideview() {
+    this.setData({
+      currentItemIndex: null
     })
   },
 });

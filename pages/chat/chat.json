@@ -2,6 +2,7 @@
   "navigationBarTitleText": "聊天",
   "navigationStyle": "custom",
   "usingComponents": {
-    "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar"
+    "custom-navigation-bar": "/components/custom-navigation-bar/custom-navigation-bar",
+     "mp-slideview": "weui-miniprogram/slideview/slideview"
   }
 }

@@ -150,7 +150,9 @@ page {
   max-width: 320rpx;
 }
 
-
+.weui-slideview__btn {
+  font-size: 28rpx;
+}
 
 .text-xl {
   font-size: 40rpx;

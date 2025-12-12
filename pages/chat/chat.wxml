@@ -1,5 +1,5 @@
 <!-- pages/chat/chat.wxml -->
-<view class="page-container">
+<view class="page-container" bindtap="closeSlideview">
   <!-- 顶部导航 -->
   <custom-navigation-bar id="customNavigationBar" bar-style="1" background='#fff' color='#000'>
     <view class="fixed-nav py-3 px-6" style="height: 100%;">
@@ -40,37 +40,43 @@
         <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'contacts'}}">
           <!-- 联系人列表 -->
           <block wx:if="{{contactsList.length > 0}}">
-            <block wx:for="{{contactsList}}" wx:key="id">
-              <view class="chat-card" bindtap="navigateToConversation" data-user="{{item}}">
-                <view class="flex items-center">
-                  <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
-                    <image src="{{item.avatar}}" class="w-full h-full object-cover rounded-full"></image>
-                  </view>
-                  <view class="flex-1">
-                    <view class="flex items-center justify-between mb-2">
-                      <view class="flex items-center">
-                        <view class="text-base font-semibold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-160">
-                          {{item.name}}
-                        </view>
-                        <view class="text-xs text-gray-400 ml-6 flex items-center" wx:if="{{item.matchPercent}}">
-                          <view class="bg-gray-200 py-2 rounded-full">{{item.matchPercent}}%</view>
-                          <text class="fa fa-star text-red-500 ml-2" wx:if="{{item.matchPercent >= 90}}"></text>
-                          <text class="fa fa-arrow-up text-green-600 ml-2" wx:if="{{item.matchPercent >= 80 && item.matchPercent < 90}}"></text>
-                        </view>
-                      </view>
-                      <view class="text-xs text-gray-400 whitespace-nowrap ml-3">
-                        {{item.time}}
-                      </view>
+            <block wx:for="{{contactsList}}" wx:for-index="index" wx:key="id">
+              <mp-slideview buttons="{{item.isPinned ? [{text: '取消置顶', type: 'default'}] : [{text: '置顶', type: 'warn'}]}}" bindbuttontap="slideButtonTap" show="{{index == currentItemIndex}}" bindshow="handleShow" data-index="{{index}}" data-user="{{item}}">
+                <view class="chat-card" bindtap="navigateToConversation" data-user="{{item}}">
+                  <view class="flex items-center">
+                    <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
+                      <image src="{{item.avatar}}" class="w-full h-full object-cover rounded-full"></image>
                     </view>
-                    <view class="flex items-center justify-between">
-                      <text class="last-message multi-line">{{item.lastMessage}}</text>
-                      <view class="ml-4" wx:if="{{item.unread > 0}}">
-                        <view class="unread-badge">{{item.unread > 99 ? '99+' : item.unread}}</view>
+                    <view class="flex-1">
+                      <view class="flex items-center justify-between mb-2">
+                        <view class="flex items-center">
+                          <view class="text-base font-semibold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-160">
+                            {{item.name}}
+                          </view>
+                          <view class="text-xs text-gray-400 ml-6 flex items-center" wx:if="{{item.matchPercent}}">
+                            <view class="bg-gray-200 py-2 rounded-full">
+                              {{item.matchPercent}}%
+                            </view>
+                            <text class="fa fa-star text-red-500 ml-2" wx:if="{{item.matchPercent >= 90}}"></text>
+                            <text class="fa fa-arrow-up text-green-600 ml-2" wx:if="{{item.matchPercent >= 80 && item.matchPercent < 90}}"></text>
+                          </view>
+                        </view>
+                        <view class="text-xs text-gray-400 whitespace-nowrap ml-3">
+                          {{item.time}}
+                        </view>
+                      </view>
+                      <view class="flex items-center justify-between">
+                        <text class="last-message multi-line">{{item.lastMessage}}</text>
+                        <view class="ml-4" wx:if="{{item.unread > 0}}">
+                          <view class="unread-badge">
+                            {{item.unread > 99 ? '99+' : item.unread}}
+                          </view>
+                        </view>
                       </view>
                     </view>
                   </view>
                 </view>
-              </view>
+              </mp-slideview>
             </block>
           </block>
           <!-- 空状态 -->
