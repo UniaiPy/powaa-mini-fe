@@ -2885,7 +2885,7 @@ Page({
       } else {
         // 训练未完成，显示提示信息
         wx.showToast({
-          title: '完成五轮对话，即可生成AI分身报告',
+          title: '请先完成AI分身训练',
           icon: 'none',
           duration: 2000
         });
@@ -2897,7 +2897,7 @@ Page({
       // 处理请求错误
       console.error('获取AI训练状态失败:', error);
       wx.showToast({
-        title: '完成五轮对话，即可生成AI分身报告',
+        title: '请先完成AI分身训练',
         icon: 'none',
         duration: 2000
       });

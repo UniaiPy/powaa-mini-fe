@@ -142,6 +142,16 @@ page {
   height: 160rpx;
 }
 
+.text-ellipsis {
+  text-overflow: ellipsis;
+}
+
+.max-w-160 {
+  max-width: 320rpx;
+}
+
+
+
 .text-xl {
   font-size: 40rpx;
 }

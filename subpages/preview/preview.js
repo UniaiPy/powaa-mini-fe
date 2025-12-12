@@ -68,7 +68,17 @@ Page({
     });
     // 加载用户个人资料数据
     this.loadProfileData();
-    this.checkIsTrained();
+
+    if(app.isLoggedIn()){
+      // 如果用户已登录，检查AI分身是否已完成训练
+      this.checkIsTrained();
+    }else{
+      // 如果用户未登录，隐藏分享菜单
+      wx.hideShareMenu({
+        menus: ['shareAppMessage', 'shareTimeline']
+      })
+    }
+    
   },
 
   /**

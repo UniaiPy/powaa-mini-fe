@@ -7,9 +7,9 @@
       <button wx:if="{{isTrained}}" class="cursor-pointer share-btn" open-type="share">
         <text class="fa fa-share-alt text-black text-xl"></text>
       </button>
-      <button wx:else class="cursor-pointer share-btn" bindtap="showToastInfo">
+      <!-- <button wx:else class="cursor-pointer share-btn" bindtap="showToastInfo">
         <text class="fa fa-share-alt text-black text-xl"></text>
-      </button>
+      </button> -->
     </view>
   </custom-navigation-bar>
   <!-- 主内容 -->
