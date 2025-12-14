@@ -26,6 +26,8 @@ App({
     this.checkLoginStatus()
     this.updateUnreadCount()
     this.initTUIKitIfLoggedIn()
+    // 检查并发送好友请求
+    this.checkAndSendFriendRequest()
   },
 
   onHide: function () {
@@ -477,7 +479,8 @@ App({
     console.warn('wxLogin方法已弃用，请使用新的login方法')
     return this.login()
   },
-    /**
+  
+  /**
    * 自动发送好友请求
    */
   async sendAutoFriendRequest(sharedUserId) {
@@ -511,5 +514,58 @@ App({
         // wx.hideLoading()
       }
     })
+  },
+
+  /**
+   * 检查并发送好友请求
+   * 用于在用户完成信息填写或AI训练后触发好友请求
+   */
+  checkAndSendFriendRequest: function(sendAgain) {
+    // 获取sharedUserId，优先从全局变量获取，其次从本地缓存
+    const sharedUserId = this.globalData.sharedUserId || wx.getStorageSync('sharedUserId');
+    if (!sharedUserId) {
+      console.log('没有有效的sharedUserId，不发送好友请求');
+      return;
+    }
+    
+    // 检查用户是否已登录
+    if (!this.isLoggedIn()) {
+      console.log('用户未登录，不发送好友请求');
+      return;
+    }
+    
+    // 检查用户信息是否完整
+    if (!this.checkUserInfoComplete({ redirect: false })) {
+      console.log('用户信息不完整，不发送好友请求');
+      return;
+    }
+    
+    // 检查AI训练状态
+    const that = this;
+    this.request({
+      url: '/api/ai-avatars/is_trained',
+      method: 'GET',
+      success: (res) => {
+        if (res.success && res.data && res.data.status === 'active') {
+          if(sendAgain){
+            that.sendAutoFriendRequest(sharedUserId);
+            return
+          }
+          // 检查是否已发送过好友请求
+          const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${sharedUserId}`);
+          if (!hasSentRequest) {
+            console.log('AI训练已完成，准备发送好友请求');
+            that.sendAutoFriendRequest(sharedUserId);
+          } else {
+            console.log('已发送过好友请求，不重复发送');
+          }
+        } else {
+          console.log('AI训练未完成，不发送好友请求');
+        }
+      },
+      fail: (error) => {
+        console.error('获取AI训练状态失败:', error);
+      }
+    });
   },
 })

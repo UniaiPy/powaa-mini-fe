@@ -4,7 +4,7 @@
   <custom-navigation-bar id="customNavigationBar" bar-style="2" background='#fff' color='#000' showBack="{{!isFromShare}}" showHome="{{isFromShare}}">
     <view class="fixed-nav flex items-center justify-center gap-2 w-full">
       <view class="text-base font-bold text-gray-900">名片预览</view>
-      <button wx:if="{{isTrained}}" class="cursor-pointer share-btn" open-type="share">
+      <button wx:if="{{openShare}}" class="cursor-pointer share-btn" open-type="share">
         <text class="fa fa-share-alt text-black text-xl"></text>
       </button>
       <!-- <button wx:else class="cursor-pointer share-btn" bindtap="showToastInfo">
@@ -123,25 +123,44 @@
             </view>
           </view>
           <!-- 匹配度内容 -->
-          <view class="text-gray-800 text-sm leading-relaxed" wx:if="{{matchDegreeContent !== ''}}">
-            <view wx:if="{{highMatchUser}}" class="mb-4 border-b border-gray-100 py-3">
+          <view class="text-gray-700 text-sm leading-relaxed" wx:if="{{matchDegreeContent !== ''}}">
+            <view class="font-semibold mb-3">匹配度评分</view>
+            <view class="mb-3 border-b border-gray-100 py-3">
+              <view class="flex items-center">
+                总体匹配度：
+                <view class="text-purple-600 font-bold">{{matchDegreeContent.overallScore}}%</view>
+              </view>
+              <view class="flex items-center">
+                人格契合度：
+                <view class="text-blue-600 font-bold">
+                  {{matchDegreeContent.personalityMatchScore}}%
+                </view>
+              </view>
+            </view>
+            <view wx:if="{{matchDegreeContent.overallScore >= 90}}" class="mb-4 border-b border-gray-100 py-3">
               <view class="font-semibold mb-3">高匹配用户</view>
-              <view class="text-gray-600">
+              <view class="text-gray-500">
                 <text class="fa fa-star text-red-500 font-bold">高匹配用户：</text>
                 <text class="text-blue-500 font-bold">【{{userInfo.name}}】</text>
                 是你的精准目标对象，建议你直接联系对方本人，建立深度关系!
               </view>
             </view>
-            <view wx:if="{{highPotentialUser}}" class="mb-4 border-b border-gray-100 py-3">
+            <view wx:if="{{matchDegreeContent.overallScore >= 80 && matchDegreeContent.overallScore < 90}}" class="mb-4 border-b border-gray-100 py-3">
               <view class="font-semibold mb-3">高潜力用户</view>
-              <view class="text-gray-600">
+              <view class="text-gray-500">
                 <text class="fa fa-arrow-up text-green-600 font-bold">高潜力用户：</text>
                 <text class="text-blue-500 font-bold">【{{userInfo.name}}】</text>
                 是高潜力目标对象，但你的信息不足，建议你本人和他多聊。
               </view>
             </view>
-            <view class="font-semibold mb-3">匹配度评分</view>
-            <rich-text nodes="{{matchDegreeContent}}"></rich-text>
+            <view class="mb-4">
+              <view class="font-semibold mb-3">匹配点</view>
+              <view class="text-gray-500">{{matchDegreeContent.matchingPoints}}</view>
+            </view>
+            <view class="mb-4">
+              <view class="font-semibold mb-3">分歧点</view>
+              <view class="text-gray-500">{{matchDegreeContent.incomprehension}}</view>
+            </view>
             <!-- <text>{{matchDegreeContent}}</text> -->
           </view>
           <!-- 无内容提示 -->

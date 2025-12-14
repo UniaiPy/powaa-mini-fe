@@ -42,7 +42,7 @@
           <block wx:if="{{contactsList.length > 0}}">
             <block wx:for="{{contactsList}}" wx:for-index="index" wx:key="id">
               <mp-slideview buttons="{{item.isPinned ? [{text: '取消置顶', type: 'default'}] : [{text: '置顶', type: 'warn'}]}}" bindbuttontap="slideButtonTap" show="{{index == currentItemIndex}}" bindshow="handleShow" data-index="{{index}}" data-user="{{item}}">
-                <view class="chat-card" bindtap="navigateToConversation" data-user="{{item}}">
+                <view class="chat-card {{item.isPinned ? 'pinned-conversation' : ''}}" bindtap="navigateToConversation" data-user="{{item}}">
                   <view class="flex items-center">
                     <view class="w-24 h-24 rounded-full overflow-hidden mr-6">
                       <image src="{{item.avatar}}" class="w-full h-full object-cover rounded-full"></image>

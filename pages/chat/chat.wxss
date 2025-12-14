@@ -460,6 +460,15 @@ page {
   background-color: #f8f8f8;
 }
 
+/* 置顶会话样式 */
+.pinned-conversation {
+  background-color: #f5f5f5;
+}
+
+.pinned-conversation:active {
+  background-color: #e5e5e5;
+}
+
 .chat-card:last-child {
   border-bottom: none;
 }

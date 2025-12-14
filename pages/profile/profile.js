@@ -477,7 +477,7 @@ Page({
     })
     
     // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
-    this.checkAndSendAutoFriendRequest()
+    // this.checkAndSendAutoFriendRequest()
   },
   /**
    * 显示头像昵称编辑弹窗
@@ -613,6 +613,8 @@ Page({
                 title: '保存成功',
                 icon: 'success'
               })
+              // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
+              this.checkAndSendAutoFriendRequest()
             } else {
               console.error('保存微信信息失败:', res)
               wx.showToast({
@@ -1350,24 +1352,9 @@ Page({
    */
   checkAndSendAutoFriendRequest() {
     const app = getApp()
-    
-    // 检查用户是否已登录且信息完整
-    if (app.isLoggedIn() && app.checkUserInfoComplete({ redirect: false, message: '' })) {
-      console.log('用户信息完整，检查分享者ID')
-      // 检查是否有来自分享的userId
-      const sharedUserId = wx.getStorageSync('sharedUserId')
-      console.log('分享者ID:', sharedUserId)
-      if (sharedUserId) {
-        
-        // 检查是否已经发送过好友请求（避免重复发送）
-        const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${sharedUserId}`)
-        console.log('是否已发送好友请求:', hasSentRequest)
-        if (!hasSentRequest) {
-          // 发送好友请求
-          this.sendAutoFriendRequest(sharedUserId)
-        }
-      }
-    }
+    console.log('调用app.checkAndSendFriendRequest()检查并发送好友请求')
+    // 调用app级别的检查方法，该方法会检查所有条件（登录状态、信息完整性、AI训练状态等）
+    app.checkAndSendFriendRequest()
   },
   
 

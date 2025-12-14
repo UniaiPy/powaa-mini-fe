@@ -14,7 +14,40 @@ Page({
     greetingMessage: '你好，很高兴认识你！', // 打招呼消息
     matchDegreeContent: '',   // 匹配度说明内容
     isLoadingMatchDegree: false, // 是否正在加载匹配度说明
-    matchDegreeCache: {}      // 匹配度缓存
+    matchDegreeCache: {},      // 匹配度缓存
+    isFriend: null,           // 是否为好友关系，null表示未检查，true表示是好友，false表示不是好友
+    isCheckingFriendship: false // 是否正在检查好友关系
+  },
+
+  /**
+   * 检查好友关系状态
+   */
+  checkFriendshipStatus: function(targetUserId) {
+    if (!targetUserId) return;
+    
+    const app = getApp();
+    this.setData({ isCheckingFriendship: true });
+    
+    // 调用后端接口检查好友关系
+    app.request({
+      url: `/api/friendships/check/${targetUserId}`,
+      method: 'GET',
+      allowAnonymous: true, // 允许匿名访问
+      success: (res) => {
+        if (res.success && res.data.is_friend) {
+          return true;
+        } else {
+          return false;
+        }
+      },
+      fail: (error) => {
+        console.error('检查好友关系失败:', error);
+        this.setData({ isFriend: false });
+      },
+      complete: () => {
+        this.setData({ isCheckingFriendship: false });
+      }
+    });
   },
 
   /**
@@ -31,7 +64,8 @@ Page({
     const currentUserId = app.globalData.userInfo?.id;
     const targetUserId = options.userId || '';
     const type = options.type || '';
-    const fromElseCard = options.shareElseCard || false;
+    console.log('OPtions:', options);
+    const fromElseCard = options.shareElseCard || false;//是否是分享者分享别人的名片
     const isFromProfile = options.isFromProfile || false;
     console.log('options:', options);
     this.setData({
@@ -39,7 +73,7 @@ Page({
     })
     if (currentUserId !== targetUserId) {
       this.setData({
-        shareElseCard: true
+        shareElseCard: true //是否是分享者分享别人的名片
       })
     }
     if(isFromProfile){
@@ -50,11 +84,22 @@ Page({
       this.setData({
         isFromShare: true
       });
-      // 如果是通过分享进入页面并且是分享者自己的名片时，将分享者的userId存储到本地缓存
-      if (currentUserId !== targetUserId && !fromElseCard) {
-        wx.setStorageSync('sharedUserId', targetUserId);
-        console.log('sharedUserId:', targetUserId);
-      }
+      console.log('fromElseCard:', fromElseCard);
+      // 如果是通过分享进入页面并且是分享者自己的名片时，将分享者的userId存储到本地缓存和全局变量
+        if (currentUserId !== targetUserId && !fromElseCard) {
+          wx.setStorageSync('sharedUserId', targetUserId);
+          app.globalData.sharedUserId = targetUserId;
+          console.log('sharedUserId:', targetUserId);
+          const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${targetUserId}`);
+          // 如果是通过分享进入页面并且是分享者自己的名片时 ，且用户不是好友关系，则触发自动发送好友请求
+          if(!this.checkFriendshipStatus(targetUserId) && !hasSentRequest){
+            console.log('不是好友关系，触发自动发送好友请求');
+            app.checkAndSendFriendRequest();
+          }else if(!this.checkFriendshipStatus(targetUserId) && hasSentRequest){
+            app.checkAndSendFriendRequest(true);
+            console.log('不是好友关系，但是已发送过好友请求，触发重新发送好友请求');
+          }
+        }
     }
 
 
@@ -71,7 +116,21 @@ Page({
 
     if(app.isLoggedIn()){
       // 如果用户已登录，检查AI分身是否已完成训练
-      this.checkIsTrained();
+       if(!app.checkUserInfoComplete({ redirect: false }) || !this.checkIsTrained()){
+          this.setData({
+            openShare: false
+          })
+          wx.hideShareMenu({
+            menus: ['shareAppMessage', 'shareTimeline']
+          })
+       }else if(app.checkUserInfoComplete({ redirect: false }) && this.checkIsTrained()){
+          wx.showShareMenu({
+            menus: ['shareAppMessage', 'shareTimeline']
+          })
+          this.setData({
+            openShare: true
+          })
+       }
     }else{
       // 如果用户未登录，隐藏分享菜单
       wx.hideShareMenu({
@@ -126,21 +185,10 @@ Page({
       });
       // 检查训练状态
       if (result.success && result.data && result.data.status === 'active') {
-        // 训练已完成
-        this.setData({
-          isTrained: true
-        })
-        wx.showShareMenu({
-          menus: ['shareAppMessage', 'shareTimeline']
-        })
+        return true
       } else {
         // 训练未完成
-        this.setData({
-          isTrained: false
-        })
-        wx.hideShareMenu({
-          menus: ['shareAppMessage', 'shareTimeline']
-        })
+        return false
       }
     } catch (error) {
       // 处理请求错误
@@ -181,7 +229,7 @@ Page({
     if(!app.checkUserInfoComplete()){
       return;
     }
-    if(!this.data.isTrained){
+    if(!this.checkIsTrained()){
       this.showToastInfo();
       return;
     }
@@ -248,35 +296,11 @@ Page({
         try {
           // 处理完整的响应数据
           let accumulatedContent = '';
-          if (res.data) {
-            // 如果响应是字符串类型，尝试解析
-            if (typeof res.data === 'string') {
-              // 检查是否是 SSE 格式数据
-              if (res.data.includes('data:')) {
-                const testArr = res.data.split('data:');
-                testArr.forEach(item => {
-                  if (item.trim()) {
-                    const parsedBlock = JSON.parse(item);
-                    if (parsedBlock.content) {
-                      accumulatedContent += parsedBlock.content;
-                    }
-                  }
-                });
-              } else {
-                // 直接使用响应内容
-                accumulatedContent = res.data;
-              }
-            } else if (res.data.content) {
-              // 如果响应是对象且包含 content 字段
-              accumulatedContent = res.data.content;
-              
-            }
-          }
-          
-          
+          accumulatedContent=res.data;
+          console.log('accumulatedContent', accumulatedContent)
           // 更新页面内容
           if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
-            const processedContent = this.processMatchDegreeContent(accumulatedContent);
+            const processedContent = accumulatedContent
             this.setData({ matchDegreeContent: processedContent });
             // 保存缓存
             this.cacheMatchDegree(cacheKey, processedContent);
@@ -301,56 +325,6 @@ Page({
       }
     })
   },
-  // 处理匹配度内容格式
-  processMatchDegreeContent(content) {
-        // 将换行符替换为<br/>标签
-        content = content.replace(/\n/g, '<br/>');
-        // 将指定文本改为加粗体
-        content = content.replace(/匹配点：/g, '<span class="font-bold">匹配点</span>');
-        content = content.replace(/分歧点：/g, '<span class="font-bold">分歧点</span>');
-        content = content.replace(/分析说明：/g, '<span class="font-bold">分析说明</span>');
-    // 提取总体匹配度数值
-    const totalMatchRegex = /总体匹配度：(\d+)\s*\/\s*(\d+)/;
-    const totalMatchMatch = content.match(totalMatchRegex);
-    console.log(totalMatchMatch);
-    let totalMatchPercent = 0;
-    
-    if (totalMatchMatch) {
-      const total = parseInt(totalMatchMatch[1]);
-      const max = parseInt(totalMatchMatch[2]);
-      totalMatchPercent = Math.round((total / max) * 100);
-      // 替换为百分比格式并添加紫色样式
-      content = content.replace(totalMatchRegex, `总体匹配度：<span class="text-purple-500 font-bold">${totalMatchPercent}%</span>`);
-    }
-    
-    // 提取人格契合度数值
-    const personalityMatchRegex = /人格契合度：(\d+)\s*\/\s*(\d+)/;
-    const personalityMatchMatch = content.match(personalityMatchRegex);
-    
-    if (personalityMatchMatch) {
-      const total = parseInt(personalityMatchMatch[1]);
-      const max = parseInt(personalityMatchMatch[2]);
-      const personalityMatchPercent = Math.round((total / max) * 100);
-      // 替换为百分比格式并添加蓝色样式
-      content = content.replace(personalityMatchRegex, `人格契合度：<span class="text-blue-500 font-bold">${personalityMatchPercent}%</span>`);
-    }
-    
-    // 根据总体匹配度标记用户类型
-    if (totalMatchPercent >= 90) {
-      // 标记为高匹配户
-      this.setData({
-        highMatchUser: true
-      });
-    } else if (totalMatchPercent >= 80 && totalMatchPercent < 90) {
-      // 标记为高潜力用户
-      this.setData({
-        highPotentialUser: true
-      });
-    }
-    
-    return content;
-  },
-
   /**
    * 缓存匹配度结果
    */
@@ -445,7 +419,7 @@ Page({
     if(!app.checkUserInfoComplete()){
       return;
     }
-    if(!this.data.isTrained){
+    if(!this.checkIsTrained()){
       this.showToastInfo();
       return;
     }
@@ -469,32 +443,10 @@ Page({
             });
           }else{
             //不是好友，并且是分享者自己名片时,跳转到chat页面展示待联系tab 并切换到pending tab  tab页面不能带参数，使用全局变量传递
-            // 检查是否有来自分享的userId
-            const sharedUserId = wx.getStorageSync('sharedUserId')
-            console.log('分享者ID:', sharedUserId)
-            if (sharedUserId) {
-              // 检查是否已经发送过好友请求（避免重复发送）
-              const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${sharedUserId}`)
-              console.log('是否已发送好友请求:', hasSentRequest)
-              if (!hasSentRequest) {
-                // 发送好友请求
-                app.sendAutoFriendRequest(sharedUserId).then(isSuccess => {
-                  console.log('是否成功发送好友请求:', isSuccess)
-                  if(isSuccess){
-                    app.globalData.tabParams = { activeSection: 'pending'};
-                    wx.switchTab({
-                      url: '/pages/chat/chat'
-                    });
-                  }
-                })
-              }else{
-                //已经收到发送好友请求，并且还没有同意好友申请
-                app.globalData.tabParams = { activeSection: 'pending'};
-                wx.switchTab({
-                  url: '/pages/chat/chat'
-                });
-              }
-            }
+            app.globalData.tabParams = { activeSection: 'pending'};
+            wx.switchTab({
+              url: '/pages/chat/chat'
+            });
           }
         }
       },
