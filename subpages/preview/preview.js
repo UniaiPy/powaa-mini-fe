@@ -65,6 +65,9 @@ Page({
     const targetUserId = options.userId || '';
     const type = options.type || '';
     console.log('OPtions:', options);
+    console.log('currentUserId:', currentUserId);
+    console.log('targetUserId:', targetUserId);
+    console.log('currentUserId != targetUserId:', currentUserId != targetUserId);
     // 处理分享参数，小程序会将所有参数转换为字符串，需要手动转换为布尔值
     const fromElseCard = options.shareElseCard == 'true' ? true : false;//是否是分享者分享别人的名片
     // 同样处理isFromProfile参数，确保它是布尔值
@@ -121,31 +124,34 @@ Page({
     });
     // 加载用户个人资料数据
     this.loadProfileData();
-
     if(app.isLoggedIn()){
-      // 如果用户已登录，检查AI分身是否已完成训练
-       if(!app.checkUserInfoComplete({ redirect: false }) || !this.checkIsTrained()){
-          this.setData({
-            openShare: false
-          })
+      this.checkIsTrained().then(() => {
+        console.log('isTrained', this.data.isTrained);
+        if(app.isLoggedIn()){
+          // 如果用户已登录，检查AI分身是否已完成训练
+          if(!app.checkUserInfoComplete({ redirect: false }) || !this.data.isTrained){
+              this.setData({
+                openShare: false
+              })
+              wx.hideShareMenu({
+                menus: ['shareAppMessage', 'shareTimeline']
+              })
+          }else if(app.checkUserInfoComplete({ redirect: false }) && this.data.isTrained){
+              wx.showShareMenu({
+                menus: ['shareAppMessage', 'shareTimeline']
+              })
+              this.setData({
+                openShare: true
+              })
+          }
+        }else{
+          // 如果用户未登录，隐藏分享菜单
           wx.hideShareMenu({
             menus: ['shareAppMessage', 'shareTimeline']
           })
-       }else if(app.checkUserInfoComplete({ redirect: false }) && this.checkIsTrained()){
-          wx.showShareMenu({
-            menus: ['shareAppMessage', 'shareTimeline']
-          })
-          this.setData({
-            openShare: true
-          })
-       }
-    }else{
-      // 如果用户未登录，隐藏分享菜单
-      wx.hideShareMenu({
-        menus: ['shareAppMessage', 'shareTimeline']
-      })
+        }
+      });
     }
-    
   },
 
   /**
@@ -193,10 +199,14 @@ Page({
       });
       // 检查训练状态
       if (result.success && result.data && result.data.status === 'active') {
-        return true
+        this.setData({
+          isTrained: true
+        })
       } else {
         // 训练未完成
-        return false
+        this.setData({
+          isTrained: false
+        })
       }
     } catch (error) {
       // 处理请求错误
@@ -237,7 +247,7 @@ Page({
     if(!app.checkUserInfoComplete()){
       return;
     }
-    if(!this.checkIsTrained()){
+    if(!this.data.isTrained){
       this.showToastInfo();
       return;
     }
@@ -427,7 +437,7 @@ Page({
     if(!app.checkUserInfoComplete()){
       return;
     }
-    if(!this.checkIsTrained()){
+    if(!this.data.isTrained){
       this.showToastInfo();
       return;
     }

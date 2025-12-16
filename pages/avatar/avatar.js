@@ -98,7 +98,7 @@ Page({
     if (message.type === wx.TencentCloudChat.TYPES.MSG_CUSTOM) {
       try {
         const customData = JSON.parse(message.payload?.data || '{}');
-        console.log('=== 解析自定义消息 ===', customData);
+        // console.log('=== 解析自定义消息 ===', customData);
         
         // 检查是否为AI下一问的流式消息
         if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
@@ -132,29 +132,29 @@ Page({
             streamMessageKey = message.ID || streamMessageKey;
           }
           
-          console.log('=== 自定义流式消息处理 ===', {
-            chunkContent: chunkContent,
-            chunksLength: customData.chunks.length,
-            isStreaming: isStreaming,
-            streamContent: streamContent,
-            streamComplete: streamComplete,
-            streamMessageKey: streamMessageKey,
-            messageMsgKey: message.MsgKey,
-            messageID: messageID,
-            isModified: message.isModified
-          });
+          // console.log('=== 自定义流式消息处理 ===', {
+          //   chunkContent: chunkContent,
+          //   chunksLength: customData.chunks.length,
+          //   isStreaming: isStreaming,
+          //   streamContent: streamContent,
+          //   streamComplete: streamComplete,
+          //   streamMessageKey: streamMessageKey,
+          //   messageMsgKey: message.MsgKey,
+          //   messageID: messageID,
+          //   isModified: message.isModified
+          // });
         }
       } catch (error) {
         console.error('=== 解析自定义消息失败 ===', error);
       }
     }
     
-    console.log('=== 流式消息判断 ===', {
-      isStreaming: isStreaming,
-      streamContent: streamContent,
-      streamComplete: streamComplete,
-      streamMessageKey: streamMessageKey
-    });
+    // console.log('=== 流式消息判断 ===', {
+    //   isStreaming: isStreaming,
+    //   streamContent: streamContent,
+    //   streamComplete: streamComplete,
+    //   streamMessageKey: streamMessageKey
+    // });
     
     // 首先获取完整的消息信息，无论是什么类型的消息
     const messageInfo = this.getMessageDetails(message);
@@ -1172,7 +1172,7 @@ Page({
         messageInfo.messageType = 'custom';
         try {
           const customData = JSON.parse(message.payload.data || '{}');
-          console.log('=== 解析自定义消息内容 ===', customData);
+          // console.log('=== 解析自定义消息内容 ===', customData);
           
           // 处理AI下一问的流式消息
           if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
@@ -1181,7 +1181,7 @@ Page({
               messageInfo.content += chunk || '';
             }
             messageInfo.messageType = 'text'; // 标记为文本消息类型，便于显示
-            console.log('=== 提取到流式消息内容 ===', messageInfo.content);
+            // console.log('=== 提取到流式消息内容 ===', messageInfo.content);
           } else if (customData.businessID === 'user_defined_status') {
             // 处理其他类型的自定义消息
             messageInfo.content = customData.description || '[自定义消息]';

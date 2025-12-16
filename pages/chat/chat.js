@@ -1188,20 +1188,14 @@ Page({
         // console.log('- 当前pendingList长度:', this.data.pendingList.length);
         // console.log('- 即将设置的pendingList长度:', pendingList.length);
 
-        // 直接设置待处理好友请求列表，不获取匹配度
-        if (pendingList.length > 0) {
-          this.setData({
-            pendingList: pendingList
-          }, () => {
-            // 数据设置完成后，批量获取头像URL
-            this.batchGetAvatarUrls(pendingList, 2);
-          });
-        } else {
-          // 好友请求列表为空，直接设置
-          this.setData({
-            pendingList: pendingList
-          });
-        }
+        this.setData({
+          pendingList: pendingList
+        }, () => {
+          console.log('✅ pendingList已设置到页面，当前长度:', this.data.pendingList.length);
+          console.log('📋 页面pendingList内容:', this.data.pendingList);
+          
+          // 数据设置完成后，批量获取头像URL
+          this.batchGetAvatarUrls(pendingList, 2);
           
           // 如果有待处理的好友请求，自动切换到待联系标签
           // if (pendingList.length > 0 && this.data.activeSection === 'contacts') {
@@ -1211,7 +1205,7 @@ Page({
           //   });
           //   console.log(`收到${pendingList.length}个好友申请`);
           // }
-        // });
+        });
 
         // 显示通知
         if (pendingList.length > 0) {
@@ -1657,6 +1651,9 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow: function () {
+    const sharedId=wx.getStorageSync('sharedUserId');
+    console.log('sharedId:', sharedId);
+
     // 页面显示时的操作
     const params = getApp().globalData.tabParams;
     if (params) {

@@ -170,9 +170,11 @@ Page({
         this.setData({
           isTrained: true
         })
-        wx.showShareMenu({
-          menus: ['shareAppMessage', 'shareTimeline']
-        })
+        if(app.checkUserInfoComplete({ redirect: false })){
+          wx.showShareMenu({
+            menus: ['shareAppMessage', 'shareTimeline']
+          })
+        }
       } else {
         // 训练未完成
         this.setData({
@@ -821,6 +823,13 @@ Page({
   saveProfileEdit() {
     const app = getApp()
     const intro = this.data.editProfileDescription.trim()
+    if (!intro) {
+      wx.showToast({
+        title: '请输入个人简介',
+        icon: 'none'
+      })
+      return
+    }
     // 显示加载提示
     wx.showLoading({
       title: '保存中...',

@@ -235,7 +235,7 @@
 
 /* 消息样式 */
 .message {
-  max-width: 75%;
+  max-width: 70%;
   padding: 12px;
   border-radius: 18px;
   line-height: 1.4;
