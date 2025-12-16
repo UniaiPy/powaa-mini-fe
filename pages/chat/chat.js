@@ -948,7 +948,8 @@ Page({
         lastMessage:  lastMessage.content || lastMessage.payload?.text,
         time: time,
         unread: conversation.unreadCount || 0,
-        isPinned: conversation.isPinned || false
+        isPinned: conversation.isPinned || false,
+        matchPercent: 0 // 添加默认匹配度
       };
       
       return contact;
@@ -956,14 +957,93 @@ Page({
     
     console.log('处理后的联系人列表:', contactsList);
     
-    this.setData({
-      contactsList: contactsList
-    }, () => {
-      // 数据设置完成后，批量获取头像URL
-      this.batchGetAvatarUrls(contactsList, 1);
+    // 提取所有用户ID，调用匹配度接口
+    if (contactsList.length > 0) {
+      const userIds = contactsList.map(contact => contact.userId).filter(id => id);
+      console.log('提取的用户ID列表:', userIds);
+      
+      if (userIds.length > 0) {
+        this.getMatchPercent(userIds, contactsList);
+      } else {
+        // 没有有效的用户ID，直接设置列表
+        this.setData({
+          contactsList: contactsList
+        }, () => {
+          // 数据设置完成后，批量获取头像URL
+          this.batchGetAvatarUrls(contactsList, 1);
+        });
+      }
+    } else {
+      // 联系人列表为空，直接设置
+      this.setData({
+        contactsList: contactsList
+      });
+    }
+  },
+
+  /**
+   * 获取联系人匹配度
+   * @param {Array} userIds - 用户ID列表
+   * @param {Array} contactsList - 原始联系人列表
+   */
+  getMatchPercent: function(userIds, contactsList) {
+    const app = getApp();
+    console.log('调用匹配度接口，用户ID列表:', userIds);
+    
+    app.request({
+      url: '/api/users/batch',
+      method: 'POST',
+      success: (res) => {
+        console.log('匹配度接口返回数据:', res);
+        
+        if (res.results && res.results.length > 0) {
+          // 合并匹配度数据到联系人列表
+          const updatedContacts = contactsList.map(contact => {
+            // 查找对应的匹配度数据
+            const matchData = res.results.find(item => item.targetUserId == contact.userId);
+            console.log('匹配度数据:', matchData);
+            
+            return {
+              ...contact,
+              matchPercent: matchData ? matchData.overallScore : 0
+            };
+          });
+          
+          console.log('合并匹配度后的联系人列表:', updatedContacts);
+          
+          // 更新UI
+          this.setData({
+            contactsList: updatedContacts
+          }, () => {
+            // 数据设置完成后，批量获取头像URL
+            this.batchGetAvatarUrls(updatedContacts, 1);
+          });
+        } else {
+          console.error('匹配度接口返回失败:', res.message || '未知错误');
+          // 接口调用失败，使用默认匹配度
+          this.setData({
+            contactsList: contactsList
+          }, () => {
+            // 数据设置完成后，批量获取头像URL
+            this.batchGetAvatarUrls(contactsList, 1);
+          });
+        }
+      },
+      fail: (error) => {
+        console.error('调用匹配度接口失败:', error);
+        // 网络请求失败，使用默认匹配度
+        this.setData({
+          contactsList: contactsList
+        }, () => {
+          // 数据设置完成后，批量获取头像URL
+          this.batchGetAvatarUrls(contactsList, 1);
+        });
+      }
     });
   },
-  
+
+
+
   // 加载好友申请列表
   async loadFriendRequests() {
     try {
@@ -1108,14 +1188,20 @@ Page({
         // console.log('- 当前pendingList长度:', this.data.pendingList.length);
         // console.log('- 即将设置的pendingList长度:', pendingList.length);
 
-        this.setData({
-          pendingList: pendingList
-        }, () => {
-          console.log('✅ pendingList已设置到页面，当前长度:', this.data.pendingList.length);
-          console.log('📋 页面pendingList内容:', this.data.pendingList);
-          
-          // 数据设置完成后，批量获取头像URL
-          this.batchGetAvatarUrls(pendingList, 2);
+        // 直接设置待处理好友请求列表，不获取匹配度
+        if (pendingList.length > 0) {
+          this.setData({
+            pendingList: pendingList
+          }, () => {
+            // 数据设置完成后，批量获取头像URL
+            this.batchGetAvatarUrls(pendingList, 2);
+          });
+        } else {
+          // 好友请求列表为空，直接设置
+          this.setData({
+            pendingList: pendingList
+          });
+        }
           
           // 如果有待处理的好友请求，自动切换到待联系标签
           // if (pendingList.length > 0 && this.data.activeSection === 'contacts') {
@@ -1125,7 +1211,7 @@ Page({
           //   });
           //   console.log(`收到${pendingList.length}个好友申请`);
           // }
-        });
+        // });
 
         // 显示通知
         if (pendingList.length > 0) {

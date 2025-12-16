@@ -65,15 +65,20 @@ Page({
     const targetUserId = options.userId || '';
     const type = options.type || '';
     console.log('OPtions:', options);
-    const fromElseCard = options.shareElseCard || false;//是否是分享者分享别人的名片
-    const isFromProfile = options.isFromProfile || false;
-    console.log('options:', options);
+    // 处理分享参数，小程序会将所有参数转换为字符串，需要手动转换为布尔值
+    const fromElseCard = options.shareElseCard == 'true' ? true : false;//是否是分享者分享别人的名片
+    // 同样处理isFromProfile参数，确保它是布尔值
+    const isFromProfile = options.isFromProfile == 'true' ? true : false;
     this.setData({
       fromElseCard: fromElseCard
     })
-    if (currentUserId !== targetUserId) {
+    if (currentUserId != targetUserId) {
       this.setData({
         shareElseCard: true //是否是分享者分享别人的名片
+      })
+    }else{
+      this.setData({
+        shareElseCard: false //是否是分享者分享别人的名片
       })
     }
     if(isFromProfile){
@@ -84,9 +89,12 @@ Page({
       this.setData({
         isFromShare: true
       });
-      console.log('fromElseCard:', fromElseCard);
+      console.log('fromElseCard:', fromElseCard,typeof fromElseCard);
       // 如果是通过分享进入页面并且是分享者自己的名片时，将分享者的userId存储到本地缓存和全局变量
-        if (currentUserId !== targetUserId && !fromElseCard) {
+      console.log('currentUserId != targetUserId:', currentUserId != targetUserId, currentUserId, targetUserId);
+      console.log('!fromElseCard:', !fromElseCard);
+      if (currentUserId != targetUserId && !fromElseCard) {
+          console.log('currentUserId != targetUserId && !fromElseCard');
           wx.setStorageSync('sharedUserId', targetUserId);
           app.globalData.sharedUserId = targetUserId;
           console.log('sharedUserId:', targetUserId);

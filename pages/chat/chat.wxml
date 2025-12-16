@@ -53,7 +53,7 @@
                           <view class="text-base font-semibold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-160">
                             {{item.name}}
                           </view>
-                          <view class="text-xs text-gray-400 ml-6 flex items-center" wx:if="{{item.matchPercent}}">
+                          <view class="text-xs text-gray-400 ml-6 flex items-center" wx:if="{{item.matchPercent > 0}}">
                             <view class="bg-gray-200 py-2 rounded-full">
                               {{item.matchPercent}}%
                             </view>
