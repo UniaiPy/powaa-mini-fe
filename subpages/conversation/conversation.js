@@ -1104,11 +1104,11 @@ Page({
    * 测试图片URL可访问性
    */
   testImageUrl(url) {
-    wx.request({
-      url: url,
-      method: 'HEAD',
+    // 使用微信小程序提供的wx.getImageInfo方法检测图片可访问性
+    wx.getImageInfo({
+      src: url,
       success: (res) => {
-        console.log('图片URL可访问:', url, '状态码:', res.statusCode);
+        console.log('图片URL可访问:', url, '图片信息:', res);
       },
       fail: (error) => {
         console.error('图片URL不可访问:', url, error);
@@ -2680,11 +2680,11 @@ Page({
       //   altitude: false
       // });
       // console.log('wx.getLocation 返回结果:', locationRes);
-      
+
       console.log('开始调用 wx.chooseLocation');
       const res = await wx.chooseLocation({
         latitude: 0,
-        longitude: locationRes.longitude
+        longitude: 0
       });
       console.log('wx.chooseLocation 返回结果:', res);
       
@@ -2711,6 +2711,11 @@ Page({
       // 验证选择的位置数据
       if (typeof res.latitude !== 'number' || typeof res.longitude !== 'number') {
         throw new Error('位置信息不完整，缺少经纬度');
+      }
+      
+      // 确保经纬度在合理范围内，避免参数错误
+      if (res.latitude < -90 || res.latitude > 90 || res.longitude < -180 || res.longitude > 180) {
+        throw new Error('经纬度值超出合理范围');
       }
       
       await this.sendLocationMessage(res);
@@ -2749,7 +2754,24 @@ Page({
         throw new Error('位置信息缺少经纬度数据');
       }
       
-      const targetUserID = this.extractUserIDFromConversationID(this.data.conversationID) || this.data.chatInfo.id || this.data.chatInfo.name;
+      // 确保经纬度在合理范围内，避免参数错误
+      const latitude = Number(location.latitude).toFixed(6);//保留六位小数
+      const longitude = Number(location.longitude).toFixed(6);//保留六位小数
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        throw new Error('经纬度值无效');
+      }
+      
+      if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        throw new Error('经纬度值超出合理范围');
+      }
+      
+      let targetUserID = this.extractUserIDFromConversationID(this.data.conversationID) || this.data.chatInfo.id || this.data.chatInfo.name;
+      
+      // 如果还是没有targetUserID，创建一个默认的
+      if (!targetUserID) {
+        targetUserID = 'default_user';
+      }
       
       console.log('准备发送位置消息:', { targetUserID, location });
       
@@ -2757,14 +2779,15 @@ Page({
       if (!wx.$TUIKit) {
         throw new Error('IM未初始化');
       }
-      
+      console.log('latitude:', latitude);
+      console.log('longitude:', longitude);
       // 创建位置消息，确保经纬度为数字类型，包含name和address信息
       const message = wx.$TUIKit.createLocationMessage({
         to: targetUserID,
         conversationType: wx.TencentCloudChat.TYPES.CONV_C2C,
         payload: {
-          latitude: Number(location.latitude),
-          longitude: Number(location.longitude),
+          latitude: Number(latitude),
+          longitude: Number(longitude),
           description: String(location.name ? `${location.name} - ${location.address || '未知位置'}` : location.address || '未知位置')
         }
       });
@@ -2818,6 +2841,8 @@ Page({
           errorMessage = '位置信息获取失败，请重新选择';
         } else if (error.message.includes('20011')) {
           errorMessage = '需要先添加好友';
+        } else if (error.message.includes('60029')) {
+          errorMessage = '参数错误，请重新发送位置消息';
         }
       }
       

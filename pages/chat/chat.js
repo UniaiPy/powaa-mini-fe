@@ -2421,11 +2421,11 @@ Page({
    * 测试图片URL可访问性
    */
   testImageUrl(url) {
-    wx.request({
-      url: url,
-      method: 'HEAD',
+    // 使用微信小程序提供的wx.getImageInfo方法检测图片可访问性
+    wx.getImageInfo({
+      src: url,
       success: (res) => {
-        console.log('图片URL可访问:', url, '状态码:', res.statusCode);
+        console.log('图片URL可访问:', url, '图片信息:', res);
       },
       fail: (error) => {
         console.error('图片URL不可访问:', url, error);

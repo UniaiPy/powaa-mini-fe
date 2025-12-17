@@ -73,7 +73,7 @@
                 </view>
                 <view class="location-address">{{item.location.address}}</view>
                 <map enable-scroll="{{mapScroll}}" enable-zoom="{{mapZoom}}" longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 24, iconPath: '/assets/icons/location.png'}]}}" class="location-map">
-                  <cover-view bindtap="openLocationMap" data-location="{{item.location}}" class="location-map-cover"></cover-view>
+                  <view bindtap="openLocationMap" data-location="{{item.location}}" class="location-map-cover"></view>
                 </map>
               </view>
             </block>
@@ -142,7 +142,7 @@
                 </view>
                 <view class="location-address">{{item.location.address}}</view>
                 <map enable-scroll="{{mapScroll}}" enable-zoom="{{mapZoom}}" longitude="{{item.location.longitude}}" latitude="{{item.location.latitude}}" scale="16" markers="{{[{id: 1, latitude: item.location.latitude, longitude: item.location.longitude, width: 24, height: 24, iconPath: '/assets/icons/location.png'}]}}" class="location-map">
-                  <cover-view bindtap="openLocationMap" data-location="{{item.location}}" class="location-map-cover"></cover-view>
+                  <view bindtap="openLocationMap" data-location="{{item.location}}" class="location-map-cover"></view>
                 </map>
               </view>
             </block>

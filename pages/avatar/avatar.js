@@ -1898,13 +1898,25 @@ Page({
         throw new Error('IM未登录，当前状态: ' + JSON.stringify(imStatus));
       }
       
+      // 确保经纬度在合理范围内，避免参数错误
+      const latitude = Number(location.latitude).toFixed(6);//保留六位小数
+      const longitude = Number(location.longitude).toFixed(6);//保留六位小数
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        throw new Error('经纬度值无效');
+      }
+      
+      if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        throw new Error('经纬度值超出合理范围');
+      }
+      
       const messageInstance = wx.$TUIKit.createLocationMessage({
         to: targetUserID,
         conversationType: wx.TencentCloudChat.TYPES.CONV_C2C,
         payload: {
           description: String(location.name ? `${location.name} - ${location.address || '未知位置'}` : location.address || '未知位置'),
-          longitude: Number(location.longitude),
-          latitude: Number(location.latitude)
+          longitude: Number(longitude),
+          latitude: Number(latitude)
         }
       });
 
@@ -3100,11 +3112,11 @@ Page({
    * 测试图片URL可访问性
    */
   testImageUrl(url) {
-    wx.request({
-      url: url,
-      method: 'HEAD',
+    // 使用wx.getImageInfo方法检测图片可访问性
+    wx.getImageInfo({
+      src: url,
       success: (res) => {
-        console.log('图片URL可访问:', url, '状态码:', res.statusCode);
+        console.log('图片URL可访问:', url, '图片信息:', res);
       },
       fail: (error) => {
         console.error('图片URL不可访问:', url, error);
