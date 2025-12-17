@@ -1361,7 +1361,7 @@ Page({
    */
   checkAndSendAutoFriendRequest() {
     const app = getApp()
-    console.log('调用app.checkAndSendFriendRequest()检查并发送好友请求')
+    console.log('保存个人信息后，调用app.checkAndSendFriendRequest()检查并发送好友请求')
     // 调用app级别的检查方法，该方法会检查所有条件（登录状态、信息完整性、AI训练状态等）
     app.checkAndSendFriendRequest()
   },

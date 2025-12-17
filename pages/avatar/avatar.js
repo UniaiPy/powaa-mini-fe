@@ -958,22 +958,23 @@ Page({
     // 接收到新消息后，检查AI训练状态
     // 如果AI训练已完成，且用户信息完整，触发好友请求
     const app = getApp();
-    console.log('接收到新消息后，检查AI训练状态');
-    app.request({
-      url: '/api/ai-avatars/is_trained',
-      method: 'GET',
-      success: (res) => {
-        if (res.success && res.data && res.data.status === 'active') {
-          console.log('AI训练已完成，检查是否需要发送好友请求');
-          app.checkAndSendFriendRequest();
-        } else {
-          console.log('AI训练未完成，不发送好友请求');
-        }
-      },
-      fail: (error) => {
-        console.error('获取AI训练状态失败:', error);
-      }
-    });
+    console.log('接收到新消息后，调用app.checkAndSendFriendRequest()检查并发送好友请求');
+    app.checkAndSendFriendRequest();
+    // app.request({
+    //   url: '/api/ai-avatars/is_trained',
+    //   method: 'GET',
+    //   success: (res) => {
+    //     if (res.success && res.data && res.data.status === 'active') {
+    //       console.log('AI训练已完成，检查是否需要发送好友请求');
+    //       app.checkAndSendFriendRequest();
+    //     } else {
+    //       console.log('AI训练未完成，不发送好友请求2');
+    //     }
+    //   },
+    //   fail: (error) => {
+    //     console.error('获取AI训练状态失败:', error);
+    //   }
+    // });
   },
 
   /**
