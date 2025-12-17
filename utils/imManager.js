@@ -388,6 +388,14 @@ class IMManager {
   // 清理实例
   _clearInstance() {
     if (wx.$TUIKit) {
+      try {
+        // 调用destroy()方法正确关闭WebSocket连接并释放资源
+        wx.$TUIKit.destroy();
+        console.log('✅ TUIKit实例已销毁，WebSocket连接已关闭');
+      } catch (error) {
+        console.warn('⚠️ 销毁TUIKit实例时出错:', error);
+        // 即使销毁失败，也要继续清理实例引用
+      }
       wx.$TUIKit = null;
     }
     

@@ -755,7 +755,13 @@ Page({
   },
   
   // 好友请求列表更新回调
-  onFriendRequestListUpdated: function(event) {
+  // onFriendRequestListUpdated: function(event) {
+  //   this.loadFriendRequests();
+  // },
+
+  // 好友申请列表更新回调
+  onFriendApplicationListUpdated: function(event) {
+    console.log('好友申请列表更新事件:', event);
     this.loadFriendRequests();
   },
   
@@ -996,7 +1002,7 @@ Page({
       success: (res) => {
         console.log('匹配度接口返回数据:', res);
         
-        if (res.results && res.results.length > 0) {
+        if (res.results) {
           // 合并匹配度数据到联系人列表
           const updatedContacts = contactsList.map(contact => {
             // 查找对应的匹配度数据

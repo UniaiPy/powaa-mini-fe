@@ -26,8 +26,6 @@ App({
     this.checkLoginStatus()
     this.updateUnreadCount()
     this.initTUIKitIfLoggedIn()
-    // 检查并发送好友请求
-    this.checkAndSendFriendRequest()
   },
 
   onHide: function () {
@@ -497,8 +495,8 @@ App({
         console.log('触发好友请求成功:', res)
         // wx.hideLoading()
         
-        // 标记已触发好友请求，避免重复触发
-        wx.setStorageSync(`sentFriendRequest_${sharedUserId}`, true)
+        // // 标记已触发好友请求，避免重复触发
+        // wx.setStorageSync(`sentFriendRequest_${sharedUserId}`, true)
         
         // 清除临时存储的分享者ID
         wx.removeStorageSync('sharedUserId')
@@ -517,10 +515,35 @@ App({
   },
 
   /**
+   * 检查好友关系状态
+   */
+  checkFriendshipStatus: function(targetUserId) {
+    if (!targetUserId) return Promise.resolve(false);
+    
+    // 返回Promise，以便正确处理异步结果
+    return new Promise((resolve) => {
+      // 调用后端接口检查好友关系
+      this.request({
+        url: `/api/friendships/check/${targetUserId}`,
+        method: 'GET',
+        allowAnonymous: true, // 允许匿名访问
+        success: (res) => {
+          const isFriend = res.success && res.data.is_friend;
+          resolve(isFriend);
+        },
+        fail: (error) => {
+          console.error('检查好友关系失败:', error);
+          resolve(false);
+        }
+      });
+    });
+  },
+
+  /**
    * 检查并发送好友请求
    * 用于在用户完成信息填写或AI训练后触发好友请求
    */
-  checkAndSendFriendRequest: function(sendAgain) {
+  checkAndSendFriendRequest: function() {
     // 获取sharedUserId，优先从全局变量获取，其次从本地缓存
     const sharedUserId = this.globalData.sharedUserId || wx.getStorageSync('sharedUserId');
     if (!sharedUserId) {
@@ -545,19 +568,20 @@ App({
     this.request({
       url: '/api/ai-avatars/is_trained',
       method: 'GET',
-      success: (res) => {
+      success: async (res) => {
         if (res.success && res.data && res.data.status === 'active') {
-          if(sendAgain){
-            that.sendAutoFriendRequest(sharedUserId);
-            return
-          }
-          // 检查是否已发送过好友请求
-          const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${sharedUserId}`);
-          if (!hasSentRequest) {
-            console.log('AI训练已完成，准备发送好友请求');
+          console.log('AI训练已完成，检查好友关系');
+          
+          // 检查是否为好友关系
+          const isFriend = await that.checkFriendshipStatus(sharedUserId);
+          if (!isFriend) {
+            console.log('不是好友关系，准备发送好友请求');
             that.sendAutoFriendRequest(sharedUserId);
           } else {
-            console.log('已发送过好友请求，不重复发送');
+            console.log('已是好友关系，不发送好友请求');
+            // 清除临时存储的分享者ID
+            wx.removeStorageSync('sharedUserId');
+            that.globalData.sharedUserId = null;
           }
         } else {
           console.log('AI训练未完成，不发送好友请求');

@@ -22,33 +22,36 @@ Page({
   /**
    * 检查好友关系状态
    */
-  checkFriendshipStatus: function(targetUserId) {
-    if (!targetUserId) return;
+  // checkFriendshipStatus: function(targetUserId) {
+  //   if (!targetUserId) return Promise.resolve(false);
     
-    const app = getApp();
-    this.setData({ isCheckingFriendship: true });
+  //   const app = getApp();
+  //   this.setData({ isCheckingFriendship: true });
     
-    // 调用后端接口检查好友关系
-    app.request({
-      url: `/api/friendships/check/${targetUserId}`,
-      method: 'GET',
-      allowAnonymous: true, // 允许匿名访问
-      success: (res) => {
-        if (res.success && res.data.is_friend) {
-          return true;
-        } else {
-          return false;
-        }
-      },
-      fail: (error) => {
-        console.error('检查好友关系失败:', error);
-        this.setData({ isFriend: false });
-      },
-      complete: () => {
-        this.setData({ isCheckingFriendship: false });
-      }
-    });
-  },
+  //   // 返回Promise，以便正确处理异步结果
+  //   return new Promise((resolve) => {
+  //     // 调用后端接口检查好友关系
+  //     app.request({
+  //       url: `/api/friendships/check/${targetUserId}`,
+  //       method: 'GET',
+  //       allowAnonymous: true, // 允许匿名访问
+  //       success: (res) => {
+  //         const isFriend = res.success && res.data.is_friend;
+  //         console.log('检查好友关系结果:', isFriend);
+  //         this.setData({ isFriend });
+  //         resolve(isFriend);
+  //       },
+  //       fail: (error) => {
+  //         console.error('检查好友关系失败:', error);
+  //         this.setData({ isFriend: false });
+  //         resolve(false);
+  //       },
+  //       complete: () => {
+  //         this.setData({ isCheckingFriendship: false });
+  //       }
+  //     });
+  //   });
+  // },
 
   /**
    * 生命周期函数--监听页面加载
@@ -101,15 +104,8 @@ Page({
           wx.setStorageSync('sharedUserId', targetUserId);
           app.globalData.sharedUserId = targetUserId;
           console.log('sharedUserId:', targetUserId);
-          const hasSentRequest = wx.getStorageSync(`sentFriendRequest_${targetUserId}`);
           // 如果是通过分享进入页面并且是分享者自己的名片时 ，且用户不是好友关系，则触发自动发送好友请求
-          if(!this.checkFriendshipStatus(targetUserId) && !hasSentRequest){
-            console.log('不是好友关系，触发自动发送好友请求');
-            app.checkAndSendFriendRequest();
-          }else if(!this.checkFriendshipStatus(targetUserId) && hasSentRequest){
-            app.checkAndSendFriendRequest(true);
-            console.log('不是好友关系，但是已发送过好友请求，触发重新发送好友请求');
-          }
+          app.checkAndSendFriendRequest();
         }
     }
 
@@ -488,6 +484,138 @@ Page({
   },
 
   /**
+   * 添加好友方法 - 封装腾讯云IM添加好友逻辑
+   */
+  addFriend: function(targetUser, message) {
+    const app = getApp();
+    
+    // 添加双向好友
+    console.log('=== 开始发送好友请求 ===');
+    console.log('发送方用户ID:', wx.$chat_userID);
+    console.log('接收方用户ID:', targetUser.userID);
+    console.log('目标用户对象:', targetUser);
+    console.log('当前用户信息:', app.globalData.userInfo);
+    
+    // 检查腾讯云IM常量值
+    console.log('=== 腾讯云IM好友类型常量 ===');
+    console.log('SNS_ADD_TYPE_SINGLE:', TencentCloudChat.TYPES.SNS_ADD_TYPE_SINGLE);
+    console.log('SNS_ADD_TYPE_BOTH:', TencentCloudChat.TYPES.SNS_ADD_TYPE_BOTH);
+    console.log('SNS_ADD_TYPE_FOLLOW:', TencentCloudChat.TYPES.SNS_ADD_TYPE_FOLLOW);
+    
+    // 添加双向好友
+    wx.$TUIKit.addFriend({
+      to: targetUser.userID,
+      source: 'AddSource_Type_Web',
+      remark: '',
+      wording: message, // 使用打招呼消息作为验证消息
+      type: TencentCloudChat.TYPES.SNS_ADD_TYPE_BOTH, // 双向好友，需要对方确认
+      addWording: message
+    }).then(res => {
+      console.log('=== TUIKit添加好友成功 ===');
+      console.log('完整响应:', JSON.stringify(res, null, 2));
+      
+      // 检查响应中的关键信息
+      if (res.data) {
+        console.log('响应数据:', res.data);
+        console.log('好友请求状态:', res.data.code);
+        if (res.data.code === 0) {
+          console.log('✅ 好友请求已成功发送到腾讯云IM服务器');
+          console.log('目标用户:', targetUser.userID, '设置了允许任何人添加自己为好友');
+          
+          // 立即检查好友申请状态
+          setTimeout(() => {
+            console.log('=== 检查好友申请状态 ===');
+            // 异步函数处理好友申请列表获取
+            const getFriendApplications = async () => {
+              try {
+                let appResponse;
+                if (typeof wx.$TUIKit.getFriendApplicationList === 'function') {
+                  // SDK v3 或兼容版本
+                  appResponse = await wx.$TUIKit.getFriendApplicationList();
+                } else if (typeof wx.$TUIKit.getFriendList === 'function') {
+                  // SDK v4 或其他版本，尝试使用 getFriendList 作为替代
+                  console.log('⚠️ getFriendApplicationList 方法不存在，尝试使用 getFriendList 替代');
+                  appResponse = await wx.$TUIKit.getFriendList();
+                } else {
+                  // 无可用API，返回空列表
+                  console.log('⚠️ 无可用的好友申请列表API');
+                  return;
+                }
+                console.log('发送方的好友申请列表:', JSON.stringify(appResponse, null, 2));
+              } catch (err) {
+                console.error('获取发送方好友申请失败:', err);
+              }
+            };
+            // 调用异步函数
+            getFriendApplications();
+          }, 1000);
+          
+          // 显示成功提示
+          this.showToast('好友请求已发送');
+        } else if (res.data.code === 30539) {
+          console.log('⚠️ 目标用户设置了需要经过自己确认对方才能添加自己为好友');
+          this.showToast('好友请求已发送，等待对方确认');
+        } else {
+          console.log('⚠️ 其他响应码:', res.data.code, res.data.message);
+          this.showToast(`操作失败: ${res.data.message || '未知错误'}`);
+        }
+      }
+      
+      wx.hideLoading();
+      
+      // 关闭弹窗
+      this.closeChatModal();
+      
+      // 跳转到聊天页面
+      setTimeout(() => {
+        wx.navigateTo({
+          url: `/pages/chat/chat?userId=${targetUser.userID}&userName=${encodeURIComponent(targetUser.name)}`
+        });
+      }, 1000);
+      
+    }).catch(err => {
+      console.error('=== TUIKit添加好友失败 ===');
+      console.error('完整错误信息:', JSON.stringify(err, null, 2));
+      console.error('错误码:', err.code);
+      console.error('错误消息:', err.message);
+      console.error('错误类型:', typeof err);
+      
+      wx.hideLoading();
+      
+      // 处理特定错误码
+      if (err.code === 10009) {
+        console.log('✅ 已经是好友关系');
+        this.showToast('已经是好友关系');
+        // 已经是好友，直接跳转到聊天页面
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/chat/chat?userId=${targetUser.userID}&userName=${encodeURIComponent(targetUser.name)}`
+          });
+        }, 1000);
+      } else if (err.code === 10010) {
+        console.log('⏰ 好友申请已发送，等待对方同意');
+        this.showToast('好友申请已发送，请等待对方同意');
+        this.closeChatModal();
+      } else if (err.code === 20009) {
+        console.log('❌ 非好友无法发送消息，需要先加好友');
+        this.showToast('需要先添加好友才能发送消息');
+      } else if (err.code === 30001) {
+        console.log('❌ 服务器内部错误');
+        this.showToast('服务器错误，请稍后重试');
+      } else if (err.code === 50001) {
+        console.log('❌ 网络连接失败');
+        this.showToast('网络连接失败，请检查网络');
+      } else {
+        console.log('❌ 其他错误:', err.message);
+        this.showToast(`添加好友失败: ${err.message || '未知错误'}`);
+        
+        // 尝试通过后端API发送好友请求（备用方案）
+        this.sendFriendRequestViaBackend(targetUser, message);
+      }
+    });
+  },
+
+  /**
    * 发送打招呼消息
    */
   sendGreeting: function() {
@@ -561,130 +689,8 @@ Page({
       return;
     }
     
-    // 调用腾讯云IM添加好友API
-    console.log('=== 开始发送好友请求 ===');
-    console.log('发送方用户ID:', wx.$chat_userID);
-    console.log('接收方用户ID:', targetUser.userID);
-    console.log('目标用户对象:', targetUser);
-    console.log('当前用户信息:', app.globalData.userInfo);
-    
-    // 检查腾讯云IM常量值
-    console.log('=== 腾讯云IM好友类型常量 ===');
-    console.log('SNS_ADD_TYPE_SINGLE:', TencentCloudChat.TYPES.SNS_ADD_TYPE_SINGLE);
-    console.log('SNS_ADD_TYPE_BOTH:', TencentCloudChat.TYPES.SNS_ADD_TYPE_BOTH);
-    console.log('SNS_ADD_TYPE_FOLLOW:', TencentCloudChat.TYPES.SNS_ADD_TYPE_FOLLOW);
-    
-    // 添加双向好友
-    wx.$TUIKit.addFriend({
-      to: targetUser.userID,
-      source: 'AddSource_Type_Web',
-      remark: '',
-      wording: message, // 使用打招呼消息作为验证消息
-      type: TencentCloudChat.TYPES.SNS_ADD_TYPE_BOTH, // 双向好友，需要对方确认
-      addWording: message
-    }).then(res => {
-      console.log('=== TUIKit添加好友成功 ===');
-      console.log('完整响应:', JSON.stringify(res, null, 2));
-      
-      // 检查响应中的关键信息
-      if (res.data) {
-        console.log('响应数据:', res.data);
-        if (res.data.code === 0) {
-          console.log('✅ 好友请求已成功发送到腾讯云IM服务器');
-          console.log('目标用户:', targetUser.userID, '应该能在待联系列表中看到此请求');
-          
-          // 立即检查好友申请状态
-          setTimeout(() => {
-            console.log('=== 检查好友申请状态 ===');
-            // 异步函数处理好友申请列表获取
-            const getFriendApplications = async () => {
-              try {
-                let appResponse;
-                if (typeof wx.$TUIKit.getFriendApplicationList === 'function') {
-                  // SDK v3 或兼容版本
-                  appResponse = await wx.$TUIKit.getFriendApplicationList();
-                } else if (typeof wx.$TUIKit.getFriendList === 'function') {
-                  // SDK v4 或其他版本，尝试使用 getFriendList 作为替代
-                  console.log('⚠️ getFriendApplicationList 方法不存在，尝试使用 getFriendList 替代');
-                  appResponse = await wx.$TUIKit.getFriendList();
-                } else {
-                  // 无可用API，返回空列表
-                  console.log('⚠️ 无可用的好友申请列表API');
-                  return;
-                }
-                console.log('发送方的好友申请列表:', JSON.stringify(appResponse, null, 2));
-              } catch (err) {
-                console.error('获取发送方好友申请失败:', err);
-              }
-            };
-            // 调用异步函数
-            getFriendApplications();
-          }, 1000);
-          
-        } else if (res.data.code === 30539) {
-          console.log('⚠️ 好友申请已存在，无需重复申请');
-          this.showToast('好友申请已存在，无需重复申请');
-        } else {
-          console.log('⚠️ 其他响应码:', res.data.code, res.data.message);
-          this.showToast(`操作失败: ${res.data.message || '未知错误'}`);
-        }
-      }
-      
-      wx.hideLoading();
-      
-      // 关闭弹窗
-      this.closeChatModal();
-      
-      // 显示成功提示
-      this.showToast('好友请求已发送');
-      
-      // 跳转到聊天页面
-      setTimeout(() => {
-        wx.navigateTo({
-          url: `/pages/chat/chat?userId=${targetUser.userID}&userName=${encodeURIComponent(targetUser.name)}`
-        });
-      }, 1000);
-      
-    }).catch(err => {
-      console.error('=== TUIKit添加好友失败 ===');
-      console.error('完整错误信息:', JSON.stringify(err, null, 2));
-      console.error('错误码:', err.code);
-      console.error('错误消息:', err.message);
-      console.error('错误类型:', typeof err);
-      
-      wx.hideLoading();
-      
-      // 处理特定错误码
-      if (err.code === 10009) {
-        console.log('✅ 已经是好友关系');
-        this.showToast('已经是好友关系');
-        // 已经是好友，直接跳转到聊天页面
-        setTimeout(() => {
-          wx.navigateTo({
-            url: `/pages/chat/chat?userId=${targetUser.userID}&userName=${encodeURIComponent(targetUser.name)}`
-          });
-        }, 1000);
-      } else if (err.code === 10010) {
-        console.log('⏰ 好友申请已发送，等待对方同意');
-        this.showToast('好友申请已发送，请等待对方同意');
-        this.closeChatModal();
-      } else if (err.code === 20009) {
-        console.log('❌ 非好友无法发送消息，需要先加好友');
-        this.showToast('需要先添加好友才能发送消息');
-      } else if (err.code === 30001) {
-        console.log('❌ 服务器内部错误');
-        this.showToast('服务器错误，请稍后重试');
-      } else if (err.code === 50001) {
-        console.log('❌ 网络连接失败');
-        this.showToast('网络连接失败，请检查网络');
-      } else {
-        console.log('❌ 其他错误:', err.message);
-        this.showToast(`添加好友失败: ${err.message || '未知错误'}`);
-        
-        // 尝试通过后端API发送好友请求（备用方案）
-        this.sendFriendRequestViaBackend(targetUser, message);
-      }
-    });
+    // 调用封装的addFriend方法
+    this.addFriend(targetUser, message);
   },
 
   /**
