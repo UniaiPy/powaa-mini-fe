@@ -287,7 +287,7 @@ Page({
    */
   fetchMatchDegree: function(userId, targetUserId, cacheKey) {
     const app = getApp();
-    const baseUrl = 'http://ai.powaa.cn';
+    const baseUrl = 'https://ai.powaa.cn';
     const url = `${baseUrl}/ai/match/compare`;
     
     const requestData = {

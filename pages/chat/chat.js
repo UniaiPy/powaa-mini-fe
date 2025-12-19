@@ -885,7 +885,7 @@ Page({
           // 重新检查TUIKit状态
           this.checkTUIKitStatus();
         }).catch((error) => {
-          console.error('❌ 重新登录失败:', error);
+          console.log('❌ 重新登录失败:', error);
           
           // 检查错误是否表示账号被踢出
           if (error && (error.message && error.message.includes('KICKED_OUT') || 

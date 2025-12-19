@@ -343,7 +343,7 @@ class IMManager {
       
       return Promise.resolve();
     } catch (error) {
-      console.error('❌ 重新登录失败:', error);
+      console.log('❌ 重新登录失败:', error);
       this._notifyListeners('RELOGIN_ERROR', error);
       throw error;
     }

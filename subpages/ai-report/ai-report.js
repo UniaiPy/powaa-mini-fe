@@ -52,7 +52,7 @@ Page({
   fetchAIReportData: function() {
     const that = this;
     const app = getApp();
-    const baseUrl = 'http://ai.powaa.cn';
+    const baseUrl = 'https://ai.powaa.cn';
     const url = `${baseUrl}/ai/profile/report/get`;
     wx.showLoading({
       title: '加载报告中...',
