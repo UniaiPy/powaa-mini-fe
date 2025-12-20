@@ -724,16 +724,15 @@ App({
             ctx.font = '30px sans-serif';
             ctx.textAlign = 'center';
             
-            // 截取简介内容（限制20个字符）
+            // 获取简介内容，不限制字符数
             const description = targetUserInfo.description || '';
-            const truncatedDesc = description.length > 20 ? description.substring(0, 20) + '...' : description;
             
             // 绘制多行文本 - 固定最大宽度，自动换行并居中
             const lines = [];
             const maxWidth = 400; // 固定最大宽度400像素，两侧各留100像素边距
             
             // 首先按照原始换行符分割文本
-            const originalLines = truncatedDesc.split('\n');
+            const originalLines = description.split('\n');
             
             originalLines.forEach(originalLine => {
               // 处理空行，保留原始换行
@@ -744,16 +743,46 @@ App({
               
               let currentLine = '';
               
-              // 逐字符处理，确保文本超出宽度时换行
+              // 标记当前行是否已经超出宽度限制
+              let lineExceeded = false;
+              
+              // 逐字符处理，确保文本超出宽度时添加省略号
               for (let i = 0; i < originalLine.length; i++) {
+                if (lineExceeded) {
+                  // 如果当前行已经超出宽度，跳过剩余所有字符
+                  break;
+                }
+                
                 const char = originalLine[i];
                 const testLine = currentLine + char;
                 const lineWidth = ctx.measureText(testLine).width;
                 
                 if (lineWidth > maxWidth && currentLine !== '') {
-                  // 当前行宽度超过限制，保存当前行并开始新行
-                  lines.push(currentLine);
-                  currentLine = char;
+                  // 当前行宽度超过限制，保存当前行并添加省略号
+                  const ellipsis = '...';
+                  let lineWithEllipsis = currentLine + ellipsis;
+                  let lineWithEllipsisWidth = ctx.measureText(lineWithEllipsis).width;
+                  
+                  // 确保添加省略号后不超过最大宽度
+                  if (lineWithEllipsisWidth <= maxWidth) {
+                    lines.push(lineWithEllipsis);
+                  } else {
+                    // 如果添加省略号后还是超过宽度，适当减少字符数
+                    let adjustedLine = currentLine.slice(0, -1) + ellipsis;
+                    let adjustedLineWidth = ctx.measureText(adjustedLine).width;
+                    
+                    // 如果还是超过宽度，继续减少字符数
+                    while (adjustedLineWidth > maxWidth && adjustedLine.length > 3) {
+                      adjustedLine = adjustedLine.slice(0, -4) + ellipsis; // 移除最后一个字符和省略号，再加新的省略号
+                      adjustedLineWidth = ctx.measureText(adjustedLine).width;
+                    }
+                    
+                    lines.push(adjustedLine);
+                  }
+                  
+                  // 标记当前行已经超出宽度，跳过剩余字符
+                  lineExceeded = true;
+                  currentLine = '';
                 } else {
                   // 当前行宽度未超过限制，继续添加字符
                   currentLine = testLine;
