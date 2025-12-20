@@ -283,34 +283,28 @@ Page({
   
   /**
    * 获取匹配度分析结果
-   * 实现SSE流式响应，每次只解析新增的数据块并逐步更新内容
+   * 通过后端接口获取AI匹配度分析数据
    */
   fetchMatchDegree: function(userId, targetUserId, cacheKey) {
     const app = getApp();
-    const baseUrl = 'https://ai.powaa.cn';
-    const url = `${baseUrl}/ai/match/compare`;
     
     const requestData = {
       userId: userId,
       targetUserId: targetUserId
     };
     
-    wx.request({
+    app.request({
       timeout: 100000,
       responseType: 'text',
-      url: url,
+      url: '/api/users/match/compare', // 后端接口会自动请求AI匹配接口
       method: 'POST',
       data: requestData,
-      header: {
-        'content-type': 'application/json',
-        'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : ''
-      },
       success: (res) => {
         this.setData({ isLoadingMatchDegree: false });
         try {
           // 处理完整的响应数据
           let accumulatedContent = '';
-          accumulatedContent=res.data;
+          accumulatedContent = res || ''; // app.request返回的res就是响应数据（文本内容）
           console.log('accumulatedContent', accumulatedContent)
           // 更新页面内容
           if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
