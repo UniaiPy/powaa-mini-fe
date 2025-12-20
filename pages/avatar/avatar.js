@@ -2302,15 +2302,25 @@ Page({
    * 选择模型
    */
   selectModel(e) {
-    const modelName = e.currentTarget.dataset.model;
-    this.setData({
-      selectedModel: modelName,
-      showModelMenu: false
-    });
-    console.log('选择了模型:', modelName);
+    // const modelName = e.currentTarget.dataset.model;
+    // this.setData({
+    //   selectedModel: modelName,
+    //   showModelMenu: false
+    // });
+    // console.log('选择了模型:', modelName);
     
-    // 调用接口修改模型
-    this.setModel(modelName);
+    // // 调用接口修改模型
+    // this.setModel(modelName);
+
+    //默认选择第一个模型，点击其他模型时toast提示用户暂未开放模型自定义
+    if (e.currentTarget.dataset.model != this.data.selectedModel) {
+      wx.showToast({
+        title: '暂未开放模型自定义',
+        icon: 'none',
+        duration: 1500
+      });
+    }
+    
   },
   
   /**

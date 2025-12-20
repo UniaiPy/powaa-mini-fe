@@ -415,6 +415,10 @@ Page({
             id: userInfo.id || userInfo.name
           }
         });
+        setTimeout(() => {
+          // 生成并保存分享图
+          app.generateAndSaveShareImage(this.data.chatInfo, this.data.chatInfo.avatar);
+        }, 300);
       }
       
       // 初始化IM并加载历史消息
@@ -3471,25 +3475,23 @@ Page({
       if (userProfile.code === 0 && userProfile.data && userProfile.data.length > 0) {
         const profile = userProfile.data[0];
         const nickname = profile.nick || profile.userID; // 优先显示昵称，没有则显示userID
-        
+        console.log('profile:', profile);
         // 处理头像URL
         const processedAvatar = this.processAvatarUrl(profile.avatar, userID);
-        
         // 更新聊天对象信息
         this.setData({
           chatInfo: {
             ...this.data.chatInfo,
             name: nickname,
             nickname: profile.nick || '',
-            avatar: processedAvatar
+            avatar: processedAvatar,
+            description: profile.selfSignature || ''
           }
         });
-
         // 更新页面标题
         wx.setNavigationBarTitle({
           title: nickname,
         });
-
         console.log('用户资料更新成功:', nickname);
       } else {
         console.warn('获取用户资料失败:', userProfile);
@@ -3572,25 +3574,27 @@ Page({
     });
   },
   onShareAppMessage() {
+    const app = getApp();
     const { chatInfo } = this.data
     console.log('chatInfo:', chatInfo)
     const userId = chatInfo.id || chatInfo.name
     return {
       title: `${chatInfo.nickname || '用户'}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}&shareElseCard=true`,
-      // 使用用户头像作为分享图片，若不存在则使用默认图片
-      imageUrl: chatInfo.avatar || '/images/ai.png'
+      // 使用生成的分享图作为分享图片
+      imageUrl: app.getShareImage(userId) || chatInfo.avatar || '/images/ai.png'
     }
   },
   onShareTimeline() {
+    const app = getApp();
     const { chatInfo } = this.data
     console.log('chatInfo:', chatInfo)
     const userId = chatInfo.id || chatInfo.name
     return {
       title: `${chatInfo.nickname || '用户'}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}&shareElseCard=true`,
-      // 使用用户头像作为分享图片，若不存在则使用默认图片
-      imageUrl: chatInfo.avatar || '/images/ai.png'
+      // 使用生成的分享图作为分享图片
+      imageUrl: app.getShareImage(userId) || chatInfo.avatar || '/images/ai.png'
     }
   }
 })
