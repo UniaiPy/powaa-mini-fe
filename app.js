@@ -13,7 +13,10 @@ App({
     userID: null,
     userSig: null,
     SDKAppID: null,
-    isTUIKitInitialized: false
+    isTUIKitInitialized: false,
+    // 分享图相关配置
+    shareImage: {}, // 存储分享图，key为userId
+    sharedUserId: null // 分享者ID
   },
 
   onLaunch: function () {
@@ -590,6 +593,283 @@ App({
       fail: (error) => {
         console.error('获取AI训练状态失败:', error);
       }
+    });
+  },
+
+  /**
+   * 获取分享图
+   * @param {string} userId - 用户ID，可选，默认当前登录用户
+   * @returns {string|null} 返回分享图临时文件路径，不存在则返回null
+   */
+  getShareImage: function(userId = null) {
+    // 如果没有提供userId，使用当前登录用户ID
+    const targetUserId = userId || this.globalData.userInfo?.id;
+    if (!targetUserId) {
+      console.log('获取分享图失败：缺少用户ID');
+      return null;
+    }
+    
+    // 优先从全局数据获取
+    if (this.globalData.shareImage && this.globalData.shareImage[targetUserId]) {
+      const shareImageData = this.globalData.shareImage[targetUserId];
+      // 检查分享图是否过期（7天过期）
+      const isExpired = Date.now() - shareImageData.timestamp > 7 * 24 * 60 * 60 * 1000;
+      if (!isExpired) {
+        console.log('从全局数据获取分享图', shareImageData.tempFilePath);
+        return shareImageData.tempFilePath;
+      }
+    }
+    
+    // 从本地存储获取
+    try {
+      const shareImageData = wx.getStorageSync('shareImage_' + targetUserId);
+      console.log('从本地存储获取分享图数据:', 'shareImage_' + targetUserId);
+      if (shareImageData) {
+        // 检查分享图是否过期（7天过期）
+        const isExpired = Date.now() - shareImageData.timestamp > 7 * 24 * 60 * 60 * 1000;
+        if (!isExpired) {
+          console.log('从本地存储获取分享图');
+          // 更新全局数据
+          if (!this.globalData.shareImage) {
+            this.globalData.shareImage = {};
+          }
+          this.globalData.shareImage[targetUserId] = shareImageData;
+          return shareImageData.tempFilePath;
+        }
+      }
+    } catch (error) {
+      console.log('从本地存储获取分享图失败:', error);
+    }
+    
+    console.log('未找到有效的分享图');
+    return null;
+  },
+
+  /**
+   * 绘制分享图片
+   * @param {Object} userInfo - 可选，要绘制的用户信息
+   * @param {string} avatarUrl - 可选，要绘制的用户头像URL
+   * @returns {Promise<string>} 返回绘制好的图片临时文件路径
+   */
+  drawShareImage(userInfo = null, avatarUrl = null) {
+    return new Promise((resolve, reject) => {
+      const query = wx.createSelectorQuery();
+      query.select('#shareCanvas')
+        .fields({ node: true, size: true })
+        .exec(async (res) => {
+          try {
+            const canvas = res[0].node;
+            const ctx = canvas.getContext('2d');
+            
+            // 设置Canvas尺寸
+            const dpr = wx.getSystemInfoSync().pixelRatio;
+            const canvasWidth = 600;
+            const canvasHeight = 600;
+            canvas.width = canvasWidth * dpr;
+            canvas.height = canvasHeight * dpr;
+            ctx.scale(dpr, dpr);
+            
+            // 1. 绘制背景
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // 2. 绘制用户头像
+            const avatarSize = 230;
+            const avatarX = (canvasWidth - avatarSize) / 2;
+            const avatarY = 20;
+            
+            // 使用传入的用户信息或当前登录用户信息
+            const targetUserInfo = userInfo || this.globalData.userInfo;
+            const targetAvatarUrl = avatarUrl || targetUserInfo.avatarUrl;
+            console.log('targetUserInfo2:', targetUserInfo);
+            console.log('targetAvatarUrl2:', targetAvatarUrl);
+            // 加载并绘制用户头像
+            await new Promise((imgResolve, imgReject) => {
+              const avatarImg = canvas.createImage();
+              avatarImg.onload = () => {
+                // 绘制圆形头像
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, 2 * Math.PI);
+                ctx.clip();
+                ctx.drawImage(avatarImg, avatarX, avatarY, avatarSize, avatarSize);
+                ctx.restore();
+                imgResolve();
+              };
+              avatarImg.onerror = () => {
+                imgReject(new Error('头像加载失败'));
+              };
+              avatarImg.src = targetAvatarUrl || '/images/ai.png';
+            });
+            
+            // 3. 绘制用户名和AI分身标识
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 36px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(targetUserInfo.name || '用户', canvasWidth / 2, 300);
+            
+            // 绘制 · AI分身（换行）
+            ctx.fillStyle = '#666666';
+            ctx.font = '30px sans-serif';
+            ctx.fillText('AI分身', canvasWidth / 2, 345);
+            
+            // 绘制绿色在线状态点（换行）
+            ctx.beginPath();
+            ctx.arc(canvasWidth / 2 + 60, 340, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#4CAF50';
+            ctx.fill();
+            
+            // 4. 绘制用户简介
+            ctx.fillStyle = '#999999';
+            ctx.font = '30px sans-serif';
+            ctx.textAlign = 'center';
+            
+            // 截取简介内容（限制20个字符）
+            const description = targetUserInfo.description || '';
+            const truncatedDesc = description.length > 20 ? description.substring(0, 20) + '...' : description;
+            
+            // 绘制多行文本 - 固定最大宽度，自动换行并居中
+            const lines = [];
+            const maxWidth = 400; // 固定最大宽度400像素，两侧各留100像素边距
+            
+            // 首先按照原始换行符分割文本
+            const originalLines = truncatedDesc.split('\n');
+            
+            originalLines.forEach(originalLine => {
+              // 处理空行，保留原始换行
+              if (originalLine === '') {
+                lines.push('');
+                return;
+              }
+              
+              let currentLine = '';
+              
+              // 逐字符处理，确保文本超出宽度时换行
+              for (let i = 0; i < originalLine.length; i++) {
+                const char = originalLine[i];
+                const testLine = currentLine + char;
+                const lineWidth = ctx.measureText(testLine).width;
+                
+                if (lineWidth > maxWidth && currentLine !== '') {
+                  // 当前行宽度超过限制，保存当前行并开始新行
+                  lines.push(currentLine);
+                  currentLine = char;
+                } else {
+                  // 当前行宽度未超过限制，继续添加字符
+                  currentLine = testLine;
+                }
+              }
+              
+              // 添加当前行（处理完成后确保添加最后一行）
+              if (currentLine) {
+                lines.push(currentLine);
+              }
+            });
+            
+            // 绘制多行文本 - 限制最多3行
+            const maxLines = 3;
+            const displayLines = lines.slice(0, maxLines);
+            
+            // 如果有超过3行的内容，在第三行末尾添加省略号
+            if (lines.length > maxLines && displayLines.length === maxLines) {
+              const lastLine = displayLines[displayLines.length - 1];
+              const ellipsis = '...';
+              const ellipsisWidth = ctx.measureText(ellipsis).width;
+              
+              // 检查添加省略号后是否超过最大宽度
+              if (ctx.measureText(lastLine + ellipsis).width <= maxWidth) {
+                // 直接添加省略号
+                displayLines[displayLines.length - 1] = lastLine + ellipsis;
+              } else {
+                // 需要截断最后一行以容纳省略号
+                let truncatedLine = lastLine;
+                while (ctx.measureText(truncatedLine + ellipsis).width > maxWidth && truncatedLine.length > 0) {
+                  truncatedLine = truncatedLine.slice(0, -1);
+                }
+                displayLines[displayLines.length - 1] = truncatedLine + ellipsis;
+              }
+            }
+            
+            displayLines.forEach((line, index) => {
+              // 确保文本居中
+              ctx.fillText(line, canvasWidth / 2, 390 + index * 35);
+            });
+            
+            // 5. 将Canvas转换为临时图片URL
+            wx.canvasToTempFilePath({
+              canvas: canvas,
+              width: canvasWidth,
+              height: canvasHeight,
+              destWidth: canvasWidth,
+              destHeight: canvasHeight,
+              success: (res) => {
+                resolve(res.tempFilePath);
+              },
+              fail: (error) => {
+                console.error('转换画布为图片失败:', error);
+                reject(error);
+              }
+            });
+          } catch (error) {
+            console.error('绘制分享图失败:', error);
+            reject(error);
+          }
+        });
+    });
+  },
+
+  /**
+   * 生成并保存分享图到本地
+   * @param {Object} userInfo - 可选，要生成分享图的用户信息
+   * @param {string} avatarUrl - 可选，要生成分享图的用户头像URL
+   * @returns {Promise<string>} 返回分享图临时文件路径
+   */
+  generateAndSaveShareImage(userInfo = null, avatarUrl = null) {
+    return new Promise((resolve, reject) => {
+      // 使用传入的用户信息或当前登录用户信息
+      const targetUserInfo = userInfo || this.globalData.userInfo;
+      const targetAvatarUrl = avatarUrl || targetUserInfo.avatar_url;
+      console.log('targetUserInfo:', targetUserInfo);
+      console.log('targetAvatarUrl:', targetAvatarUrl);
+      // 检查用户信息是否完整（仅当绘制当前用户时检查）
+      if (!userInfo && !this.checkUserInfoComplete({ redirect: false })) {
+        console.log('当前用户信息不完整，不生成分享图');
+        reject(new Error('当前用户信息不完整'));
+        return;
+      }
+      
+      console.log('开始生成分享图');
+      
+      this.drawShareImage(targetUserInfo, targetAvatarUrl)
+        .then((tempFilePath) => {
+          console.log('分享图绘制成功，临时文件路径:', tempFilePath);
+          console.log('targetUserInfo333:', targetUserInfo);
+          // 使用对应用户的ID作为缓存键
+          const userId = targetUserInfo.id || this.globalData.userInfo.id;
+          
+          // 保存到本地缓存
+          const shareImageData = {
+            tempFilePath: tempFilePath,
+            timestamp: Date.now(),
+            userId: userId
+          };
+          
+          // 保存到本地存储
+          wx.setStorageSync('shareImage_' + userId, shareImageData);
+          console.log('分享图已保存到本地缓存', 'shareImage_' + userId);
+          
+          // 更新全局数据
+          if (!this.globalData.shareImage) {
+            this.globalData.shareImage = {};
+          }
+          this.globalData.shareImage[userId] = shareImageData;
+          
+          resolve(tempFilePath);
+        })
+        .catch((error) => {
+          console.error('生成分享图失败:', error);
+          reject(error);
+        });
     });
   },
 })

@@ -305,4 +305,6 @@
       </view>
     </view>
   </view>
+  <!-- 分享图绘制画布 -->
+  <canvas type="2d" id="shareCanvas" style="width: 600px; height: 600px; position: absolute; left: -9999px;"></canvas>
 </view>

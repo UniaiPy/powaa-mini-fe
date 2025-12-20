@@ -140,6 +140,7 @@ Page({
       if (Object.keys(updateData).length > 0) {
         this.setData(updateData)
       }
+      
     }
 
     // 获取最新的用户名片数据
@@ -307,6 +308,7 @@ Page({
           if (Object.keys(updateData).length > 0) {
             this.setData(updateData)
           }
+          app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
         } else {
           // 处理后端返回的错误信息
           const errorMessage = res.message || res.error || '未知错误'
@@ -480,6 +482,9 @@ Page({
     
     // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
     // this.checkAndSendAutoFriendRequest()
+    
+    // 生成并保存分享图
+    app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
   },
   /**
    * 显示头像昵称编辑弹窗
@@ -617,6 +622,9 @@ Page({
               })
               // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
               this.checkAndSendAutoFriendRequest()
+              // 生成并保存分享图
+              const app = getApp();
+              app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
             } else {
               console.error('保存微信信息失败:', res)
               wx.showToast({
@@ -868,6 +876,9 @@ Page({
           })
           // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
           this.checkAndSendAutoFriendRequest()
+          
+          // 生成并保存分享图
+          app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
 
         } else {
           wx.showToast({
@@ -969,6 +980,10 @@ Page({
           
           // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
           this.checkAndSendAutoFriendRequest()
+          
+          // 生成并保存分享图
+          const app = getApp();
+          app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
         } else {
           wx.showToast({
             title: res.message || res.error || '保存失败',
@@ -1365,6 +1380,37 @@ Page({
     // 调用app级别的检查方法，该方法会检查所有条件（登录状态、信息完整性、AI训练状态等）
     app.checkAndSendFriendRequest()
   },
+
+
+
+
+
+  /**
+   * 测试分享图生成功能
+   */
+  testShareImageGeneration() {
+    console.log('开始测试分享图生成功能');
+    const app = getApp();
+    
+    // 直接调用生成方法，不检查信息完整性（用于测试）
+    app.drawShareImage()
+      .then((tempFilePath) => {
+        console.log('测试：分享图绘制成功，临时文件路径:', tempFilePath);
+        
+        // 显示预览
+        wx.previewImage({
+          urls: [tempFilePath],
+          current: tempFilePath
+        });
+      })
+      .catch((error) => {
+        console.error('测试：生成分享图失败:', error);
+        wx.showToast({
+          title: '测试：分享图生成失败',
+          icon: 'none'
+        });
+      });
+  },
   
 
 
@@ -1426,19 +1472,23 @@ Page({
   onShareAppMessage() {
     const app = getApp();
     const userId = app.globalData.userInfo.id;
+    // 获取生成的分享图，如果没有则使用默认头像
+    const shareImageUrl = app.getShareImage(userId) || this.data.avatarUrl || '/images/ai.png';
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: this.data.avatarUrl || '/images/ai.png'
+      imageUrl: shareImageUrl
     }
   },
   onShareTimeline() {
     const app = getApp();
     const userId = app.globalData.userInfo.id;
+    // 获取生成的分享图，如果没有则使用默认头像
+    const shareImageUrl = app.getShareImage(userId) || this.data.avatarUrl || '/images/ai.png';
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: this.data.avatarUrl || '/images/ai.png'
+      imageUrl: shareImageUrl
     }
   }
 })

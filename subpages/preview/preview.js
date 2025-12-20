@@ -851,6 +851,15 @@ Page({
           
           // 设置页面数据
           this.setData(updateData);
+          
+          // 生成并保存分享图
+          console.log('userInfo:', res.data.userInfo);
+          const newUserInfo={
+            ...res.data.userInfo,
+            id: res.data.id
+          }
+          console.log('avatar_url:', res.data.avatar_url);
+          app.generateAndSaveShareImage(newUserInfo, res.data.avatar_url);
         } else {
           this.showToast(res.message || '获取用户信息失败');
         }
@@ -885,18 +894,23 @@ Page({
    * 用户点击右上角分享
    */
   onShareAppMessage() {
-    console.log('shareElseCard:', this.data.shareElseCard)
+    const app = getApp();
+    console.log('分享图路径:', app.getShareImage(this.data.userId))
+    // 使用app.js中的drawShareImage方法生成分享图
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}&shareElseCard=${this.data.shareElseCard}`,
-      imageUrl: this.data.avatarUrl
+      imageUrl: app.getShareImage(this.data.userId) // 尝试使用缓存的分享图
     }
   },
   onShareTimeline() {
+    const app = getApp();
+    
+    // 使用app.js中的drawShareImage方法生成分享图
     return {
       title: `${this.data.userInfo.name}的AI名片`,
       path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}&shareElseCard=${this.data.shareElseCard}`,
-      imageUrl: this.data.avatarUrl
+      imageUrl: app.getShareImage(this.data.userId) // 尝试使用缓存的分享图
     }
   }
 })

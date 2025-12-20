@@ -7,7 +7,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f7f7f7;
+  background-color: #ffffff;
   position: relative;
 }
 
@@ -60,8 +60,8 @@
 .bottom-btns {
   position: fixed;
   bottom: 30px;
-  left: 10px;
-  right: 10px;
+  left: 20rpx;
+  right: 20rpx;
 }
 
 .bg-white {
@@ -121,6 +121,10 @@
 
 .text-gray-600 {
   color: #4b5563;
+}
+
+.overflow-auto-y {
+  overflow-y: auto;
 }
 
 .leading-relaxed {
