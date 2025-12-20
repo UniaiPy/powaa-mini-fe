@@ -138,7 +138,6 @@ App({
       nickname: user.nickname || '',
       phone_number: user.phone || '',
       description: user.intro || '',
-      avatar: user.avatar_url || '',
     }
     
     console.log('准备保存的用户信息:', safeUser)
