@@ -1108,8 +1108,8 @@ Page({
         messageInfo.imageUrl = message.payload.imageInfoArray?.[0]?.url || 
                                message.payload.url || 
                                message.payload.imageUrl || '';
-        console.log('获取的图片URL:', messageInfo.imageUrl);
-        console.log('完整消息对象:', JSON.stringify(messageInfo, null, 2));
+        // console.log('获取的图片URL:', messageInfo.imageUrl);
+        // console.log('完整消息对象:', JSON.stringify(messageInfo, null, 2));
         
         // 测试图片URL可访问性
         if (messageInfo.imageUrl) {

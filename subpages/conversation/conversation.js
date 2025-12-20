@@ -1006,8 +1006,8 @@ Page({
         messageInfo.imageUrl = message.payload.imageInfoArray?.[0]?.url || 
                                message.payload.url || 
                                message.payload.imageUrl || '';
-        console.log('获取的图片URL:', messageInfo.imageUrl);
-        console.log('完整消息对象:', JSON.stringify(messageInfo, null, 2));
+        // console.log('获取的图片URL:', messageInfo.imageUrl);
+        // console.log('完整消息对象:', JSON.stringify(messageInfo, null, 2));
         
         // 测试图片URL可访问性
         if (messageInfo.imageUrl) {
@@ -1071,7 +1071,7 @@ Page({
         messageInfo.messageType = 'custom';
         try {
           const customData = JSON.parse(message.payload.data || '{}');
-          console.log('=== 解析自定义消息内容 ===', customData);
+          // console.log('=== 解析自定义消息内容 ===', customData);
           
           // 处理AI下一问的流式消息
           if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
@@ -1080,7 +1080,7 @@ Page({
               messageInfo.content += chunk || '';
             }
             messageInfo.messageType = 'text'; // 标记为文本消息类型，便于显示
-            console.log('=== 提取到流式消息内容 ===', messageInfo.content);
+            // console.log('=== 提取到流式消息内容 ===', messageInfo.content);
           } else if (customData.businessID === 'user_defined_status') {
             // 处理其他类型的自定义消息
             messageInfo.content = customData.description || '[自定义消息]';

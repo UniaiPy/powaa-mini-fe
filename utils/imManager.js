@@ -431,8 +431,8 @@ class IMManager {
       return;
     }
     
-    console.log('🎧 开始设置IM事件监听...');
-    console.log('可用的EVENT常量:', Object.keys(wx.TencentCloudChat.EVENT));
+    // console.log('🎧 开始设置IM事件监听...');
+    // console.log('可用的EVENT常量:', Object.keys(wx.TencentCloudChat.EVENT));
     
     try {
       // 验证事件名称是否存在
