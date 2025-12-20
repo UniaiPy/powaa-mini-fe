@@ -52,180 +52,168 @@ Page({
   fetchAIReportData: function() {
     const that = this;
     const app = getApp();
-    const baseUrl = 'https://ai.powaa.cn';
-    const url = `${baseUrl}/ai/profile/report/get`;
     wx.showLoading({
       title: '加载报告中...',
     });
 
-    // 优先使用新的POST接口
-    const fetchNewReport = () => {
-      // 从全局用户信息获取userId
-      const userId = app.globalData.userInfo?.user_id || app.globalData.userInfo?.id;
-      
-      if (!userId) {
-        console.error('用户ID获取失败');
-        // 如果没有userId，直接调用旧接口
-        fetchOldReport();
-        return;
+    // 通过后端接口获取AI报告数据
+    app.request({
+      url: '/api/ai-avatars/report', // 后端接口会自动请求AI报告接口
+      method: 'POST',
+      success: function(res) {
+        console.log('AI报告接口获取成功:', res);
+        
+        // 转换新接口返回的数据格式以适配现有页面
+        const personalityTraitsData = res.personalityTraits || {};
+        const aiReportText = res.aiReport || '';
+        
+        // 定义特质名称映射
+        const traitNameMapping = {
+          'extraversion': '外向性',
+          'openness': '开放性',
+          'conscientiousness': '尽责性',
+          'agreeableness': '宜人性',
+          'emotionalStability': '情绪稳定性',
+          'engagement': '投入度',
+          'quality': '优质性',
+          'resonance': '同频度',
+          'socialMotivation': '社交目的'
+        };
+        
+        // 按特定顺序组织特质
+        const orderedTraits = ['extraversion', 'openness', 'conscientiousness',
+                             'agreeableness', 'emotionalStability', 'engagement',
+                             'quality', 'resonance', 'socialMotivation'];
+        
+        // 构建前端所需的personality_traits和personality_scores
+        const personality_traits = [];
+        const personality_scores = [];
+        const personality_labels = [];
+        
+        for (const traitKey of orderedTraits) {
+              if (traitKey in personalityTraitsData) {
+                  const traitData = personalityTraitsData[traitKey];
+                  const traitScore = typeof traitData === 'number' ? traitData : (traitData?.score || 50);
+                  const traitDesc = typeof traitData === 'object' ? (traitData?.description || 'AI分析中...') : 'AI分析中...';
+                  const traitName = traitNameMapping[traitKey] || traitKey;
+                  
+                  personality_traits.push({
+                      'name': traitName,
+                      'description': traitDesc,
+                      'score': traitScore
+                  });
+                  personality_scores.push(traitScore);
+                  personality_labels.push(traitName);
+              } else {
+                  // 如果某个特质缺失，使用默认值
+                  const traitName = traitNameMapping[traitKey] || traitKey;
+                  personality_traits.push({
+                      'name': traitName,
+                      'description': 'AI分析中...',
+                      'score': 50
+                  });
+                  personality_scores.push(50);
+                  personality_labels.push(traitName);
+              }
+          }
+        
+        // 构建analysis_sources
+        const analysis_sources = [
+            {'title': 'AI人格分析', 'description': aiReportText}
+        ];
+        
+        // 构建最终的formattedData
+        const formattedData = {
+            personality_labels: personality_labels,
+            personality_scores: personality_scores,
+            personality_traits: personality_traits,
+            report_summary: aiReportText || 'AI分析中...',
+            aiReport: aiReportText,
+            analysis_sources: analysis_sources
+        };
+        
+        that.setData({
+          reportData: formattedData,
+          reportTime: that.formatCurrentTime(),
+          isLoading: false,
+          reportSummary: formattedData.report_summary
+        });
+        
+        // 隐藏加载提示
+        wx.hideLoading();
+        
+        // 数据加载完成后初始化雷达图
+        that.initializeRadarChart();
+      },
+      fail: function(error) {
+        console.error('AI报告接口获取失败:', error);
+        that.handleReportError('获取报告数据失败');
+        wx.hideLoading();
       }
-
-      wx.request({
-        url: url, // 使用相对路径，app会自动拼接baseUrl
-        method: 'POST',
-        data: {
-          userId: userId
-        },
-        success: function(res) {
-          console.log('新AI报告接口获取成功:', res);
-          
-          // 转换新接口返回的数据格式以适配现有页面
-          const personalityTraitsData = res.data.personalityTraits || {};
-          const aiReportText = res.data.aiReport || '';
-          
-          // 定义特质名称映射
-          const traitNameMapping = {
-            'extraversion': '外向性',
-            'openness': '开放性',
-            'conscientiousness': '尽责性',
-            'agreeableness': '宜人性',
-            'emotionalStability': '情绪稳定性',
-            'engagement': '投入度',
-            'quality': '优质性',
-            'resonance': '同频度',
-            'socialMotivation': '社交目的'
-          };
-          
-          // 按特定顺序组织特质
-          const orderedTraits = ['extraversion', 'openness', 'conscientiousness',
-                               'agreeableness', 'emotionalStability', 'engagement',
-                               'quality', 'resonance', 'socialMotivation'];
-          
-          // 构建前端所需的personality_traits和personality_scores
-          const personality_traits = [];
-          const personality_scores = [];
-          const personality_labels = [];
-          
-          for (const traitKey of orderedTraits) {
-                if (traitKey in personalityTraitsData) {
-                    const traitData = personalityTraitsData[traitKey];
-                    const traitScore = typeof traitData === 'number' ? traitData : (traitData?.score || 50);
-                    const traitDesc = typeof traitData === 'object' ? (traitData?.description || 'AI分析中...') : 'AI分析中...';
-                    const traitName = traitNameMapping[traitKey] || traitKey;
-                    
-                    personality_traits.push({
-                        'name': traitName,
-                        'description': traitDesc,
-                        'score': traitScore
-                    });
-                    personality_scores.push(traitScore);
-                    personality_labels.push(traitName);
-                } else {
-                    // 如果某个特质缺失，使用默认值
-                    const traitName = traitNameMapping[traitKey] || traitKey;
-                    personality_traits.push({
-                        'name': traitName,
-                        'description': 'AI分析中...',
-                        'score': 50
-                    });
-                    personality_scores.push(50);
-                    personality_labels.push(traitName);
-                }
-            }
-          
-          // 构建analysis_sources
-          const analysis_sources = [
-              {'title': 'AI人格分析', 'description': aiReportText}
-          ];
-          
-          // 构建最终的formattedData
-          const formattedData = {
-              personality_labels: personality_labels,
-              personality_scores: personality_scores,
-              personality_traits: personality_traits,
-              report_summary: aiReportText || 'AI分析中...',
-              aiReport: aiReportText,
-              analysis_sources: analysis_sources
-          };
-          
-          that.setData({
-            reportData: formattedData,
-            reportTime: that.formatCurrentTime(),
-            isLoading: false,
-            reportSummary: formattedData.report_summary
-          });
-          
-          // 隐藏加载提示
-          wx.hideLoading();
-          
-          // 数据加载完成后初始化雷达图
-          that.initializeRadarChart();
-        },
-        fail: function(error) {
-          console.error('新AI报告接口获取失败:', error);
-          // 新接口失败，尝试调用旧接口
-          fetchOldReport();
-        }
-      });
-    };
-
-    // 调用原来的GET接口
-    const fetchOldReport = () => {
-      app.request({
-        url: '/api/ai-avatars/report', // 使用相对路径，app会自动拼接baseUrl
-        method: 'GET',
-        success: function(res) {
-          console.log('旧AI报告接口获取成功:', res);
-          that.setData({
-            reportData: res,
-            reportTime: res.reportTime || that.formatCurrentTime(),
-            isLoading: false,
-            reportSummary: res.report_summary || 'AI分析中...'
-          });
-          // 数据加载完成后初始化雷达图
-          that.initializeRadarChart();
-        },
-        fail: function(error) {
-          console.error('旧AI报告接口获取失败:', error);
-          that.handleReportError('获取报告数据失败');
-        },
-        complete: function() {
-          wx.hideLoading();
-        }
-      });
-    };
-
-    // 开始调用接口
-    fetchNewReport();
+    });
   },
 
   /**
    * 处理报告加载错误
    */
   handleReportError: function(errorMsg) {
+    // 使用与成功获取数据时相同的逻辑构建默认数据
+    // 定义特质名称映射
+    const traitNameMapping = {
+      'extraversion': '外向性',
+      'openness': '开放性',
+      'conscientiousness': '尽责性',
+      'agreeableness': '宜人性',
+      'emotionalStability': '情绪稳定性',
+      'engagement': '投入度',
+      'quality': '优质性',
+      'resonance': '同频度',
+      'socialMotivation': '社交目的'
+    };
+    
+    // 按特定顺序组织特质
+    const orderedTraits = ['extraversion', 'openness', 'conscientiousness',
+                         'agreeableness', 'emotionalStability', 'engagement',
+                         'quality', 'resonance', 'socialMotivation'];
+    
+    // 构建前端所需的personality_traits和personality_scores
+    const personality_traits = [];
+    const personality_scores = [];
+    const personality_labels = [];
+    
+    for (const traitKey of orderedTraits) {
+      // 使用默认值
+      const traitName = traitNameMapping[traitKey] || traitKey;
+      personality_traits.push({
+        'name': traitName,
+        'description': 'AI分析中...',
+        'score': 50
+      });
+      personality_scores.push(50);
+      personality_labels.push(traitName);
+    }
+    
+    // 构建analysis_sources
+    const analysis_sources = [
+      {'title': 'AI人格分析', 'description': '系统正在收集和分析您的AI分身数据'}
+    ];
+    
+    // 构建最终的formattedData，与成功获取数据时的格式保持一致
+    const formattedData = {
+      personality_labels: personality_labels,
+      personality_scores: personality_scores,
+      personality_traits: personality_traits,
+      report_summary: 'AI分析中...',
+      aiReport: '',
+      analysis_sources: analysis_sources
+    };
+    
     this.setData({
       error: errorMsg,
       isLoading: false,
       reportTime: this.formatCurrentTime(),
-      // 使用默认数据，确保页面能够显示，与后端格式保持一致
-      reportData: {
-        personality_labels: ['开放性', '尽责性', '外向性', '亲和性', '情绪稳定性', '参与度', '社交动机', '质量导向', '情感共鸣'],
-        personality_scores: [50, 50, 50, 50, 50, 50, 50, 50, 50],
-        personality_traits: [
-          {name: '开放性', description: 'AI分析中...', score: 50},
-          {name: '尽责性', description: 'AI分析中...', score: 50},
-          {name: '外向性', description: 'AI分析中...', score: 50},
-          {name: '亲和性', description: 'AI分析中...', score: 50},
-          {name: '情绪稳定性', description: 'AI分析中...', score: 50},
-          {name: '参与度', description: 'AI分析中...', score: 50},
-          {name: '社交动机', description: 'AI分析中...', score: 50},
-          {name: '质量导向', description: 'AI分析中...', score: 50},
-          {name: '情感共鸣', description: 'AI分析中...', score: 50}
-        ],
-        analysis_sources: [
-          {title: '分析处理中', description: '系统正在收集和分析您的AI分身数据'}
-        ]
-      }
+      reportData: formattedData,
+      reportSummary: formattedData.report_summary
     });
     // 仍然尝试绘制雷达图，使用默认数据
     this.initializeRadarChart();
