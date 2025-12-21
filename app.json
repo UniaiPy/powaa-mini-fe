@@ -52,9 +52,12 @@
   },
   "sitemapLocation": "sitemap.json",
   "renderer": "webview",
-  "requiredPrivateInfos": ["chooseLocation"],
+  "requiredPrivateInfos": ["chooseLocation","getFuzzyLocation"],
   "permission": {
     "scope.userLocation": {
+      "desc": "您的位置信息将用于选择地点"
+    },
+    "scope.userFuzzyLocation": {
       "desc": "您的位置信息将用于选择地点"
     }
   },

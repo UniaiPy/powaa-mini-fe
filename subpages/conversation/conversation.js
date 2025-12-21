@@ -2676,19 +2676,24 @@ Page({
           return;
         }
       }
-      
-      // console.log('开始调用 wx.getLocation 获取当前位置');
       // // 先获取用户当前位置
-      // const locationRes = await wx.getLocation({
-      //   type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
-      //   altitude: false
-      // });
-      // console.log('wx.getLocation 返回结果:', locationRes);
-
+      console.log('开始调用 wx.getFuzzyLocation');
+      // 获取模糊位置，用于设置 wx.chooseLocation 的初始位置
+      const fuzzyLocation = await new Promise((resolve, reject) => {
+        wx.getFuzzyLocation({
+          type: 'gcj02',
+          success: resolve,
+          fail: reject
+        });
+      });
+      
+      const { latitude, longitude } = fuzzyLocation;
+      console.log('获取到模糊位置:', { latitude, longitude });
+      
       console.log('开始调用 wx.chooseLocation');
       const res = await wx.chooseLocation({
-        latitude: 0,
-        longitude: 0
+        latitude: latitude,
+        longitude: longitude
       });
       console.log('wx.chooseLocation 返回结果:', res);
       
