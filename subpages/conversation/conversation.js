@@ -418,7 +418,7 @@ Page({
         setTimeout(() => {
           // 生成并保存分享图
           app.generateAndSaveShareImage(this.data.chatInfo, this.data.chatInfo.avatar);
-        }, 300);
+        }, 1000);
       }
       
       // 初始化IM并加载历史消息

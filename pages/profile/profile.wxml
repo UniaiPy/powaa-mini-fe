@@ -80,7 +80,7 @@
           <view class="space-item mb-5">
             <view class="flex items-center justify-between">
               <view class="block text-sm font-medium text-gray-700 mb-2 mr-4">昵称</view>
-              <input value="{{tempNickname || userInfo.name}}" placeholder="请填写昵称" type="nickname" maxlength="20" class="flex-1 px-3 py-2 no-border rounded-lg" bindinput="onNicknameInput"></input>
+              <input value="{{tempNickname || userInfo.name}}" placeholder="请填写昵称" type="nickname" maxlength="16" class="flex-1 px-3 py-2 no-border rounded-lg" bindinput="onNicknameInput"></input>
             </view>
             <!-- <text class="text-xs text-gray-500 mt-1 block">昵称限制在20个字符以内</text> -->
           </view>
@@ -356,7 +356,6 @@
       </view>
     </view>
   </view>
-  
   <!-- Canvas for generating share image -->
   <canvas type="2d" id="shareCanvas" style="width: 600px; height: 600px; position: absolute; left: -9999px;"></canvas>
 </view>

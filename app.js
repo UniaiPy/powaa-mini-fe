@@ -716,7 +716,7 @@ App({
             
             // 绘制绿色在线状态点（换行）
             ctx.beginPath();
-            ctx.arc(canvasWidth / 2 + 60, 340, 6, 0, 2 * Math.PI);
+            ctx.arc(canvasWidth / 2 + 60, 336, 6, 0, 2 * Math.PI);
             ctx.fillStyle = '#4CAF50';
             ctx.fill();
             
@@ -797,7 +797,7 @@ App({
             });
             
             // 绘制多行文本 - 限制最多3行
-            const maxLines = 3;
+            const maxLines = 2;
             const displayLines = lines.slice(0, maxLines);
             
             // 如果有超过3行的内容，在第三行末尾添加省略号
