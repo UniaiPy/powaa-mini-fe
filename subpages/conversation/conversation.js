@@ -2731,7 +2731,7 @@ Page({
       this.hideAllMenus();
       
     } catch (error) {
-      console.error('选择位置失败:', error);
+      console.log('选择位置失败:', error);
       
       // 根据错误类型给出不同提示
       let errorMessage = '选择位置失败';

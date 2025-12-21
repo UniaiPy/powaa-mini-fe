@@ -2619,18 +2619,23 @@ Page({
           return;
         }
       }
+// // 先获取用户当前位置
+      console.log('开始调用 wx.getFuzzyLocation');
+      // 获取模糊位置，用于设置 wx.chooseLocation 的初始位置
+      const fuzzyLocation = await new Promise((resolve, reject) => {
+        wx.getFuzzyLocation({
+          type: 'gcj02',
+          success: resolve,
+          fail: reject
+        });
+      });
       
-      // console.log('开始调用 wx.getLocation 获取当前位置');
-      // // 先获取用户当前位置
-      // const currentLocation = await wx.getLocation({
-      //   type: 'gcj02', // 坐标系类型，与chooseLocation使用的坐标系一致
-      //   altitude: false
-      // });
-      // console.log('wx.getLocation 返回结果:', currentLocation);
+      const { latitude, longitude } = fuzzyLocation;
+      console.log('获取到模糊位置:', { latitude, longitude });
       
       const locationRes = await wx.chooseLocation({
-        latitude: 0,
-        longitude: 0
+        latitude: latitude,
+        longitude: longitude
       });
       
       console.log('选择的位置:', locationRes);
@@ -2640,7 +2645,7 @@ Page({
       
       this.hideAllMenus();
     } catch (error) {
-      console.error('选择位置失败:', error);
+      console.log('选择位置失败:', error);
       
       // 根据错误类型给出不同提示
       let errorMessage = '选择位置失败';
