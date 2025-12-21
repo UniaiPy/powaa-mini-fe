@@ -173,7 +173,7 @@ Page({
         })
         if(app.checkUserInfoComplete({ redirect: false })){
           wx.showShareMenu({
-            menus: ['shareAppMessage', 'shareTimeline']
+            menus: ['shareAppMessage']
           })
         }
       } else {
@@ -182,7 +182,7 @@ Page({
           isTrained: false
         })
         wx.hideShareMenu({
-          menus: ['shareAppMessage', 'shareTimeline']
+          menus: ['shareAppMessage']
         })
       }
     } catch (error) {
@@ -1481,15 +1481,15 @@ Page({
       imageUrl: shareImageUrl
     }
   },
-  onShareTimeline() {
-    const app = getApp();
-    const userId = app.globalData.userInfo.id;
-    // 获取生成的分享图，如果没有则使用默认头像
-    const shareImageUrl = app.getShareImage(userId) || this.data.avatarUrl || '/images/ai.png';
-    return {
-      title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}`,
-      imageUrl: shareImageUrl
-    }
-  }
+  // onShareTimeline() {
+  //   const app = getApp();
+  //   const userId = app.globalData.userInfo.id;
+  //   // 获取生成的分享图，如果没有则使用默认头像
+  //   const shareImageUrl = app.getShareImage(userId) || this.data.avatarUrl || '/images/ai.png';
+  //   return {
+  //     title: `${this.data.userInfo.name}的AI名片`,
+  //     path: `/subpages/preview/preview?type=profile&userId=${userId}`,
+  //     imageUrl: shareImageUrl
+  //   }
+  // }
 })

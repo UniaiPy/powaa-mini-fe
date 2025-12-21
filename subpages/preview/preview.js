@@ -61,7 +61,12 @@ Page({
     this.setData({
       chatUnreadCount: 3 // 示例数据，实际应从全局状态或API获取
     });
-    
+    const scene = wx.getLaunchOptionsSync().scene;
+    if (scene == 1154) {
+      this.setData({
+        isFromShare: true
+      });
+    }
     // 保存传递过来的参数
     const app = getApp();
     const currentUserId = app.globalData.userInfo?.id;
@@ -75,6 +80,7 @@ Page({
     const fromElseCard = options.shareElseCard == 'true' ? true : false;//是否是分享者分享别人的名片
     // 同样处理isFromProfile参数，确保它是布尔值
     const isFromProfile = options.isFromProfile == 'true' ? true : false;
+    console.log('isFromProfile:', isFromProfile, typeof isFromProfile);
     this.setData({
       fromElseCard: fromElseCard
     })
@@ -899,11 +905,10 @@ Page({
   },
   onShareTimeline() {
     const app = getApp();
-    
     // 使用app.js中的drawShareImage方法生成分享图
     return {
       title: `${this.data.userInfo.name}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${this.data.userId}&shareElseCard=${this.data.shareElseCard}`,
+      query: `type=profile&userId=${this.data.userId}&shareElseCard=${this.data.shareElseCard}`,
       imageUrl: app.getShareImage(this.data.userId) // 尝试使用缓存的分享图
     }
   }

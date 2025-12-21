@@ -3590,16 +3590,16 @@ Page({
       imageUrl: app.getShareImage(userId) || chatInfo.avatar || '/images/ai.png'
     }
   },
-  onShareTimeline() {
-    const app = getApp();
-    const { chatInfo } = this.data
-    console.log('chatInfo:', chatInfo)
-    const userId = chatInfo.id || chatInfo.name
-    return {
-      title: `${chatInfo.nickname || '用户'}的AI名片`,
-      path: `/subpages/preview/preview?type=profile&userId=${userId}&shareElseCard=true`,
-      // 使用生成的分享图作为分享图片
-      imageUrl: app.getShareImage(userId) || chatInfo.avatar || '/images/ai.png'
-    }
-  }
+  // onShareTimeline() {
+  //   const app = getApp();
+  //   const { chatInfo } = this.data
+  //   console.log('chatInfo:', chatInfo)
+  //   const userId = chatInfo.id || chatInfo.name
+  //   return {
+  //     title: `${chatInfo.nickname || '用户'}的AI名片`,
+  //     path: `/subpages/preview/preview?type=profile&userId=${userId}&shareElseCard=true`,
+  //     // 使用生成的分享图作为分享图片
+  //     imageUrl: app.getShareImage(userId) || chatInfo.avatar || '/images/ai.png'
+  //   }
+  // }
 })
