@@ -965,6 +965,8 @@ Page({
             wechat: this.data.editContactWechat,
             address: this.data.editContactAddress
           }
+          // 重新获取app实例以确保可用
+          const app = getApp();
           // 保存到全局
           app.globalData.userInfo.phone_number = this.data.editContactPhone
           wx.setStorageSync('userInfo', app.globalData.userInfo)
@@ -982,7 +984,6 @@ Page({
           this.checkAndSendAutoFriendRequest()
           
           // 生成并保存分享图
-          const app = getApp();
           app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
         } else {
           wx.showToast({

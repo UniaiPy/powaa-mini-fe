@@ -675,7 +675,7 @@ App({
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
             
             // 2. 绘制用户头像
-            const avatarSize = 230;
+            const avatarSize = 240;
             const avatarX = (canvasWidth - avatarSize) / 2;
             const avatarY = 20;
             
