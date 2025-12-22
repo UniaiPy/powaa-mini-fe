@@ -1241,9 +1241,14 @@ Page({
    * 发送消息
    */
   async sendMessage() {
+    const app = getApp();
     if (!this.checkLoginStatus()) {
       return;
     } else {
+      if(!app.checkUserInfoComplete()){
+        return;
+      }
+      //is_create_ai_avatar 1:创建中 2：创建成功 0：未创建 3：创建失败
       if(this.data.is_create_ai_avatar != 2){
         await this.getUserInfo();
         if(this.data.is_create_ai_avatar == 0 || this.data.is_create_ai_avatar == 3){
@@ -2165,9 +2170,13 @@ Page({
    * 切换功能菜单显示
    */
   async showPlusMenu() {
+    const app = getApp();
     if (!this.checkLoginStatus()) {
       return;
     } else {
+      if(!app.checkUserInfoComplete()){
+        return;
+      }
       if(this.data.is_create_ai_avatar != 2){
         await this.getUserInfo();
         if(this.data.is_create_ai_avatar == 0 || this.data.is_create_ai_avatar == 3){
@@ -2186,7 +2195,7 @@ Page({
 
         } else if (this.data.is_create_ai_avatar == 1) {
           wx.showToast({
-            title: "AI分身生在生成，请稍等再试",
+            title: "AI分身正在生成，请稍等再试",
             icon: 'none',
             duration: 1500
           });

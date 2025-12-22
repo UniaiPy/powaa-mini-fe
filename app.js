@@ -141,7 +141,7 @@ App({
       nickname: user.nickname || '',
       phone_number: user.phone || '',
       description: user.intro || '',
-      avatar: user.avatar_url || '',
+      avatar_url: user.avatar_url || '',
     }
     
     console.log('准备保存的用户信息:', safeUser)
@@ -301,25 +301,50 @@ App({
 
   checkUserInfoComplete: function(options = {}) {
     const { 
-      redirect = true, 
-      message = '请完善您的名片信息'
+      redirect = true,
+      defaultMessage = '请完善您的名片信息'
     } = options;
     
     const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo');
     
     console.log('检查用户信息完整性:', userInfo);
     
-    const checkConditions = [
-      !!userInfo,
-      !!userInfo?.nickname,
-      !!userInfo?.phone_number,
-      !!userInfo?.description
+    // 定义需要检查的字段及其中文名称
+    const fieldsToCheck = [
+      { key: 'avatar_url', name: '头像' },
+      { key: 'nickname', name: '昵称' },
+      { key: 'description', name: '个人资料' },
+      { key: 'phone_number', name: '联系信息' }
+      
     ];
     
-    const isUserInfoComplete = checkConditions.every(condition => condition);
+    // 检查哪些字段缺失
+    const missingFields = [];
+    
+    // 首先检查用户信息是否存在
+    if (!userInfo) {
+      missingFields.push(...fieldsToCheck.map(field => field.name));
+    } else {
+      // 检查每个字段
+      fieldsToCheck.forEach(field => {
+        if (!userInfo[field.key]) {
+          missingFields.push(field.name);
+        }
+      });
+    }
+    
+    const isUserInfoComplete = missingFields.length === 0;
     
     if (!isUserInfoComplete && redirect) {
       console.log('用户信息不完整，跳转到名片页面完善信息');
+      
+      // 根据缺失情况生成不同的提示信息
+      let message = defaultMessage;
+      if (missingFields.length > 0 && missingFields.length < fieldsToCheck.length) {
+        // 如果不是所有字段都缺失，显示具体缺失的字段
+        message = `请填写${missingFields.join('、')}`;
+      }
+      
       wx.showToast({
         title: message,
         icon: 'none',
@@ -497,10 +522,24 @@ App({
       },
       success: (res) => {
         console.log('触发好友请求成功:', res)
-        // wx.hideLoading()
-        
-        // // 标记已触发好友请求，避免重复触发
-        // wx.setStorageSync(`sentFriendRequest_${sharedUserId}`, true)
+
+        //跳转到chat页面展示待联系tab 并切换到pending tab  tab页面不能带参数，使用全局变量传递
+        // wx.showModal({
+        //   title: '请登录',
+        //   content: '您需要先登录才能分享名片',
+        //   showCancel: true,
+        //   cancelText: '取消',
+        //   confirmText: '去登录',
+        //   success: (res) => {
+        //     if (res.confirm) {
+
+        //     }
+        //   }
+        // }) 
+        app.globalData.tabParams = { activeSection: 'pending'};
+        wx.switchTab({
+          url: '/pages/chat/chat'
+        });
         
         // 清除临时存储的分享者ID
         wx.removeStorageSync('sharedUserId')

@@ -16,7 +16,9 @@ Page({
     isLoadingMatchDegree: false, // 是否正在加载匹配度说明
     matchDegreeCache: {},      // 匹配度缓存
     isFriend: null,           // 是否为好友关系，null表示未检查，true表示是好友，false表示不是好友
-    isCheckingFriendship: false // 是否正在检查好友关系
+    isCheckingFriendship: false, // 是否正在检查好友关系
+    progressValue: 0,         // 匹配度进度条值（0-100）
+    progressTimer: null       // 进度条定时器
   },
 
   /**
@@ -294,6 +296,38 @@ Page({
   fetchMatchDegree: function(userId, targetUserId, cacheKey) {
     const app = getApp();
     
+    // 初始化进度条
+    this.setData({
+      isLoadingMatchDegree: true,
+      progressValue: 0
+    });
+    
+    // 清除可能存在的旧定时器
+    if (this.data.progressTimer) {
+      clearInterval(this.data.progressTimer);
+      this.setData({ progressTimer: null });
+    }
+    
+    // 启动假进度增长定时器
+    let progress = 0;
+    const timer = setInterval(() => {
+      // 每次增加1-3%的进度，确保增长速度缓慢
+      const increment = Math.floor(Math.random() * 3) + 1;
+      progress += increment;
+      
+      // 进度增长到85%时停止，等待接口返回
+      if (progress >= 85) {
+        progress = 85;
+        this.setData({ progressValue: progress });
+        return;
+      }
+      
+      this.setData({ progressValue: progress });
+    }, 300); // 每300毫秒更新一次进度
+    
+    // 保存定时器引用
+    this.setData({ progressTimer: timer });
+    
     const requestData = {
       userId: userId,
       targetUserId: targetUserId
@@ -306,33 +340,47 @@ Page({
       method: 'POST',
       data: requestData,
       success: (res) => {
-        this.setData({ isLoadingMatchDegree: false });
-        try {
-          // 处理完整的响应数据
-          let accumulatedContent = '';
-          accumulatedContent = res || ''; // app.request返回的res就是响应数据（文本内容）
-          console.log('accumulatedContent', accumulatedContent)
-          // 更新页面内容
-          if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
-            const processedContent = accumulatedContent
-            this.setData({ matchDegreeContent: processedContent });
-            // 保存缓存
-            this.cacheMatchDegree(cacheKey, processedContent);
-          } else {
-            // 如果没有有效内容，显示默认文本
-            const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
+        // 接口请求完成，清除定时器
+        clearInterval(this.data.progressTimer);
+        this.setData({ 
+          progressTimer: null,
+          progressValue: 100 // 直接跳转到100%
+        });
+        
+        // 短暂延迟，让用户看到100%的状态
+        setTimeout(() => {
+          this.setData({ isLoadingMatchDegree: false });
+          
+          try {
+            // 处理完整的响应数据
+            let accumulatedContent = '';
+            accumulatedContent = res || ''; // app.request返回的res就是响应数据（文本内容）
+            console.log('accumulatedContent', accumulatedContent)
+            // 更新页面内容
+            if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
+              const processedContent = accumulatedContent
+              this.setData({ matchDegreeContent: processedContent });
+              // 保存缓存
+              this.cacheMatchDegree(cacheKey, processedContent);
+            } else {
+              // 如果没有有效内容，显示默认文本
+              const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
+              this.setData({ matchDegreeContent: defaultContent });
+            }
+          } catch (err) {
+            console.error('处理响应数据异常！', err);
+            // 发生错误时显示默认文本
+            const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">匹配度数据加载失败</div>';
             this.setData({ matchDegreeContent: defaultContent });
           }
-        } catch (err) {
-          console.error('处理响应数据异常！', err);
-          // 发生错误时显示默认文本
-          const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">匹配度数据加载失败</div>';
-          this.setData({ matchDegreeContent: defaultContent });
-        }
+        }, 500); // 延迟500毫秒，让用户看到100%的状态
       },
       fail: (err) => {
         console.error('请求匹配度数据失败！', err);
+        // 清除定时器
+        clearInterval(this.data.progressTimer);
         this.setData({ 
+          progressTimer: null,
           isLoadingMatchDegree: false,
           matchDegreeContent: '<div style="text-align: center; color: #666; padding: 20px 0;">匹配度数据加载失败</div>'
         });

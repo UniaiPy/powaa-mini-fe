@@ -117,11 +117,17 @@
         </view>
         <!-- 弹窗内容 -->
         <view class="p-5 flex-1 overflow-y-auto">
-          <!-- 加载状态 -->
-          <view class="flex justify-center items-center py-12" wx:if="{{isLoadingMatchDegree && matchDegreeContent === ''}}">
-            <view class="text-center">
-              <view class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600 mb-3"></view>
-              <view class="text-gray-600">正在分析匹配度...</view>
+          <!-- 加载状态 - 进度条 -->
+          <view class="loading-container flex justify-center items-center py-12" wx:if="{{isLoadingMatchDegree && matchDegreeContent === ''}}">
+            <view class="progress-content text-center">
+              <view class="progress-title mb-4 text-gray-600">正在分析匹配度...</view>
+              <!-- 进度条容器 -->
+              <view class="progress-bar-container w-64 h-3 bg-gray-200 rounded-full mb-3">
+                <!-- 进度条填充 -->
+                <view class="progress-bar-fill h-full bg-purple-600 rounded-full" style="width: {{progressValue}}%; transition: width 0.3s ease;"></view>
+              </view>
+              <!-- 进度百分比 -->
+              <view class="progress-text text-purple-600 font-semibold">{{progressValue}}%</view>
             </view>
           </view>
           <!-- 匹配度内容 -->

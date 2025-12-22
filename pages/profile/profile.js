@@ -208,19 +208,19 @@ Page({
     if (!app.isLoggedIn()) {
       // 用户未登录，提示登录
       wx.showModal({
-      title: '请登录',
-      content: '您需要先登录才能分享名片',
-      showCancel: true,
-      cancelText: '取消',
-      confirmText: '去登录',
-      success: (res) => {
-        if (res.confirm) {
-          wx.navigateTo({
-            url: '/pages/login/login'
-          })
+        title: '请登录',
+        content: '您需要先登录才能分享名片',
+        showCancel: true,
+        cancelText: '取消',
+        confirmText: '去登录',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({
+              url: '/pages/login/login'
+            })
+          }
         }
-      }
-    })
+      })
       return;
     }
     if (!app.checkUserInfoComplete()) {
@@ -275,7 +275,8 @@ Page({
             updateData.userInfo = {
               name: profileData.userInfo.name || '请编辑您的昵称',
               aiStatus: profileData.userInfo.aiStatus || '在线',
-              description: profileData.userInfo.description || ''
+              description: profileData.userInfo.description || '',
+              avatar_url: profileData.avatar_url || ''
             }
           }
           
@@ -452,10 +453,10 @@ Page({
     const app = getApp()
     if (app.globalData.userInfo) {
       app.globalData.userInfo.nickname = tempNickname || app.globalData.userInfo.nickname
-      wx.setStorageSync('userInfo', app.globalData.userInfo)
       if (updateData.avatarUrl) {
         app.globalData.userInfo.avatar_url = updateData.avatarUrl
       }
+      wx.setStorageSync('userInfo', app.globalData.userInfo)
     }
     
     // 将头像和昵称发送到后端保存

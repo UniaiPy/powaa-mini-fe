@@ -100,8 +100,8 @@ Page({
   // 导航到预览页面
   navigateToPreview: function() {
     wx.navigateTo({
-      url: '../preview/preview'
-    });
+      url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=81&shareElseCard=true`
+    })
   },
 
   // 拨打电话
