@@ -195,7 +195,7 @@
         <!-- 弹窗内容 -->
         <view class="p-4">
           <view class="mb-4">
-            <textarea id="greetingMessage" class="p-3 w-full border border-gray-200 rounded-lg p-3 text-gray-700 resize-none" rows="4" placeholder="输入你想说的话..." value="{{greetingMessage}}" bindinput="onInput"></textarea>
+            <textarea cursor-spacing="10" id="greetingMessage" class="p-3 w-full border border-gray-200 rounded-lg p-3 text-gray-700 resize-none" rows="4" placeholder="输入你想说的话..." value="{{greetingMessage}}" bindinput="onInput"></textarea>
           </view>
           <button class="w-full py-2 btn-primary text-white rounded-lg text-base font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center" bindtap="sendGreeting">
             <text class="fa fa-paper-plane mr-2"></text>

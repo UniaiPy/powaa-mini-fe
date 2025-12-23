@@ -33,7 +33,7 @@
 
 .share-btn2 {
   position: fixed;
-  bottom:20px;
+  bottom: 20px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -421,7 +421,7 @@
 
 .min-h-200 {
   /* height: auto; */
-  height: 250rpx;
+  height: 500rpx;
 }
 
 .max-h-400 {

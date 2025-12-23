@@ -191,7 +191,7 @@
       <view class="plus-btn" bindtap="showPlusMenu">
         <text class="fa fa-plus"></text>
       </view>
-      <input type="text" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." bindconfirm="sendMessage" />
+      <input type="text" cursor-spacing="10" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." bindconfirm="sendMessage" />
       <!-- <view class="hold-to-talk-btn" wx:if="{{isVoiceMode}}" bindtouchstart="startRecording" bindtouchend="stopRecording">
         <text class="fa fa-microphone"></text>
         <text>按住说话</text>

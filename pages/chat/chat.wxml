@@ -135,7 +135,7 @@
       <!-- <view class="search-overlay" bindtap="closeSearch"></view> -->
       <view class="search-container">
         <view class="search-input-container">
-          <input type="text" class="search-input" placeholder="搜索联系人、聊天记录" value="{{searchText}}" bindinput="onSearchInput" confirm-type="search" bindconfirm="performSearch" focus="true" />
+          <input type="text" cursor-spacing="10" class="search-input" placeholder="搜索联系人、聊天记录" value="{{searchText}}" bindinput="onSearchInput" confirm-type="search" bindconfirm="performSearch" focus="true" />
           <view class="search-actions">
             <button class="search-btn" bindtap="performSearch" size="mini" plain="false">
               <text class="fa fa-search"></text>

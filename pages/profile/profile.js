@@ -622,7 +622,7 @@ Page({
                 icon: 'success'
               })
               // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
-              this.checkAndSendAutoFriendRequest()
+              // this.checkAndSendAutoFriendRequest()
               // 生成并保存分享图
               const app = getApp();
               app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
@@ -876,7 +876,7 @@ Page({
             icon: 'success'
           })
           // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
-          this.checkAndSendAutoFriendRequest()
+          // this.checkAndSendAutoFriendRequest()
           
           // 生成并保存分享图
           app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
@@ -982,7 +982,7 @@ Page({
           })
           
           // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
-          this.checkAndSendAutoFriendRequest()
+          // this.checkAndSendAutoFriendRequest()
           
           // 生成并保存分享图
           app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
@@ -1376,12 +1376,12 @@ Page({
   /**
    * 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
    */
-  checkAndSendAutoFriendRequest() {
-    const app = getApp()
-    console.log('保存个人信息后，调用app.checkAndSendFriendRequest()检查并发送好友请求')
-    // 调用app级别的检查方法，该方法会检查所有条件（登录状态、信息完整性、AI训练状态等）
-    app.checkAndSendFriendRequest()
-  },
+  // checkAndSendAutoFriendRequest() {
+  //   const app = getApp()
+  //   console.log('保存个人信息后，调用app.checkAndSendFriendRequest()检查并发送好友请求')
+  //   // 调用app级别的检查方法，该方法会检查所有条件（登录状态、信息完整性、AI训练状态等）
+  //   app.checkAndSendFriendRequest()
+  // },
 
 
 

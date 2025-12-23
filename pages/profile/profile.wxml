@@ -80,7 +80,7 @@
           <view class="space-item mb-5">
             <view class="flex items-center justify-between">
               <view class="block text-sm font-medium text-gray-700 mb-2 mr-4">昵称</view>
-              <input value="{{tempNickname || userInfo.name}}" placeholder="请填写昵称" type="nickname" maxlength="16" class="flex-1 px-3 py-2 no-border rounded-lg" bindinput="onNicknameInput"></input>
+              <input cursor-spacing="10" value="{{tempNickname || userInfo.name}}" placeholder="请填写昵称" type="nickname" maxlength="16" class="flex-1 px-3 py-2 no-border rounded-lg" bindinput="onNicknameInput"></input>
             </view>
             <!-- <text class="text-xs text-gray-500 mt-1 block">昵称限制在20个字符以内</text> -->
           </view>
@@ -121,7 +121,7 @@
         </view>
         <view class="text-sm text-gray-700">
           <text wx:if="{{!showProfileModal}}">{{userInfo.description}}</text>
-          <textarea wx:else value="{{editProfileDescription}}" placeholder="请输入您的个人简介..." class="w-full py-2 rounded-lg  resize-y min-h-200" bindinput="onProfileDescriptionInput"></textarea>
+          <textarea wx:else cursor-spacing="10" value="{{editProfileDescription}}" maxlength="400" placeholder="请输入您的个人简介..." class="w-full py-2 rounded-lg  resize-y min-h-200" bindinput="onProfileDescriptionInput"></textarea>
         </view>
       </view>
       <!-- 联系信息 -->
@@ -164,7 +164,7 @@
           <view class="space-y-3 text-sm text-gray-600" wx:if="{{showContactModal}}">
             <view class="flex items-center space-item">
               <text class="fa fa-phone text-blue-600 mr-3 w-8"></text>
-              <input value="{{editContactPhone}}" placeholder="请输入手机号" class="h-full flex-1" bindinput="onContactPhoneInput"></input>
+              <input cursor-spacing="10" value="{{editContactPhone}}" placeholder="请输入手机号" class="h-full flex-1" bindinput="onContactPhoneInput"></input>
               <button class="px-3 bg-green-600 text-white rounded-lg text-sm" open-type="getPhoneNumber" bindgetphonenumber="getWechatPhoneNumber">
                 <text class="fa fa-wechat mr-1"></text>
                 微信授权
@@ -172,11 +172,11 @@
             </view>
             <view class="flex items-center space-item">
               <text class="fa fa-wechat text-green-600 mr-3 w-8"></text>
-              <input value="{{editContactWechat}}" placeholder="请输入微信号" bindinput="onContactWechatInput"></input>
+              <input cursor-spacing="10" value="{{editContactWechat}}" placeholder="请输入微信号" bindinput="onContactWechatInput"></input>
             </view>
             <view class="flex items-center">
               <text class="fa fa-map-marker text-blue-600 mr-3 w-8"></text>
-              <input value="{{editContactAddress}}" placeholder="请输入地址" bindinput="onContactAddressInput"></input>
+              <input cursor-spacing="10" value="{{editContactAddress}}" placeholder="请输入地址" bindinput="onContactAddressInput"></input>
             </view>
           </view>
         </view>
@@ -328,21 +328,21 @@
               自定义名称
               <text class="text-red-500">*</text>
             </view>
-            <input value="{{editCustomPlatformName}}" placeholder="请输入平台名称" class="w-full px-3 py-2 border border-gray-300 rounded-lg " bindinput="onCustomPlatformNameInput"></input>
+            <input cursor-spacing="10" value="{{editCustomPlatformName}}" placeholder="请输入平台名称" class="w-full px-3 py-2 border border-gray-300 rounded-lg " bindinput="onCustomPlatformNameInput"></input>
           </view>
           <view class="space-item">
             <view class="block text-sm font-medium text-gray-700 mb-2">
               用户名
               <text class="text-red-500">*</text>
             </view>
-            <input value="{{editSocialUsername}}" placeholder="请输入用户名" class="w-full px-3 py-2 border border-gray-300 rounded-lg " bindinput="onSocialUsernameInput"></input>
+            <input cursor-spacing="10" value="{{editSocialUsername}}" placeholder="请输入用户名" class="w-full px-3 py-2 border border-gray-300 rounded-lg " bindinput="onSocialUsernameInput"></input>
           </view>
           <view class="space-item">
             <view class="block text-sm font-medium text-gray-700 mb-2">
               主页链接
               <text class="text-red-500">*</text>
             </view>
-            <input value="{{editSocialUrl}}" placeholder="请输入主页链接" class="w-full px-3 py-2 border border-gray-300 rounded-lg " bindinput="onSocialUrlInput"></input>
+            <input cursor-spacing="10" value="{{editSocialUrl}}" placeholder="请输入主页链接" class="w-full px-3 py-2 border border-gray-300 rounded-lg " bindinput="onSocialUrlInput"></input>
           </view>
           <view class="flex pt-2">
             <view wx:if="{{isEditingSocial}}" class="flex items-center justify-center flex-1 px-4 py-2 text-red-600 bg-red-100 rounded-lg mr-3" bindtap="deleteSocialMediaFromModal">

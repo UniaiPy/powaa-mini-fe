@@ -510,7 +510,8 @@ App({
   /**
    * 自动发送好友请求
    */
-  async sendAutoFriendRequest(sharedUserId) {
+  async sendAutoFriendRequest(sharedUserId, toChat) {
+    console.log('toChat', toChat)
     const app = getApp()
     // 调用后端API，触发分享者发送好友请求给新用户
     app.request({
@@ -522,25 +523,15 @@ App({
       },
       success: (res) => {
         console.log('触发好友请求成功:', res)
-
-        //跳转到chat页面展示待联系tab 并切换到pending tab  tab页面不能带参数，使用全局变量传递
-        // wx.showModal({
-        //   title: '请登录',
-        //   content: '您需要先登录才能分享名片',
-        //   showCancel: true,
-        //   cancelText: '取消',
-        //   confirmText: '去登录',
-        //   success: (res) => {
-        //     if (res.confirm) {
-
-        //     }
-        //   }
-        // }) 
-        app.globalData.tabParams = { activeSection: 'pending'};
-        wx.switchTab({
-          url: '/pages/chat/chat'
-        });
-        
+        if (toChat=="toChat") {
+          // 触发成功后，调用toChat方法
+          setTimeout(() => {
+            app.globalData.tabParams = { activeSection: 'pending'};
+            wx.switchTab({
+              url: '/pages/chat/chat'
+            });
+          }, 2000);
+        }
         // 清除临时存储的分享者ID
         wx.removeStorageSync('sharedUserId')
         return true
@@ -586,7 +577,7 @@ App({
    * 检查并发送好友请求
    * 用于在用户完成信息填写或AI训练后触发好友请求
    */
-  checkAndSendFriendRequest: function() {
+  checkAndSendFriendRequest: function(toChat=null) {
     // 获取sharedUserId，优先从全局变量获取，其次从本地缓存
     const sharedUserId = this.globalData.sharedUserId || wx.getStorageSync('sharedUserId');
     if (!sharedUserId) {
@@ -619,7 +610,7 @@ App({
           const isFriend = await that.checkFriendshipStatus(sharedUserId);
           if (!isFriend) {
             console.log('不是好友关系，准备发送好友请求');
-            that.sendAutoFriendRequest(sharedUserId);
+            that.sendAutoFriendRequest(sharedUserId, toChat ? toChat:"");
           } else {
             console.log('已是好友关系，不发送好友请求');
             // 清除临时存储的分享者ID

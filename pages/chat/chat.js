@@ -2220,23 +2220,21 @@ Page({
         })
         .then((imResponse) => {
           console.log('IM同意好友申请成功:', imResponse);
-          
-          // 同意好友申请后，发送一条欢迎消息来创建会话
-          // 这样新好友就会出现在会话列表中
+          // 发送欢迎消息来创建会话
           this.sendWelcomeMessage(userId, name);
-          
+          // 同意好友申请后立即刷新联系人列表，确保新好友能够立即显示
+          this.loadConversationList();
           // 移除已处理的请求
           const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList
+            pendingList: updatedPendingList,
+            activeSection: "contacts" // 切换到联系人列表
           });
           
           wx.showToast({
             title: `已同意与${name}的好友请求`,
             icon: 'success'
           });
-          // 刷新联系人列表的逻辑已移至sendWelcomeMessage方法中，确保会话创建完成后再刷新
-          // 避免因异步操作导致的更新不及时问题
         })
         .catch((error) => {
           console.error('IM同意好友申请失败:', error);
@@ -2273,7 +2271,8 @@ Page({
           // 更新待联系列表（移除已同意的用户）
           const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList
+            pendingList: updatedPendingList,
+            activeSection: "contacts" // 切换到联系人列表
           });
         }, 1000);
       }
