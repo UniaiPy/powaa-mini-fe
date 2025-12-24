@@ -18,7 +18,8 @@ Page({
     contactInfo: {
       phone: '18101847172',
       wechat: '小瓦AI分身'
-    }
+    },
+    customerUserId: 0,
   },
 
   onLoad: function(options) {
@@ -26,6 +27,8 @@ Page({
     this.updateUnreadCount();
     // 加载官方信息
     this.loadOfficialInfo();
+    // 获取客服配置
+    this.loadCustomerServiceConfig();
     
     // 检查是否有指定要展开的部分
     if (options.section) {
@@ -99,8 +102,9 @@ Page({
 
   // 导航到预览页面
   navigateToPreview: function() {
+    const userId = this.data.customerUserId;
     wx.navigateTo({
-      url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=81&shareElseCard=true`
+      url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=${userId}&shareElseCard=true` 
     })
   },
 
@@ -155,5 +159,23 @@ Page({
   // 监听页面显示，每次显示时更新未读消息数量
   onShow: function() {
     this.updateUnreadCount();
+  },
+
+  // 加载客服配置
+  loadCustomerServiceConfig: function() {
+    const app = getApp();
+    app.request({
+      url: '/api/official/get_customer',
+      method: 'GET',
+      success: (res) => {
+        if (res.data && res.data.customer_user_id) {
+          this.setData({
+            customerUserId: res.data.customer_user_id
+          });
+        } else {
+          console.warn('获取客服配置返回异常:', res);
+        }
+      }
+    });
   }
 });
