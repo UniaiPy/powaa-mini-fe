@@ -165,7 +165,7 @@ Page({
   loadCustomerServiceConfig: function() {
     const app = getApp();
     app.request({
-      url: '/api/official/get_customer',
+      url: '/api/official/config/get_customer',
       method: 'GET',
       success: (res) => {
         if (res.data && res.data.customer_user_id) {
