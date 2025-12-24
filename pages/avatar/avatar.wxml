@@ -42,7 +42,7 @@
           <view class="avatar-circle other-avatar">
             <image src="/images/robot-avatar.png" mode="aspectFill"></image>
           </view>
-          <view class="message other-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'location' ? 'message-location-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
+          <view class="message other-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'location' ? 'message-location-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" data-message="{{item}}">
             <!-- 文本消息 -->
             <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
               <text>{{item.content}}</text>
@@ -112,7 +112,7 @@
         </block>
         <!-- 用户消息 -->
         <block wx:else>
-          <view class="message user-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'location' ? 'message-location-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" bindlongpress="onMessageLongPress" data-message="{{item}}">
+          <view class="message user-message {{item.messageType === 'image' ? 'message-image-container' : ''}} {{item.messageType === 'location' ? 'message-location-container' : ''}} {{item.messageType === 'file' ? 'message-file-container' : ''}}" data-message="{{item}}">
             <!-- 文本消息 -->
             <block wx:if="{{item.messageType === 'text' || !item.messageType}}">
               <text>{{item.content}}</text>
