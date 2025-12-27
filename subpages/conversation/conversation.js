@@ -65,6 +65,15 @@ Page({
     isUserBlocked: false,
     // 流式消息处理相关
     streamingMessages: {}, // 存储正在处理的流式消息，key为messageID
+    // 匹配度弹窗相关
+    showMatchDegreeModal: false, // 是否显示匹配度弹窗
+    matchDegreeContent: '',     // 匹配度说明内容
+    isLoadingMatchDegree: false, // 是否正在加载匹配度说明
+    matchDegreeCache: {},        // 匹配度缓存
+    progressValue: 0,           // 匹配度进度条值（0-100）
+    progressTimer: null,        // 进度条定时器
+    isTrained: false,           // AI分身是否已完成训练
+    userId: '',                 // 目标用户ID
   },
 
   /**
@@ -1181,6 +1190,215 @@ Page({
     
     // 获取当前用户信息
     this.fetchCurrentUserInfo();
+  },
+
+  /**
+   * 显示匹配度说明
+   * 点击时调用匹配度分析接口，使用流式输出
+   */
+  showMatchDegree() {
+    const app = getApp();
+    const userId = String(app.globalData.userInfo?.id || '');
+    const { chatInfo } = this.data
+    console.log('chatInfo:', chatInfo)
+    const targetUserId = chatInfo.id
+    if (!userId || !targetUserId) {
+      wx.showToast({
+        title: '用户信息不完整',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 生成缓存键
+    const cacheKey = `${userId}_${targetUserId}`;
+    
+    // 检查是否有缓存数据且未过期
+    const cachedData = this.getCachedMatchDegree(cacheKey);
+    if (cachedData) {
+      this.setData({
+        showMatchDegreeModal: true,
+        matchDegreeContent: cachedData.content,
+        isLoadingMatchDegree: false
+      });
+      return;
+    }
+    
+    // 设置初始状态，初始内容为空
+    this.setData({
+      showMatchDegreeModal: true,
+      matchDegreeContent: '',
+      isLoadingMatchDegree: true
+    });
+    
+    // 调用匹配度分析接口
+    this.fetchMatchDegree(userId, targetUserId, cacheKey);
+  },
+  
+  /**
+   * 获取匹配度分析结果
+   * 通过后端接口获取AI匹配度分析数据
+   */
+  fetchMatchDegree(userId, targetUserId, cacheKey) {
+    const app = getApp();
+    
+    // 初始化进度条
+    this.setData({
+      isLoadingMatchDegree: true,
+      progressValue: 0
+    });
+    
+    // 清除可能存在的旧定时器
+    if (this.data.progressTimer) {
+      clearInterval(this.data.progressTimer);
+      this.setData({ progressTimer: null });
+    }
+    
+    // 启动假进度增长定时器
+    let progress = 0;
+    const timer = setInterval(() => {
+      // 每次增加1-3%的进度，确保增长速度缓慢
+      const increment = Math.floor(Math.random() * 3) + 1;
+      progress += increment;
+      
+      // 进度增长到85%时停止，等待接口返回
+      if (progress >= 85) {
+        progress = 85;
+        this.setData({ progressValue: progress });
+        return;
+      }
+      
+      this.setData({ progressValue: progress });
+    }, 300); // 每300毫秒更新一次进度
+    
+    // 保存定时器引用
+    this.setData({ progressTimer: timer });
+    
+    const requestData = {
+      userId: userId,
+      targetUserId: targetUserId
+    };
+    
+    app.request({
+      timeout: 100000,
+      responseType: 'text',
+      url: '/api/users/match/compare', // 后端接口会自动请求AI匹配接口
+      method: 'POST',
+      data: requestData,
+      success: (res) => {
+        // 接口请求完成，清除定时器
+        clearInterval(this.data.progressTimer);
+        this.setData({ 
+          progressTimer: null,
+          progressValue: 100 // 直接跳转到100%
+        });
+        
+        // 短暂延迟，让用户看到100%的状态
+        setTimeout(() => {
+          this.setData({ isLoadingMatchDegree: false });
+          
+          try {
+            // 处理完整的响应数据
+            let accumulatedContent = '';
+            accumulatedContent = res || ''; // app.request返回的res就是响应数据（文本内容）
+            
+            // 更新页面内容
+            if (accumulatedContent && accumulatedContent !== '<div style="text-align: center; color: #666; padding: 20px 0;">正在分析匹配度...</div>') {
+              const processedContent = accumulatedContent
+              this.setData({ matchDegreeContent: processedContent });
+              // 保存缓存
+              this.cacheMatchDegree(cacheKey, processedContent);
+            } else {
+              // 如果没有有效内容，显示默认文本
+              const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">暂无匹配度数据</div>';
+              this.setData({ matchDegreeContent: defaultContent });
+            }
+          } catch (err) {
+            console.error('处理响应数据异常！', err);
+            // 发生错误时显示默认文本
+            const defaultContent = '<div style="text-align: center; color: #666; padding: 20px 0;">匹配度数据加载失败</div>';
+            this.setData({ matchDegreeContent: defaultContent });
+          }
+        }, 500); // 延迟500毫秒，让用户看到100%的状态
+      },
+      fail: (err) => {
+        console.error('请求匹配度数据失败！', err);
+        // 清除定时器
+        clearInterval(this.data.progressTimer);
+        this.setData({ 
+          progressTimer: null,
+          isLoadingMatchDegree: false,
+          matchDegreeContent: '<div style="text-align: center; color: #666; padding: 20px 0;">匹配度数据加载失败</div>'
+        });
+      }
+    })
+  },
+
+  /**
+   * 缓存匹配度结果
+   */
+  cacheMatchDegree(cacheKey, content) {
+    try {
+      const cacheData = {
+        content: content,
+        timestamp: Date.now()
+      };
+      
+      // 更新内存缓存
+      const cache = this.data.matchDegreeCache;
+      cache[cacheKey] = cacheData;
+      this.setData({ matchDegreeCache: cache });
+      
+      // 保存到本地存储
+      wx.setStorageSync('matchDegreeCache', cache);
+    } catch (e) {
+      console.error('缓存匹配度结果失败:', e);
+    }
+  },
+  
+  /**
+   * 获取缓存的匹配度结果
+   */
+  getCachedMatchDegree(cacheKey) {
+    try {
+      // 先从内存缓存获取
+      const memoryCache = this.data.matchDegreeCache;
+      if (memoryCache[cacheKey]) {
+        const cachedTime = memoryCache[cacheKey].timestamp;
+        // 缓存有效期为30分钟
+        if (Date.now() - cachedTime < 30 * 60 * 1000) {
+          return memoryCache[cacheKey];
+        }
+      }
+      
+      // 从本地存储获取
+      const storageCache = wx.getStorageSync('matchDegreeCache') || {};
+      if (storageCache[cacheKey]) {
+        const cachedTime = storageCache[cacheKey].timestamp;
+        // 缓存有效期为30分钟
+        if (Date.now() - cachedTime < 30 * 60 * 1000) {
+          // 更新内存缓存
+          const cache = this.data.matchDegreeCache;
+          cache[cacheKey] = storageCache[cacheKey];
+          this.setData({ matchDegreeCache: cache });
+          return storageCache[cacheKey];
+        }
+      }
+    } catch (e) {
+      console.error('获取缓存匹配度失败:', e);
+    }
+    return null;
+  },
+
+  /**
+   * 关闭匹配度说明弹窗
+   */
+  closeMatchDegree() {
+    this.setData({
+      showMatchDegreeModal: false,
+      isLoadingMatchDegree: false
+      // 保留matchDegreeContent以便下次快速显示缓存内容
+    });
   },
 
   /**

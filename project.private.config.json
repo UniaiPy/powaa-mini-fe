@@ -5,8 +5,8 @@
     "miniprogram": {
       "list": [
         {
-          "name": "pages/chat/chat",
-          "pathName": "pages/chat/chat",
+          "name": "subpages/conversation/conversation",
+          "pathName": "subpages/conversation/conversation",
           "query": "",
           "scene": null,
           "launchMode": "default"
@@ -14,6 +14,13 @@
         {
           "name": "subpages/preview/preview",
           "pathName": "subpages/preview/preview",
+          "query": "userId=103",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/chat/chat",
+          "pathName": "pages/chat/chat",
           "query": "",
           "launchMode": "default",
           "scene": null

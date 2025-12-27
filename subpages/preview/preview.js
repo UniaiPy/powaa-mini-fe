@@ -18,7 +18,8 @@ Page({
     isFriend: null,           // 是否为好友关系，null表示未检查，true表示是好友，false表示不是好友
     isCheckingFriendship: false, // 是否正在检查好友关系
     progressValue: 0,         // 匹配度进度条值（0-100）
-    progressTimer: null       // 进度条定时器
+    progressTimer: null,      // 进度条定时器
+    shouldEncryptContact: false // 是否需要加密显示联系信息
   },
 
   /**
@@ -130,31 +131,32 @@ Page({
     this.loadProfileData();
     if(app.isLoggedIn()){
       this.checkIsTrained().then(() => {
-        console.log('isTrained', this.data.isTrained);
-        if(app.isLoggedIn()){
-          // 如果用户已登录，检查AI分身是否已完成训练
-          if(!app.checkUserInfoComplete({ redirect: false }) || !this.data.isTrained){
-              this.setData({
-                openShare: false
-              })
-              wx.hideShareMenu({
-                menus: ['shareAppMessage', 'shareTimeline']
-              })
-          }else if(app.checkUserInfoComplete({ redirect: false }) && this.data.isTrained){
-              wx.showShareMenu({
-                menus: ['shareAppMessage', 'shareTimeline']
-              })
-              this.setData({
-                openShare: true
-              })
-          }
-        }else{
-          // 如果用户未登录，隐藏分享菜单
+      console.log('isTrained', this.data.isTrained);
+      // 如果用户已登录，检查AI分身是否已完成训练
+        if(!app.checkUserInfoComplete({ redirect: false }) || !this.data.isTrained){
+          this.setData({
+            openShare: false
+          })
           wx.hideShareMenu({
             menus: ['shareAppMessage', 'shareTimeline']
           })
+        }else if(app.checkUserInfoComplete({ redirect: false }) && this.data.isTrained){
+          wx.showShareMenu({
+            menus: ['shareAppMessage', 'shareTimeline']
+          })
+          this.setData({
+            openShare: true
+          })
         }
       });
+    }else{
+      // 如果用户未登录，隐藏分享菜单
+      this.setData({
+        openShare: false
+      })
+      wx.hideShareMenu({
+        menus: ['shareAppMessage', 'shareTimeline']
+      })
     }
   },
 
@@ -216,15 +218,6 @@ Page({
       // 处理请求错误
       console.error('获取AI训练状态失败:', error);
     }
-  },
-  /**
-   * 导航到个人资料页面
-   */
-  navigateToProfile: function() {
-    const userId = this.data.userId;
-    wx.navigateTo({
-      url: `/pages/profile/profile?userId=${userId}`
-    });
   },
   
   /**
@@ -832,8 +825,9 @@ Page({
    * 导航到名片页面
    */
   navigateToProfile: function() {
+    console.log('导航到用户个人资料页面');
     const userId = this.data.userId;
-    wx.navigateTo({
+    wx.switchTab({
       url: `/pages/profile/profile?userId=${userId}`
     });
   },
@@ -884,7 +878,37 @@ Page({
           
           // 更新联系信息
           if (res.data.contactInfo) {
-            updateData.contactInfo = res.data.contactInfo;
+            // 根据条件判断是否需要加密联系信息
+            if(!app.isLoggedIn()){
+              updateData.shouldEncryptContact = true;
+              updateData.contactInfo = this.encryptContactInfo(res.data.contactInfo);
+              
+              // 设置页面数据
+              this.setData(updateData);
+              
+              // 生成并保存分享图
+              this.generateShareImage(res);
+            }else{
+              this.checkIsTrained().then(() => {
+                const app = getApp();
+                const shouldEncrypt = !app.checkUserInfoComplete({ redirect: false }) || 
+                                      !this.data.isTrained;
+                
+                updateData.shouldEncryptContact = shouldEncrypt;
+                // 如果需要加密，创建加密后的联系信息副本
+                if (shouldEncrypt) {
+                  updateData.contactInfo = this.encryptContactInfo(res.data.contactInfo);
+                } else {
+                  updateData.contactInfo = res.data.contactInfo;
+                }
+                
+                // 设置页面数据（包括联系信息）
+                this.setData(updateData);
+                
+                // 生成并保存分享图
+                this.generateShareImage(res);
+              });
+            }
           }
           
           // 更新社交媒体列表
@@ -897,17 +921,11 @@ Page({
             updateData.avatarUrl = res.data.avatar_url;
           }
           
-          // 设置页面数据
+          // 设置页面数据（不包含联系信息，联系信息在上面的条件分支中处理）
           this.setData(updateData);
           
           // 生成并保存分享图
-          console.log('userInfo:', res.data.userInfo);
-          const newUserInfo={
-            ...res.data.userInfo,
-            id: res.data.id
-          }
-          console.log('avatar_url:', res.data.avatar_url);
-          app.generateAndSaveShareImage(newUserInfo, res.data.avatar_url);
+          this.generateShareImage(res);
         } else {
           this.showToast(res.message || '获取用户信息失败');
         }
@@ -922,6 +940,20 @@ Page({
     });
   },
 
+  /**
+   * 生成并保存分享图（提取为独立函数，避免重复代码）
+   */
+  generateShareImage(res) {
+    const app = getApp();
+    console.log('userInfo:', res.data.userInfo);
+    const newUserInfo={
+      ...res.data.userInfo,
+      id: res.data.id
+    }
+    console.log('avatar_url:', res.data.avatar_url);
+    app.generateAndSaveShareImage(newUserInfo, res.data.avatar_url);
+  },
+  
   // 复制社交媒体链接
   copySocialMedia(e) {
     const url = e.currentTarget.dataset.url
@@ -937,6 +969,38 @@ Page({
         this.showToast('复制失败');
       }
     })
+  },
+  /**
+   * 加密联系信息
+   * @param {Object} contactInfo 原始联系信息
+   * @returns {Object} 加密后的联系信息
+   */
+  encryptContactInfo(contactInfo) {
+    // 创建联系信息副本，避免修改原始数据
+    const encryptedContact = { ...contactInfo };
+    
+    // 加密电话号码（显示前3位和后4位，中间用*代替）
+    if (encryptedContact.phone) {
+      encryptedContact.phone = encryptedContact.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+    }
+    
+    // 加密微信号（显示前2位和后2位，中间用*代替）
+    if (encryptedContact.wechat) {
+      const len = encryptedContact.wechat.length;
+      if (len > 4) {
+        encryptedContact.wechat = encryptedContact.wechat.substring(0, 2) + '*'.repeat(len - 4) + encryptedContact.wechat.substring(len - 2);
+      }
+    }
+    
+    // 加密地址（只显示省份和城市，隐藏详细地址）
+    if (encryptedContact.address) {
+      // 简单处理：只保留前8个字符，后面用...代替
+      encryptedContact.address = encryptedContact.address.length > 8 
+        ? encryptedContact.address.substring(0, 8) + '...' 
+        : encryptedContact.address;
+    }
+    
+    return encryptedContact;
   },
   /**
    * 用户点击右上角分享

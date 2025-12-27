@@ -36,8 +36,12 @@
       <text class="fa fa-address-card text-gray-500 w-5"></text>
       <text class="ml-2 text-gray-700 text-sm">查看名片</text>
     </view>
-    <button class="option-item" open-type="share">
-      <text class="fa fa-share-alt text-gray-500 w-5"></text>
+    <view class="option-item" bindtap="showMatchDegree">
+      <text class="fa fa-star text-gray-500 w-5"></text>
+      <text class="ml-2 text-gray-700 text-sm">查看匹配度</text>
+    </view>
+    <button class="option-item option-item-share" open-type="share">
+      <text class="fa fa-share-alt text-gray-500 w-5 align-left"></text>
       <text class="ml-2 text-gray-700 text-sm">分享名片</text>
     </button>
     <!-- <view class="option-item" bindtap="reportUser">
@@ -249,7 +253,7 @@
       <view class="plus-btn" id="plusBtn" bindtap="showPlusMenu">
         <text class="fa fa-plus"></text>
       </view>
-      <input type="text" cursor-spacing="10" class="input-field" id="messageInput" placeholder="输入消息..." value="{{inputValue}}" bindinput="onInput" bindfocus="onInputFocus" bindblur="onInputBlur" bindconfirm="sendMessage"></input>
+      <textarea cursor-spacing="10" class="input-field" id="messageInput" placeholder="输入消息..." value="{{inputValue}}" bindinput="onInput" bindfocus="onInputFocus" bindblur="onInputBlur" bindconfirm="sendMessage" auto-height="true" style="min-height: 40px;" show-confirm-bar="false"></textarea>
       <view class="send-btn" id="sendBtn" bindtap="sendMessage">
         <text class="fa fa-paper-plane"></text>
       </view>
@@ -307,4 +311,80 @@
   </view>
   <!-- 分享图绘制画布 -->
   <canvas type="2d" id="shareCanvas" style="width: 600px; height: 600px; position: absolute; left: -9999px;"></canvas>
+  <!-- 匹配度说明弹窗 -->
+  <view id="matchDegreeModal" class="matchDegreeModal absolute inset-0 bg-primary z-9999" wx:if="{{showMatchDegreeModal}}">
+    <view class="bg-white w-full h-full flex flex-col">
+      <!-- 弹窗头部 -->
+      <view class="flex items-center justify-between p-4 border-b border-gray-100">
+        <view class="text-base font-semibold text-gray-900">匹配度说明</view>
+        <view class="w-8 h-8 flex items-center justify-center text-gray-400" bindtap="closeMatchDegree">
+          <text class="fa fa-times text-xl"></text>
+        </view>
+      </view>
+      <!-- 弹窗内容 -->
+      <view class="p-5 flex-1 overflow-y-auto">
+        <!-- 加载状态 - 进度条 -->
+        <view class="loading-container flex justify-center items-center py-12" wx:if="{{isLoadingMatchDegree && matchDegreeContent === ''}}">
+          <view class="progress-content text-center">
+            <view class="progress-title mb-4 text-gray-600">正在分析匹配度...</view>
+            <!-- 进度条容器 -->
+            <view class="progress-bar-container w-64 h-3 bg-gray-200 rounded-full mb-3">
+              <!-- 进度条填充 -->
+              <view class="progress-bar-fill h-full bg-purple-600 rounded-full" style="width: {{progressValue}}%; transition: width 0.3s ease;"></view>
+            </view>
+            <!-- 进度百分比 -->
+            <view class="progress-text text-purple-600 font-semibold">{{progressValue}}%</view>
+          </view>
+        </view>
+        <!-- 匹配度内容 -->
+        <view class="text-gray-700 text-sm leading-relaxed" wx:if="{{matchDegreeContent !== ''}}">
+          <view class="font-semibold mb-3">匹配度评分</view>
+          <view class="mb-3 border-b border-gray-100 py-3">
+            <view class="flex items-center">
+              总体匹配度：
+              <view class="text-purple-600 font-bold">{{matchDegreeContent.overallScore}}%</view>
+            </view>
+            <view class="flex items-center">
+              人格契合度：
+              <view class="text-blue-600 font-bold">
+                {{matchDegreeContent.personalityMatchScore}}%
+              </view>
+            </view>
+          </view>
+          <view wx:if="{{matchDegreeContent.overallScore >= 90}}" class="mb-4 border-b border-gray-100 py-3">
+            <view class="font-semibold mb-3">高匹配用户</view>
+            <view class="text-gray-500">
+              <text class="fa fa-star text-red-500 font-bold">高匹配用户：</text>
+              <text class="text-blue-500 font-bold">【{{chatInfo.name}}】</text>
+              是你的精准目标对象，建议你直接联系对方本人，建立深度关系!
+            </view>
+          </view>
+          <view wx:if="{{matchDegreeContent.overallScore >= 80 && matchDegreeContent.overallScore < 90}}" class="mb-4 border-b border-gray-100 py-3">
+            <view class="font-semibold mb-3">高潜力用户</view>
+            <view class="text-gray-500">
+              <text class="fa fa-arrow-up text-green-600 font-bold">高潜力用户：</text>
+              <text class="text-blue-500 font-bold">【{{chatInfo.name}}】</text>
+              是高潜力目标对象，但你的信息不足，建议你本人和他多聊。
+            </view>
+          </view>
+          <view class="mb-4">
+            <view class="font-semibold mb-3">匹配点</view>
+            <view class="text-gray-500">{{matchDegreeContent.matchingPoints}}</view>
+          </view>
+          <view class="mb-4">
+            <view class="font-semibold mb-3">分歧点</view>
+            <view class="text-gray-500">{{matchDegreeContent.incomprehension}}</view>
+          </view>
+        </view>
+        <!-- 无内容提示 -->
+        <view class="text-gray-600 text-sm text-center py-12" wx:if="{{!isLoadingMatchDegree && matchDegreeContent === ''}}">
+          暂无匹配度数据
+        </view>
+        <!-- 加载中提示 -->
+        <view class="text-gray-400 text-xs text-center mt-2" wx:if="{{isLoadingMatchDegree && matchDegreeContent !== ''}}">
+          正在获取更多内容...
+        </view>
+      </view>
+    </view>
+  </view>
 </view>

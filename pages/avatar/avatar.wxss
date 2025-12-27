@@ -287,13 +287,15 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 22px;
-  padding: 0 16px;
+  padding: 8px 16px;
   font-size: 16px;
   outline: none;
-  height: 44px;
-  line-height: 44px;
+  min-height: 44px;
+  line-height: 22px;
   box-sizing: border-box;
   vertical-align: middle;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .input-field:focus {
@@ -356,6 +358,7 @@
     transform: translateY(-100%);
   }
 }
+
 @keyframes slideInUp2 {
   from {
     opacity: 0;
@@ -367,6 +370,7 @@
     transform: translateY(0);
   }
 }
+
 .function-grid {
   display: flex;
   gap: 16px;
@@ -426,7 +430,7 @@
 /* AI分身悬浮按钮样式 */
 .ai-avatar-button {
   position: fixed;
-  bottom: 100px;
+  bottom: 105px;
   right: 20px;
   width: 60px;
   height: 60px;
@@ -950,6 +954,16 @@
   padding-right: 24px;
 }
 
+.px-4 {
+  padding-left: 24rpx;
+  padding-right: 24rpx;
+}
+
+.w-100 {
+  width: 100px;
+  text-align: center;
+}
+
 .relative {
   position: relative;
 }
@@ -1202,5 +1216,10 @@
 }
 
 .py-2 {
-  padding: 5px 0;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.bg-gray-300 {
+  background-color: #f0eeee;
 }

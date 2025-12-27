@@ -21,6 +21,12 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+/* 多行placeholder样式 */
+.textarea-multi-placeholder {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
 .share-btn {
   border: none;
   background-color: transparent;
@@ -57,7 +63,7 @@
 }
 
 .content-with-fixed-nav {
-  padding: 44px 0 60px 0;
+  padding: 44px 0 70px 0;
 }
 
 /* 头像样式 */
@@ -519,6 +525,10 @@
 
 .text-center {
   text-align: center;
+}
+
+.align-right {
+  text-align: right;
 }
 
 /* 阴影类 */

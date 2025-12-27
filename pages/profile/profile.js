@@ -149,6 +149,28 @@ Page({
     this.checkIsTrained();
     this.checkUserInfoComplete();
   },
+  goAvatarOrNot(){
+    const app = getApp()
+     // 检查用户信息是否完整
+    if (app.checkUserInfoComplete({ redirect: false })) {
+      console.log('用户信息已完整，检查AI训练状态');
+      // 重新获取最新的训练状态
+      this.checkIsTrained().then(() => {
+        // 延迟1.5秒跳转，让用户先看到保存成功提示
+        setTimeout(() => {
+          if (this.data.isTrained) {
+            return
+          } else {
+            // AI训练未完成，跳转到avatar页
+            console.log('AI训练未完成，跳转到avatar页');
+            wx.switchTab({
+              url: '/pages/avatar/avatar'
+            });
+          }
+        }, 2000);
+      });
+    }
+  },
   async checkIsTrained() {
     try {
       // 获取当前AI分身的训练状态
@@ -483,6 +505,9 @@ Page({
     
     // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
     // this.checkAndSendAutoFriendRequest()
+
+    // 第一次完成所有信息后，跳转到avatar页
+    this.goAvatarOrNot();
     
     // 生成并保存分享图
     app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
@@ -832,9 +857,9 @@ Page({
   saveProfileEdit() {
     const app = getApp()
     const intro = this.data.editProfileDescription.trim()
-    if (!intro) {
+    if (!intro || intro.length < 50) {
       wx.showToast({
-        title: '请输入个人简介',
+        title: '请输入至少50字的个人简介',
         icon: 'none'
       })
       return
@@ -878,6 +903,8 @@ Page({
           // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
           // this.checkAndSendAutoFriendRequest()
           
+          // 第一次完成所有信息后，跳转到avatar页
+          this.goAvatarOrNot();
           // 生成并保存分享图
           app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
 
@@ -984,6 +1011,8 @@ Page({
           // 检查用户信息是否完整，如果完整且有分享者ID，则发送好友请求
           // this.checkAndSendAutoFriendRequest()
           
+          // 第一次完成所有信息后，跳转到avatar页
+          this.goAvatarOrNot();
           // 生成并保存分享图
           app.generateAndSaveShareImage(this.data.userInfo, this.data.avatarUrl)
         } else {

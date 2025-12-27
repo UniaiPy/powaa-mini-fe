@@ -10,11 +10,15 @@
         </view>
       </view>
       <view class="flex items-center justify-center">
-        <view class="atom-btn" bindtap="toggleModelMenu">
+        <view class="atom-btn flex items-center justify-center" bindtap="toggleModelMenu">
           <image src="/assets/icons/icon-atom.png"></image>
         </view>
         <view class="chart-btn ml-7" bindtap="openAIReport">
-          <image src="/assets/icons/icon-chart.png"></image>
+          <!-- <image src="/assets/icons/icon-chart.png"></image> -->
+          <view class="text-sm px-4 text-center flex items-center justify-center bg-gray-300 rounded-full py-2">
+            <image src="/assets/icons/icon-chart.png" class="mr-2"></image>
+            AI报告
+          </view>
         </view>
       </view>
     </view>
@@ -191,7 +195,7 @@
       <view class="plus-btn" bindtap="showPlusMenu">
         <text class="fa fa-plus"></text>
       </view>
-      <input type="text" cursor-spacing="10" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." bindconfirm="sendMessage" />
+      <textarea cursor-spacing="10" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." bindconfirm="sendMessage" auto-height="true" style="min-height: 40px;" show-confirm-bar="false" />
       <!-- <view class="hold-to-talk-btn" wx:if="{{isVoiceMode}}" bindtouchstart="startRecording" bindtouchend="stopRecording">
         <text class="fa fa-microphone"></text>
         <text>按住说话</text>

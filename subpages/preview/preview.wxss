@@ -55,6 +55,7 @@
 /* 内容区域 - 考虑固定导航栏的高度 */
 .content-with-fixed-nav {
   position: relative;
+  padding-bottom: 11rem !important;
 }
 
 .bottom-btns {
@@ -527,14 +528,17 @@
 .progress-title {
   margin-bottom: 16px;
   font-size: 16px;
-  color: #4b5563; /* text-gray-600 */
+  color: #4b5563;
+  /* text-gray-600 */
 }
 
 .progress-bar-container {
   width: 256px;
   height: 12px;
-  background-color: #f3f4f6; /* bg-gray-200 */
-  border-radius: 9999px; /* rounded-full */
+  background-color: #f3f4f6;
+  /* bg-gray-200 */
+  border-radius: 9999px;
+  /* rounded-full */
   margin-bottom: 12px;
   overflow: hidden;
   position: relative;
@@ -542,8 +546,10 @@
 
 .progress-bar-fill {
   height: 100%;
-  background-color: #8b5cf6; /* bg-purple-600 */
-  border-radius: 9999px; /* rounded-full */
+  background-color: #8b5cf6;
+  /* bg-purple-600 */
+  border-radius: 9999px;
+  /* rounded-full */
   transition: width 0.3s ease;
   position: absolute;
   left: 0;
@@ -553,7 +559,8 @@
 .progress-text {
   font-size: 16px;
   font-weight: 600;
-  color: #8b5cf6; /* text-purple-600 */
+  color: #8b5cf6;
+  /* text-purple-600 */
 }
 
 /* 响应式调整 */

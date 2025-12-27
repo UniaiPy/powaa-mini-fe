@@ -109,19 +109,23 @@
               <text class="fa fa-edit mr-1.5"></text>
               编辑
             </view>
-            <view wx:if="{{showProfileModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="saveProfileEdit">
-              <text class="fa fa-save mr-1.5"></text>
-              保存
-            </view>
             <view wx:if="{{showProfileModal}}" class="ml-4 text-xs text-gray-400 bg-gray-200 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="closeProfileEditModal">
               <text class="fa fa-close mr-1.5"></text>
               取消
+            </view>
+            <view wx:if="{{showProfileModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="saveProfileEdit">
+              <text class="fa fa-save mr-1.5"></text>
+              保存
             </view>
           </view>
         </view>
         <view class="text-sm text-gray-700">
           <text wx:if="{{!showProfileModal}}">{{userInfo.description}}</text>
-          <textarea wx:else cursor-spacing="10" value="{{editProfileDescription}}" maxlength="400" placeholder="请输入您的个人简介..." class="w-full py-2 rounded-lg  resize-y min-h-200" bindinput="onProfileDescriptionInput"></textarea>
+          <textarea wx:else cursor-spacing="10" value="{{editProfileDescription}}" maxlength="400" placeholder="怎么填？参考下边：\n\n1、你是谁？（职业/身份：创业者、工程师、咨询师、博主，或某兴趣爱好者）\n\n2、你在做什么？（如：做产品、创业、写内容、带团队，也可是健身、学习）\n\n3、你有什么经验或判断？（如：做这件事几年、有方法、踩过坑，或生活经验）\n\n4、别人适合跟你聊什么？（如：工作、生活、兴趣爱好、情感话题）" class="w-full py-2 rounded-lg resize-y min-h-200 textarea-multi-placeholder" bindinput="onProfileDescriptionInput"></textarea>
+          <view class="align-right text-xs text-gray-500 mt-1 block" wx:if="{{showProfileModal}}">
+            <text class="mr-1">最低50字</text>
+            {{editProfileDescription.length}}/400
+          </view>
         </view>
       </view>
       <!-- 联系信息 -->
@@ -136,13 +140,13 @@
               <text class="fa fa-edit mr-1.5"></text>
               编辑
             </view>
-            <view wx:if="{{showContactModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="saveContactEdit">
-              <text class="fa fa-save mr-1.5"></text>
-              保存
-            </view>
             <view wx:if="{{showContactModal}}" class="ml-4 text-xs text-gray-400 bg-gray-200 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="closeContactEditModal">
               <text class="fa fa-close mr-1.5"></text>
               取消
+            </view>
+            <view wx:if="{{showContactModal}}" class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="saveContactEdit">
+              <text class="fa fa-save mr-1.5"></text>
+              保存
             </view>
           </view>
         </view>
@@ -182,7 +186,7 @@
         </view>
       </view>
       <!-- 社交媒体 -->
-      <view class="bg-white p-4 border-b border-gray-100">
+      <!-- <view class="bg-white p-4 border-b border-gray-100">
         <view class="flex items-center justify-between">
           <view class="text-sm font-semibold text-gray-700 flex items-center">对外媒体</view>
           <view class="flex items-center space-x-2" wx:if="{{isLoggedIn}}">
@@ -196,13 +200,11 @@
           <view class="space-y-1 text-sm text-gray-600" wx:if="{{socialMediaList.length > 0}}">
             <view class="flex items-center justify-between py-2 hover-bg-gray-50 rounded-lg space-item" wx:for="{{socialMediaList}}" wx:key="id">
               <view class="flex items-center">
-                <!-- <text class="fa fa-{{item.icon}} {{item.iconColor}} mr-3"></text> -->
                 <text class="mr-5">{{item.name}}</text>
                 <text class="text-gray-500">@{{item.username}}</text>
               </view>
               <view class="flex items-center">
                 <view class="mr-3 text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="copySocialMedia" data-url="{{item.url}}">
-                  <!-- <text class="fa fa-plus mr-1.5"></text> -->
                   复制链接
                 </view>
                 <view class="text-xs text-purple-600 bg-purple-100 px-3 py-1.5 rounded-full flex items-center shadow-sm" bindtap="editSocialMedia" data-id="{{item.id}}">
@@ -214,7 +216,7 @@
           </view>
           <view class="text-center text-gray-400 py-4" wx:else>暂无媒体信息，点击添加</view>
         </view>
-      </view>
+      </view> -->
     </view>
     <!-- 悬浮分享按钮 -->
     <view class="share-btn2">
