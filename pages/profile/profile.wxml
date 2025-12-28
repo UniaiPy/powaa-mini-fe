@@ -121,7 +121,7 @@
         </view>
         <view class="text-sm text-gray-700">
           <text wx:if="{{!showProfileModal}}">{{userInfo.description}}</text>
-          <textarea wx:else cursor-spacing="10" value="{{editProfileDescription}}" maxlength="400" placeholder="怎么填？参考下边：\n\n1、你是谁？（职业/身份：创业者、工程师、咨询师、博主，或某兴趣爱好者）\n\n2、你在做什么？（如：做产品、创业、写内容、带团队，也可是健身、学习）\n\n3、你有什么经验或判断？（如：做这件事几年、有方法、踩过坑，或生活经验）\n\n4、别人适合跟你聊什么？（如：工作、生活、兴趣爱好、情感话题）" class="w-full py-2 rounded-lg resize-y min-h-200 textarea-multi-placeholder" bindinput="onProfileDescriptionInput"></textarea>
+          <textarea wx:else cursor-spacing="20" value="{{editProfileDescription}}" maxlength="400" placeholder="参考下方填写：\n\n1、你是谁？(如创业者，咨询师，博主，某兴趣爱好者)\n\n2、你在做什么？(如做产品，写内容，在健身，学习中)\n\n3、你有什么经验、判断？(如做某件事几年，有方法或经验)\n\n4、别人适合跟你聊什么？(如工作，生活，情感，爱好)" class="w-full py-2 rounded-lg resize-y min-h-200 textarea-multi-placeholder" bindinput="onProfileDescriptionInput"></textarea>
           <view class="align-right text-xs text-gray-500 mt-1 block" wx:if="{{showProfileModal}}">
             <text class="mr-1">最低50字</text>
             {{editProfileDescription.length}}/400

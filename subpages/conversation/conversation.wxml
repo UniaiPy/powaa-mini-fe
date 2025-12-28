@@ -253,7 +253,7 @@
       <view class="plus-btn" id="plusBtn" bindtap="showPlusMenu">
         <text class="fa fa-plus"></text>
       </view>
-      <textarea cursor-spacing="10" class="input-field" id="messageInput" placeholder="输入消息..." value="{{inputValue}}" bindinput="onInput" bindfocus="onInputFocus" bindblur="onInputBlur" bindconfirm="sendMessage" auto-height="true" style="min-height: 40px;" show-confirm-bar="false"></textarea>
+      <textarea cursor-spacing="25" class="input-field" id="messageInput" placeholder="输入消息..." value="{{inputValue}}" bindinput="onInput" bindfocus="onInputFocus" bindblur="onInputBlur" bindconfirm="sendMessage" auto-height="true" style="min-height: 40px;" show-confirm-bar="false"></textarea>
       <view class="send-btn {{sendBtnDisabled ? 'disabled' : ''}}" id="sendBtn" bindtap="sendMessage" disabled="{{sendBtnDisabled}}">
         <text class="fa fa-paper-plane"></text>
       </view>

@@ -19,6 +19,7 @@
       <view class="bottom-btns bottom-20 left-0 right-0 z-30 pb-2 floating-button" wx:if="{{!isOwnProfile}}">
         <view class="max-w-md mx-auto">
           <view class="py-3 rounded-xl text-base font-bold flex items-center justify-center shadow-lg btn-secondary" bindtap="navigateToProfile">
+            <text class="fa fa-plus mr-2 text-lg"></text>
             创建我的AI分身
           </view>
           <!-- 一排两个按钮：匹配度说明 + 与ta聊天 -->

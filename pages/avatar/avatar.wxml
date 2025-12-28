@@ -195,7 +195,7 @@
       <view class="plus-btn" bindtap="showPlusMenu">
         <text class="fa fa-plus"></text>
       </view>
-      <textarea cursor-spacing="10" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." bindconfirm="sendMessage" auto-height="true" style="min-height: 40px;" show-confirm-bar="false" />
+      <textarea cursor-spacing="25" class="input-field" model:value="{{inputValue}}" placeholder="输入消息..." bindconfirm="sendMessage" auto-height="true" style="min-height: 40px;" show-confirm-bar="false" />
       <!-- <view class="hold-to-talk-btn" wx:if="{{isVoiceMode}}" bindtouchstart="startRecording" bindtouchend="stopRecording">
         <text class="fa fa-microphone"></text>
         <text>按住说话</text>
