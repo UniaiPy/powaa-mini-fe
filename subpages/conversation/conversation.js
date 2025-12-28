@@ -56,6 +56,8 @@ Page({
     menuPosition: { left: 0, top: 0 },
     // 下拉刷新状态
     refreshing: false,
+    // 发送按钮是否禁用
+    sendBtnDisabled: false,
     // 分页相关字段
     nextReqMessageID: '',
     isCompleted: false,
@@ -74,6 +76,9 @@ Page({
     progressTimer: null,        // 进度条定时器
     isTrained: false,           // AI分身是否已完成训练
     userId: '',                 // 目标用户ID
+    // 消息发送间隔限制
+    lastSendTime: 0,            // 上次发送消息的时间戳
+    minSendInterval: 1000,      // 最小发送间隔，单位毫秒
   },
 
   /**
@@ -93,22 +98,22 @@ Page({
     let streamingMessages = this.data.streamingMessages;
     let messages = this.data.messages;
     
-    console.log('=== 处理消息开始 ===', {
-      messageID: messageID,
-      message: message
-    });
+    // console.log('=== 处理消息开始 ===', {
+    //   messageID: messageID,
+    //   message: message
+    // });
     
     // 检查是否为流式消息
-    let isStreaming = message.payload?.isStreaming === true;
-    let streamContent = message.payload?.streamContent || '';
-    let streamComplete = message.payload?.streamComplete === true;
-    let streamMessageKey = message.payload?.streamMessageKey || 'stream_' + Math.floor(Date.now() / 1000); // 使用固定的键标识同一个流式消息
+    let isStreaming = false;
+    let streamContent = '';
+    let streamComplete = false;
+    let streamMessageKey = 'stream_' + Math.floor(Date.now() / 1000); // 使用固定的键标识同一个流式消息
     
     // 处理自定义消息格式的流式消息（来自后端的下一问接口）
     if (message.type === wx.TencentCloudChat.TYPES.MSG_CUSTOM) {
       try {
         const customData = JSON.parse(message.payload?.data || '{}');
-        console.log('=== 解析自定义消息 ===', customData);
+        // console.log('=== 解析自定义消息 ===', customData);
         
         // 检查是否为AI下一问的流式消息
         if (customData.chatbotPlugin === 1 && customData.src === 2 && customData.chunks) {
@@ -120,7 +125,18 @@ Page({
           streamContent = chunkContent;
           // 对于下一问接口，我们需要将多个片段合并成一个完整的消息
           // 所以不立即设置为已完成，等待所有片段处理完成后再设置
-          streamComplete = false;
+          streamComplete = customData.isFinished == 1;
+          if (!streamComplete) {
+            // 禁用发送按钮
+            this.setData({
+              sendBtnDisabled: true
+            });
+          } else {
+            // 启用发送按钮
+            this.setData({
+              sendBtnDisabled: false
+            });
+          }
           
           // 从message对象中获取MsgKey，这是后端返回的唯一标识
           // 对于流式消息，所有片段都应该有相同的MsgKey
@@ -142,17 +158,17 @@ Page({
             streamMessageKey = messageID || streamMessageKey;
           }
           
-          console.log('=== 自定义流式消息处理 ===', {
-            chunkContent: chunkContent,
-            chunksLength: customData.chunks.length,
-            isStreaming: isStreaming,
-            streamContent: streamContent,
-            streamComplete: streamComplete,
-            streamMessageKey: streamMessageKey,
-            messageMsgKey: message.MsgKey,
-            messageID: messageID,
-            isModified: message.isModified
-          });
+          // console.log('=== 自定义流式消息处理 ===', {
+          //   chunkContent: chunkContent,
+          //   chunksLength: customData.chunks.length,
+          //   isStreaming: isStreaming,
+          //   streamContent: streamContent,
+          //   streamComplete: streamComplete,
+          //   streamMessageKey: streamMessageKey,
+          //   messageMsgKey: message.MsgKey,
+          //   messageID: messageID,
+          //   isModified: message.isModified
+          // });
         }
       } catch (error) {
         console.error('=== 解析自定义消息失败 ===', error);
@@ -171,11 +187,11 @@ Page({
     
     // 对于MESSAGE_MODIFIED事件，直接查找并更新消息 - 实现打印机效果
     if (message.eventType === 'MESSAGE_MODIFIED' || message.type === 'modified' || message.isModified) {
-      console.log('=== 处理MESSAGE_MODIFIED事件（打印机效果） ===', {
-        messageID: messageID,
-        streamMessageKey: streamMessageKey,
-        messageInfoContent: messageInfo.content
-      });
+      // console.log('=== 处理MESSAGE_MODIFIED事件（打印机效果） ===', {
+      //   messageID: messageID,
+      //   streamMessageKey: streamMessageKey,
+      //   messageInfoContent: messageInfo.content
+      // });
       
       // 查找对应的消息，使用多种匹配方式
       let messageIndex = messages.findIndex(msg => 
@@ -189,12 +205,12 @@ Page({
       
       if (messageIndex !== -1) {
         // 找到对应的消息，更新内容 - 这是实现打印机效果的关键
-        console.log('=== 找到对应的消息，更新内容（打印机效果） ===', {
-          messageIndex: messageIndex,
-          oldContent: messages[messageIndex].content,
-          newContent: messageInfo.content,
-          streamMessageKey: streamMessageKey
-        });
+        // console.log('=== 找到对应的消息，更新内容（打印机效果） ===', {
+        //   messageIndex: messageIndex,
+        //   oldContent: messages[messageIndex].content,
+        //   newContent: messageInfo.content,
+        //   streamMessageKey: streamMessageKey
+        // });
         
         // 更新消息内容 - 直接使用最新的完整内容
         messages[messageIndex].content = messageInfo.content;
@@ -205,10 +221,10 @@ Page({
         this.setData({
           messages: messages
         });
-        console.log('=== MESSAGE_MODIFIED事件处理完成 ===', {
-          messageID: messageID,
-          newContent: messageInfo.content
-        });
+        // console.log('=== MESSAGE_MODIFIED事件处理完成 ===', {
+        //   messageID: messageID,
+        //   newContent: messageInfo.content
+        // });
         
         // 滚动到底部
         setTimeout(() => {
@@ -227,12 +243,12 @@ Page({
     }
     
     if (isStreaming || streamContent) {
-      console.log('=== 是流式消息，开始处理 ===', {
-        messageID: messageID,
-        streamMessageKey: streamMessageKey,
-        streamingMessages: streamingMessages,
-        messageInfoContent: messageInfo.content
-      });
+      // console.log('=== 是流式消息，开始处理 ===', {
+      //   messageID: messageID,
+      //   streamMessageKey: streamMessageKey,
+      //   streamingMessages: streamingMessages,
+      //   messageInfoContent: messageInfo.content
+      // });
       
       // 检查消息是否已存在于消息列表中，使用多种匹配方式
       const existingMessageIndex = messages.findIndex(msg => 
@@ -293,11 +309,11 @@ Page({
         };
         
         messages = [...messages, newMessage];
-        console.log('=== 创建新的流式消息 ===', {
-          streamMessageKey: streamMessageKey,
-          content: messageInfo.content,
-          messagesLength: messages.length
-        });
+        // console.log('=== 创建新的流式消息 ===', {
+        //   streamMessageKey: streamMessageKey,
+        //   content: messageInfo.content,
+        //   messagesLength: messages.length
+        // });
       } else {
         // 消息已存在，更新内容 - 实现打印机效果
         console.log('=== 消息已存在，更新内容（打印机效果） ===', {
@@ -358,10 +374,10 @@ Page({
         this.scrollToBottom();
       }, 100);
       
-      console.log('=== 流式消息处理完成 ===', {
-        messageID: messageID,
-        isComplete: streamComplete
-      });
+      // console.log('=== 流式消息处理完成 ===', {
+      //   messageID: messageID,
+      //   isComplete: streamComplete
+      // });
       
       return true; // 表示已处理流式消息
     } else {
@@ -485,7 +501,7 @@ Page({
    */
   onMessageReceived(event) {
     const messageList = event.data;
-    console.log('接收到新消息:', messageList);
+    // console.log('接收到新消息:', messageList);
     
     messageList.forEach((message) => {
       // 只处理当前会话的消息
@@ -580,7 +596,7 @@ Page({
    */
   onMessageModified(event) {
     let messages = event.data;
-    console.log('消息变更:', messages);
+    // console.log('消息变更:', messages);
     
     // 处理消息数组的情况（TUIKit可能会发送数组）
     if (Array.isArray(messages)) {
@@ -599,7 +615,7 @@ Page({
   _handleSingleModifiedMessage(message) {
     if (!message) return;
     
-    console.log('=== 处理单个变更消息 ===', { messageID: message.ID, messageType: message.type });
+    // console.log('=== 处理单个变更消息 ===', { messageID: message.ID, messageType: message.type });
     
     // 先尝试作为流式消息处理
     const isStreamingHandled = this.handleStreamingMessage(message);
@@ -1536,6 +1552,11 @@ Page({
   async sendMessage() {
     const inputValue = this.data.inputValue.trim();
     const conversationID = this.data.conversationID;
+    // 检查发送按钮是否禁用
+    if (this.data.sendBtnDisabled) {
+      console.log('=== 发送按钮已禁用，无法发送消息 ===');
+      return;
+    }
     
     if (!inputValue) {
       wx.showToast({
@@ -1545,11 +1566,18 @@ Page({
       return;
     }
     
+    // 检查消息发送间隔
+    const currentTime = getCurrentTimestamp();
+    const lastSendTime = this.data.lastSendTime;
+    const minInterval = this.data.minSendInterval;
+    
+    if (currentTime - lastSendTime < minInterval) {
+      console.log(`消息发送过于频繁，请稍后后再试`);
+      return;
+    }
+    
     // 检查是否只包含表情
     const emojiOnly = this.isEmojiOnly(inputValue);
-    
-    // 添加消息到本地列表（乐观更新）
-    const currentTime = this.getCurrentTime();
     
     // 判断是否应该显示时间分隔符
     const lastMessage = this.data.messages.length > 0 ? 
@@ -1645,8 +1673,10 @@ Page({
         msg.id === newMessage.id ? { ...msg, id: message.ID, messageObj: message } : msg
       );
       
+      // 更新上次发送时间
       this.setData({
-        messages: updatedMessagesWithID
+        messages: updatedMessagesWithID,
+        lastSendTime: getCurrentTimestamp()
       });
 
     } catch (error) {

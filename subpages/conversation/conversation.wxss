@@ -335,6 +335,11 @@
   flex-shrink: 0;
 }
 
+.send-btn.disabled {
+  background-color: #a5b4fc;
+  cursor: not-allowed;
+}
+
 .send-btn:active {
   transform: scale(0.95);
 }

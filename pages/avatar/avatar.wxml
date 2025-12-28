@@ -15,7 +15,7 @@
         </view>
         <view class="chart-btn ml-7" bindtap="openAIReport">
           <!-- <image src="/assets/icons/icon-chart.png"></image> -->
-          <view class="text-sm px-4 text-center flex items-center justify-center bg-gray-300 rounded-full py-2">
+          <view class="text-sm px-4 text-center flex items-center justify-center bg-gray-300 rounded-full py-1">
             <image src="/assets/icons/icon-chart.png" class="mr-2"></image>
             AI报告
           </view>
@@ -200,7 +200,7 @@
         <text class="fa fa-microphone"></text>
         <text>按住说话</text>
       </view> -->
-      <view class="send-btn" bindtap="sendMessage">
+      <view class="send-btn {{sendBtnDisabled ? 'disabled' : ''}}" bindtap="sendMessage" disabled="{{sendBtnDisabled}}">
         <text class="fa fa-paper-plane"></text>
       </view>
     </view>

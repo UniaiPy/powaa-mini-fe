@@ -64,6 +64,11 @@ Page({
     refreshing: false,
     // 流式消息处理相关
     streamingMessages: {}, // 存储正在处理的流式消息，key为messageID
+    // 发送按钮是否禁用
+    sendBtnDisabled: false,
+    // 消息发送间隔限制
+    lastSendTime: 0,            // 上次发送消息的时间戳
+    minSendInterval: 1000,      // 最小发送间隔，单位毫秒
   },
   
   /**
@@ -89,10 +94,10 @@ Page({
     });
     
     // 检查是否为流式消息
-    let isStreaming = message.payload?.isStreaming === true;
-    let streamContent = message.payload?.streamContent || '';
-    let streamComplete = message.payload?.streamComplete === true;
-    let streamMessageKey = message.payload?.streamMessageKey || 'stream_' + Math.floor(Date.now() / 1000); // 使用固定的键标识同一个流式消息
+    let isStreaming = false;
+    let streamContent = '';
+    let streamComplete = false;
+    let streamMessageKey = 'stream_' + Math.floor(Date.now() / 1000); // 使用固定的键标识同一个流式消息
     
     // 处理自定义消息格式的流式消息（来自后端的下一问接口）
     if (message.type === wx.TencentCloudChat.TYPES.MSG_CUSTOM) {
@@ -110,7 +115,18 @@ Page({
           streamContent = chunkContent;
           // 对于下一问接口，我们需要将多个片段合并成一个完整的消息
           // 所以不立即设置为已完成，等待所有片段处理完成后再设置
-          streamComplete = false;
+          streamComplete = customData.isFinished == 1;
+          if (!streamComplete) {
+            // 禁用发送按钮
+            this.setData({
+              sendBtnDisabled: true
+            });
+          } else {
+            // 启用发送按钮
+            this.setData({
+              sendBtnDisabled: false
+            });
+          }
           
           // 从message对象中获取MsgKey，这是后端返回的唯一标识
           // 对于流式消息，所有片段都应该有相同的MsgKey
@@ -1234,6 +1250,22 @@ Page({
       if(!app.checkUserInfoComplete()){
         return;
       }
+      // 检查发送按钮是否禁用
+      if (this.data.sendBtnDisabled) {
+        console.log('=== 发送按钮已禁用，无法发送消息 ===');
+        return;
+      }
+
+      // 检查消息发送间隔
+      const currentTime = getCurrentTimestamp();
+      const lastSendTime = this.data.lastSendTime;
+      const minInterval = this.data.minSendInterval;
+      
+      if (currentTime - lastSendTime < minInterval) {
+        console.log(`消息发送过于频繁，请稍后后再试`);
+        return;
+      }
+
       //is_create_ai_avatar 1:创建中 2：创建成功 0：未创建 3：创建失败
       if(this.data.is_create_ai_avatar != 2){
         await this.getUserInfo();
@@ -1298,7 +1330,8 @@ Page({
 
     const updatedMessages = [...this.data.messages, userMessage];
     this.setData({
-      messages: updatedMessages
+      messages: updatedMessages,
+      lastSendTime: getCurrentTimestamp(),
     });
 
     // 滚动到底部
@@ -1420,8 +1453,6 @@ Page({
       showActionMenu: false
     });
   },
-
-
 
   /**
    * 选择图片
