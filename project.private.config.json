@@ -5,16 +5,16 @@
     "miniprogram": {
       "list": [
         {
-          "name": "subpages/conversation/conversation",
-          "pathName": "subpages/conversation/conversation",
-          "query": "",
+          "name": "subpages/preview/preview",
+          "pathName": "subpages/preview/preview",
+          "query": "userId=136",
           "scene": null,
           "launchMode": "default"
         },
         {
-          "name": "subpages/preview/preview",
-          "pathName": "subpages/preview/preview",
-          "query": "userId=103",
+          "name": "subpages/conversation/conversation",
+          "pathName": "subpages/conversation/conversation",
+          "query": "",
           "launchMode": "default",
           "scene": null
         },

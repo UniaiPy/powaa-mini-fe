@@ -57,8 +57,8 @@
                             <view class="bg-gray-200 py-2 rounded-full">
                               {{item.matchPercent}}%
                             </view>
-                            <text class="fa fa-star text-red-500 ml-2" wx:if="{{item.matchPercent >= 90}}"></text>
-                            <text class="fa fa-arrow-up text-green-600 ml-2" wx:if="{{item.matchPercent >= 80 && item.matchPercent < 90}}"></text>
+                            <text class="fa fa-star text-red-500 ml-2" wx:if="{{item.matchPercent >= 85}}"></text>
+                            <text class="fa fa-arrow-up text-green-600 ml-2" wx:if="{{item.matchPercent >= 75 && item.matchPercent < 85}}"></text>
                           </view>
                         </view>
                         <view class="text-xs text-gray-400 whitespace-nowrap ml-3">

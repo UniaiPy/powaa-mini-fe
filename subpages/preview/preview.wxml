@@ -153,7 +153,7 @@
                 </view>
               </view>
             </view>
-            <view wx:if="{{matchDegreeContent.overallScore >= 90}}" class="mb-4 border-b border-gray-100 py-3">
+            <view wx:if="{{matchDegreeContent.overallScore >= 85}}" class="mb-4 border-b border-gray-100 py-3">
               <view class="font-semibold mb-3">高匹配用户</view>
               <view class="text-gray-500">
                 <text class="fa fa-star text-red-500 font-bold">高匹配用户：</text>
@@ -161,7 +161,7 @@
                 是你的精准目标对象，建议你直接联系对方本人，建立深度关系!
               </view>
             </view>
-            <view wx:if="{{matchDegreeContent.overallScore >= 80 && matchDegreeContent.overallScore < 90}}" class="mb-4 border-b border-gray-100 py-3">
+            <view wx:if="{{matchDegreeContent.overallScore >= 75 && matchDegreeContent.overallScore < 85}}" class="mb-4 border-b border-gray-100 py-3">
               <view class="font-semibold mb-3">高潜力用户</view>
               <view class="text-gray-500">
                 <text class="fa fa-arrow-up text-green-600 font-bold">高潜力用户：</text>

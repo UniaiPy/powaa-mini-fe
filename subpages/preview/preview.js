@@ -261,15 +261,15 @@ Page({
     const cacheKey = `${userId}_${targetUserId}`;
     
     // 检查是否有缓存数据且未过期
-    const cachedData = this.getCachedMatchDegree(cacheKey);
-    if (cachedData) {
-      this.setData({
-        showMatchDegreeModal: true,
-        matchDegreeContent: cachedData.content,
-        isLoadingMatchDegree: false
-      });
-      return;
-    }
+    // const cachedData = this.getCachedMatchDegree(cacheKey);
+    // if (cachedData) {
+    //   this.setData({
+    //     showMatchDegreeModal: true,
+    //     matchDegreeContent: cachedData.content,
+    //     isLoadingMatchDegree: false
+    //   });
+    //   return;
+    // }
     
     // 设置初始状态，初始内容为空
     this.setData({

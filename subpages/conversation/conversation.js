@@ -193,14 +193,17 @@ Page({
       //   messageInfoContent: messageInfo.content
       // });
       
-      // 查找对应的消息，使用多种匹配方式
+      // 查找对应的消息，使用多种匹配方式并确保消息类型一致
+      const expectedMessageType = message.flow === 'out' ? 'user' : 'other';
       let messageIndex = messages.findIndex(msg => 
+        // 确保消息类型一致
+        msg.type === expectedMessageType &&
         // 优先使用消息ID匹配
-        msg.id === messageID || 
+        (msg.id === messageID || 
         // 其次使用streamMessageKey匹配
         msg.id === streamMessageKey ||
         // 最后尝试匹配messageObj.ID
-        (msg.messageObj && msg.messageObj.ID === messageID)
+        (msg.messageObj && msg.messageObj.ID === messageID))
       );
       
       if (messageIndex !== -1) {
@@ -250,9 +253,13 @@ Page({
       //   messageInfoContent: messageInfo.content
       // });
       
-      // 检查消息是否已存在于消息列表中，使用多种匹配方式
+      // 检查消息是否已存在于消息列表中，使用多种匹配方式并确保消息类型一致
+      const expectedMessageType = message.flow === 'out' ? 'user' : 'other';
       const existingMessageIndex = messages.findIndex(msg => 
-        msg.id === messageID || msg.id === streamMessageKey || (msg.messageObj && msg.messageObj.ID === messageID)
+        // 确保消息类型一致
+        msg.type === expectedMessageType &&
+        // 使用多种匹配方式
+        (msg.id === messageID || msg.id === streamMessageKey || (msg.messageObj && msg.messageObj.ID === messageID))
       );
       
       // 更新或创建流式消息记录，使用完整的消息内容
@@ -501,7 +508,7 @@ Page({
    */
   onMessageReceived(event) {
     const messageList = event.data;
-    // console.log('接收到新消息:', messageList);
+    console.log('接收到新消息:', messageList);
     
     messageList.forEach((message) => {
       // 只处理当前会话的消息
@@ -932,8 +939,14 @@ Page({
     if (!messageList || !Array.isArray(messageList)) {
       return [];
     }
+    // 首先对消息列表按时间进行排序，确保按时间顺序显示
+    // 注意：TUIKit返回的历史消息可能是倒序的（最新的在前面）
+    const sortedMessageList = [...messageList].sort((a, b) => {
+      // 使用时间戳进行比较，确保按时间正序排列（旧消息在前，新消息在后）
+      return a.time - b.time;
+    });
     
-    const formattedMessages = messageList.map((message, index) => {
+    const formattedMessages = sortedMessageList.map((message, index) => {
       const isFromMe = message.flow === 'out';
       let avatarUrl;
       
@@ -955,7 +968,7 @@ Page({
         showTimeSeparator = true;
       } else {
         // 检查与前一条消息的时间间隔
-        const previousMessage = messageList[index - 1];
+        const previousMessage = sortedMessageList[index - 1];
         // 使用原始时间戳进行间隔判断
         showTimeSeparator = this.shouldShowMessageTime(message.time, previousMessage.time);
       }
@@ -1229,16 +1242,16 @@ Page({
     // 生成缓存键
     const cacheKey = `${userId}_${targetUserId}`;
     
-    // 检查是否有缓存数据且未过期
-    const cachedData = this.getCachedMatchDegree(cacheKey);
-    if (cachedData) {
-      this.setData({
-        showMatchDegreeModal: true,
-        matchDegreeContent: cachedData.content,
-        isLoadingMatchDegree: false
-      });
-      return;
-    }
+    // // 检查是否有缓存数据且未过期
+    // const cachedData = this.getCachedMatchDegree(cacheKey);
+    // if (cachedData) {
+    //   this.setData({
+    //     showMatchDegreeModal: true,
+    //     matchDegreeContent: cachedData.content,
+    //     isLoadingMatchDegree: false
+    //   });
+    //   return;
+    // }
     
     // 设置初始状态，初始内容为空
     this.setData({

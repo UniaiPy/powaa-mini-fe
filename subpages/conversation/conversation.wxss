@@ -222,7 +222,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .avatar-circle image {
@@ -496,8 +496,8 @@
 /* AI分身悬浮按钮 */
 .ai-avatar-button {
   position: fixed;
-  bottom: 105px;
-  right: 20px;
+  bottom: 110px;
+  right: 16px;
   width: 60px;
   height: 60px;
   border-radius: 50%;
