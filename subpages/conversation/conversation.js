@@ -738,25 +738,30 @@ Page({
    */
   async loadHistoryMessages() {
     try {
-      console.log('开始加载历史消息...');
+      console.log('==================================================');
+      console.log('【开始加载历史消息】- 时间:', new Date().toLocaleString());
+      console.log('当前会话ID:', this.data.conversationID);
+      console.log('当前nextReqMessageID:', this.data.nextReqMessageID || '空');
       
       if (!this.data.conversationID) {
-        console.log('没有会话ID，跳过历史消息加载');
         this.setData({ loading: false });
+        console.log('==================================================');
         return;
       }
 
       // 获取会话资料
+      console.log('📥 获取会话资料中...');
       const conversationProfile = await wx.$TUIKit.getConversationProfile(this.data.conversationID);
       console.log('会话资料:', conversationProfile);
 
       // 获取历史消息列表
       const messageListOptions = {
         conversationID: this.data.conversationID,
-        count: 20, // 每次加载20条消息
+        // count: 20, // 每次加载20条消息
         nextReqMessageID: this.data.nextReqMessageID || ''
       };
 
+      console.log('📥 请求历史消息列表，参数:', messageListOptions);
       const messageListRes = await wx.$TUIKit.getMessageList(messageListOptions);
       console.log('历史消息列表:', messageListRes);
 
@@ -765,6 +770,7 @@ Page({
       if (code === 0 && data) {
         const { messageList, nextReqMessageID, isCompleted } = data;
         // 格式化消息 - 检查TUIKit返回的消息顺序
+        console.log('🔄 开始格式化消息...');
         const formattedMessages = this.formatMessages(messageList);
         
         // 更新数据
@@ -776,15 +782,20 @@ Page({
           loading: false
         });
 
-        console.log(`加载了 ${formattedMessages.length} 条历史消息`);
-        console.log('是否还有更多消息:', !isCompleted);
+        console.log('✅ 历史消息加载完成:');
+        console.log(`   - 加载消息数量: ${formattedMessages.length}`);
+        console.log(`   - 是否还有更多消息: ${!isCompleted}`);
+        console.log(`   - 新的nextReqMessageID: ${nextReqMessageID || '空'}`);
         
         // 滚动到底部（显示最新消息）
         setTimeout(() => {
           this.scrollToBottom();
         }, 100);
       } else {
-        console.error('获取历史消息失败:', code);
+        console.error('❌ 获取历史消息失败:', {
+          code: code,
+          message: messageListRes.message || '未知错误'
+        });
         this.setData({
           error: '获取历史消息失败',
           loading: false
@@ -795,22 +806,23 @@ Page({
       console.error('加载历史消息失败:', error);
       // 如果是会话不存在的错误，这是正常的（新会话）
       if (error.message && error.message.includes('not exist')) {
-        console.log('新会话，没有历史消息');
+        console.log('ℹ️ 新会话，没有历史消息');
         this.setData({
           messages: [],
           loading: false
         });
-        return;
+      } else {
+        this.setData({
+          error: '加载历史消息失败',
+          loading: false
+        });
+        wx.showToast({
+          title: '加载历史消息失败',
+          icon: 'error'
+        });
       }
-      
-      this.setData({
-        error: '加载历史消息失败',
-        loading: false
-      });
-      wx.showToast({
-        title: '加载历史消息失败',
-        icon: 'error'
-      });
+    } finally {
+      console.log('==================================================');
     }
   },
 
@@ -939,12 +951,21 @@ Page({
     if (!messageList || !Array.isArray(messageList)) {
       return [];
     }
-    // 首先对消息列表按时间进行排序，确保按时间顺序显示
-    // 注意：TUIKit返回的历史消息可能是倒序的（最新的在前面）
+    
+    // 关键修复：确保消息列表总是按时间顺序排序
+    // 虽然TUIKit应该返回按时间排序的消息，但实际测试中发现第一次加载时可能按发送方分组
     const sortedMessageList = [...messageList].sort((a, b) => {
-      // 使用时间戳进行比较，确保按时间正序排列（旧消息在前，新消息在后）
-      return a.time - b.time;
+      // 主要按时间戳排序
+      if (a.time !== b.time) {
+        return a.time - b.time;
+      }
+      // 时间戳相同时，按消息ID排序，确保排序稳定性
+      const idA = a.ID || a.sequence || '';
+      const idB = b.ID || b.sequence || '';
+      return idA.localeCompare(idB);
     });
+    
+    console.log('格式化后消息顺序（按时间）:', sortedMessageList);
     
     const formattedMessages = sortedMessageList.map((message, index) => {
       const isFromMe = message.flow === 'out';

@@ -857,9 +857,9 @@ Page({
   saveProfileEdit() {
     const app = getApp()
     const intro = this.data.editProfileDescription.trim()
-    if (!intro || intro.length < 50) {
+    if (!intro || intro.length < 20) {
       wx.showToast({
-        title: '请输入至少50字的个人简介',
+        title: '请输入至少20字的个人简介',
         icon: 'none'
       })
       return
