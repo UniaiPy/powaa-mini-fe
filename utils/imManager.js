@@ -90,7 +90,8 @@ class IMManager {
       
       // 创建新实例
       wx.$TUIKit = TencentCloudChat.create({
-        SDKAppID: parseInt(SDKAppID)
+        SDKAppID: parseInt(SDKAppID),
+        // devMode: true
       });
       
 
