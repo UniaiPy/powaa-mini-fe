@@ -356,7 +356,7 @@ page {
   color: white;
   border-radius: 12rpx;
   font-size: 22rpx;
-  padding: 0 16rpx;
+  padding: 0 10rpx;
   border: none;
   display: flex;
   align-items: center;
@@ -371,7 +371,7 @@ page {
   color: white;
   border-radius: 12rpx;
   font-size: 22rpx;
-  padding: 0 16rpx;
+  padding: 0 10rpx;
   border: none;
   display: flex;
   align-items: center;
@@ -383,6 +383,34 @@ page {
 .reject-btn:active {
   background-color: #d70015;
   opacity: 0.8;
+}
+
+/* 待验证按钮 */
+.pending-btn {
+  background-color: orange;
+  color: white;
+  border-radius: 12rpx;
+  padding: 0 10rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 80rpx;
+}
+
+/* 已同意按钮 */
+.agree-btn {
+  background-color: #059669;
+  color: white;
+  border-radius: 12rpx;
+  padding: 0 10rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 80rpx;
 }
 
 /* 待联系徽章样式 */

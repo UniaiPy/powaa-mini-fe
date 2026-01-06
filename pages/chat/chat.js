@@ -10,7 +10,8 @@ Page({
   data: {
     activeSection: 'contacts', // 默认显示联系人
     contactsList: [],
-    pendingList: [],
+    pendingContactList: [],
+    applyCount: 0,
     showSearch: false,
     searchText: '',
     showSearchResults: false,
@@ -99,7 +100,7 @@ Page({
         
         // 加载数据
         this.loadConversationList();
-        this.loadFriendRequests();
+        this.loadPendingContactList();
       } else {
         console.log('⏳ IM未完全初始化，开始初始化流程', {
           isInitialized: imStatus?.isInitialized,
@@ -247,7 +248,7 @@ Page({
           });
           
           // 检查是否有新的请求
-          const currentIds = new Set(this.data.pendingList.map(pending => pending.id));
+          const currentIds = new Set(this.data.pendingContactList.map(pending => pending.id));
           const newRequestIds = new Set(sentToMeApps.map(app => app.userID).filter(id => id));
           
           // 找出新的请求ID
@@ -263,7 +264,7 @@ Page({
           if (hasNewRequests) {
             console.log('🔄 发现新的好友请求，刷新列表');
             // 如果有新请求，重新加载好友请求列表
-            this.loadFriendRequests();
+            this.loadPendingContactList();
           }
         } else {
           console.error('❌ 获取好友申请列表失败:', friendApplicationList);
@@ -401,7 +402,7 @@ Page({
           
           // 加载数据
           this.loadConversationList();
-          this.loadFriendRequests();
+          this.loadPendingContactList();
           
           // 检查和设置用户隐私设置
           this.checkAndSetPrivacySettings();
@@ -497,6 +498,9 @@ Page({
     }
   },
   
+  /**
+   * 设置IM事件监听（页面级别）
+   */
   setImEventListeners: function() {
     console.log('🔗 开始设置IM事件监听');
     
@@ -753,16 +757,13 @@ Page({
   onMessageReceived: function(event) {
     this.loadConversationList();
   },
-  
-  // 好友请求列表更新回调
-  // onFriendRequestListUpdated: function(event) {
-  //   this.loadFriendRequests();
-  // },
 
-  // 好友申请列表更新回调
+  /**
+   * 好友申请列表更新回调
+   */
   onFriendApplicationListUpdated: function(event) {
     console.log('好友申请列表更新事件:', event);
-    this.loadFriendRequests();
+    this.loadPendingContactList();
   },
   
   // 加载会话列表 - 简化版本，使用imManager状态管理
@@ -1047,16 +1048,16 @@ Page({
       }
     });
   },
-
-
-
-  // 加载好友申请列表
-  async loadFriendRequests() {
+  
+  /**
+   * 加载待联系列表（好友列表 + 自己发送的好友请求）
+   */
+  async loadPendingContactList() {
     try {
-      console.log('🔍 开始加载好友申请列表...');
+      console.log('🔍 开始加载待联系列表...');
       
       if (!this.data.isImInitialized || !wx.$TUIKit) {
-        console.log('📦 IM未初始化，跳过好友申请加载');
+        console.log('📦 IM未初始化，跳过待联系列表加载');
         return;
       }
 
@@ -1065,169 +1066,112 @@ Page({
       if (imManager) {
         const isLoginReady = await imManager.waitForLogin(10000);
         if (!isLoginReady) {
-          console.error('❌ 等待登录超时，无法加载好友申请');
+          console.error('❌ 等待登录超时，无法加载待联系列表');
           return;
         }
       }
 
-      const friendApplicationList = await wx.$TUIKit.getFriendApplicationList();
-      console.log('📬 好友申请列表原始数据:', JSON.stringify(friendApplicationList, null, 2));
-
-      if (friendApplicationList.code === 0) {
-        // 修复数据结构解析逻辑
-        let applications = [];
-        
-        // 检查实际的数据结构
-        if (friendApplicationList.data) {
-          if (Array.isArray(friendApplicationList.data)) {
-            applications = friendApplicationList.data;
-          } else if (friendApplicationList.data.friendApplicationList && Array.isArray(friendApplicationList.data.friendApplicationList)) {
-            applications = friendApplicationList.data.friendApplicationList;
-          } else if (friendApplicationList.data.applicationList && Array.isArray(friendApplicationList.data.applicationList)) {
-            applications = friendApplicationList.data.applicationList;
-          } else {
-            console.warn('未知的data结构:', friendApplicationList.data);
-            applications = [];
-          }
-        } else if (friendApplicationList.friendApplicationList && Array.isArray(friendApplicationList.friendApplicationList)) {
-          // 直接在根级别的情况
-          applications = friendApplicationList.friendApplicationList;
-        } else {
-          console.warn('未知的响应结构:', friendApplicationList);
-          applications = [];
+      // 1. 获取好友列表
+      let friendList = [];
+      try {
+        const friendListResponse = await wx.$TUIKit.getFriendList();
+        console.log('👥 好友列表原始数据:', JSON.stringify(friendListResponse, null, 2));
+        if (friendListResponse.code === 0 && friendListResponse.data && Array.isArray(friendListResponse.data)) {
+          friendList = friendListResponse.data;
         }
-        
-        // 确保是数组才进行处理
-        if (!Array.isArray(applications)) {
-          throw new Error('申请列表不是数组格式');
-        }
-        console.log('📋 申请列表总数:', applications.length);
-        
-        // 详细分析申请类型
-        const sentToMeApps = applications.filter(app => {
-          // 检查多种可能的类型值
-          const isSentToMe = app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME ||
-                            app.type === 'SNS_APPLICATION_SENT_TO_ME' ||
-                            app.type === 1; // 有可能是数字类型
-          
-          if (isSentToMe) {
-            console.log('✅ 找到发送给我的申请:', app.userID || app.nick);
-          }
-          return isSentToMe;
-        });
-        
-        const sentFromMeApps = applications.filter(app => {
-          const isSentFromMe = app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_FROM_ME ||
-                              app.type === 'SNS_APPLICATION_SENT_FROM_ME' ||
-                              app.type === 2; // 有可能是数字类型
-          
-          if (isSentFromMe) {
-            console.log('📤 我发送的申请:', app.userID || app.nick);
-          }
-          return isSentFromMe;
-        });
-        
-        // 打印每个申请的详细信息
-        // applications.forEach((app, index) => {
-        //   console.log(`申请${index + 1}详情:`, {
-        //     userID: app.userID,
-        //     nickname: app.nickname,
-        //     nick: app.nick, // 注意：可能是 nick 而不是 nickname
-        //     type: app.type,
-        //     addTime: app.addTime,
-        //     time: app.time, // 注意：可能是 time 而不是 addTime
-        //     addSource: app.addSource,
-        //     source: app.source, // 注意：可能是 source 而不是 addSource
-        //     wording: app.wording,
-        //     status: app.status
-        //   });
-        // });
-
-        // 只显示收到的好友申请（别人发给当前用户的）
-        const pendingList = sentToMeApps
-          .filter(app => {
-            // 更灵活的有效性检查
-            const userID = app.userID;
-            const time = app.addTime || app.time;
-            const isValid = userID && time;
-            if (!isValid) {
-              console.warn('⚠️ 无效的申请记录:', app);
-            }
-            return isValid;
-          })
-          .map((app, index) => {
-            console.log(`处理申请${index + 1}:`, app);
-            // 格式化时间
-            const time = this.formatTime(app.time);
-            return {
-              id: app.userID,
-              name: app.nick || app.nickname || app.userID,
-              avatar: this.processAvatarUrl(app.avatar),
-              originalAvatar: app.avatar, // 保存原始头像地址
-              message: app.wording,
-              time: time,
-              requestId: app.userID, // 使用userID作为requestId
-              type: app.type,
-              addSource: app.addSource || app.source
-            };
-          });
-
-        // console.log('🎯 最终待处理的好友申请列表:', pendingList);
-        // console.log('📝 设置到页面的pendingList:', pendingList.length, '条记录');
-        
-        // // 添加更详细的调试信息
-        // console.log('🔍 调试信息 - pendingList详情:');
-        // pendingList.forEach((item, index) => {
-        //   console.log(`待处理申请${index + 1}:`, {
-        //     id: item.id,
-        //     name: item.name,
-        //     message: item.message,
-        //     time: item.time,
-        //     requestId: item.requestId,
-        //     type: item.type,
-        //     addSource: item.addSource
-        //   });
-        // });
-        
-        // console.log('🔍 调试信息 - 页面状态检查:');
-        // console.log('- 当前activeSection:', this.data.activeSection);
-        // console.log('- 当前pendingList长度:', this.data.pendingList.length);
-        // console.log('- 即将设置的pendingList长度:', pendingList.length);
-
-        this.setData({
-          pendingList: pendingList
-        }, () => {
-          console.log('✅ pendingList已设置到页面，当前长度:', this.data.pendingList.length);
-          console.log('📋 页面pendingList内容:', this.data.pendingList);
-          
-          // 数据设置完成后，批量获取头像URL
-          this.batchGetAvatarUrls(pendingList, 2);
-          
-          // 如果有待处理的好友请求，自动切换到待联系标签
-          // if (pendingList.length > 0 && this.data.activeSection === 'contacts') {
-          //   console.log('🔄 发现好友请求，自动切换到待联系标签');
-          //   this.setData({
-          //     activeSection: 'pending'
-          //   });
-          //   console.log(`收到${pendingList.length}个好友申请`);
-          // }
-        });
-
-        // 显示通知
-        if (pendingList.length > 0) {
-          const app = getApp();
-          if (app.globalData.imManager) {
-            app.globalData.imManager.showNotification(
-              `收到 ${pendingList.length} 个好友申请`,
-              pendingList.map(req => req.name).join(', ')
-            );
-          }
-        }
-      } else {
-        console.error('❌ 获取好友申请列表失败:', friendApplicationList);
+      } catch (friendError) {
+        console.error('❌ 获取好友列表失败:', friendError);
       }
+
+      // 2. 获取好友申请列表
+      let applications = [];
+      try {
+        const friendApplicationList = await wx.$TUIKit.getFriendApplicationList();
+        console.log('📤 好友申请列表数据:', JSON.stringify(friendApplicationList, null, 2));
+        
+        if (friendApplicationList.code === 0) {
+          // 解析好友申请列表
+          if (friendApplicationList.data) {
+            if (Array.isArray(friendApplicationList.data)) {
+              applications = friendApplicationList.data;
+            } else if (friendApplicationList.data.friendApplicationList && Array.isArray(friendApplicationList.data.friendApplicationList)) {
+              applications = friendApplicationList.data.friendApplicationList;
+            } else if (friendApplicationList.data.applicationList && Array.isArray(friendApplicationList.data.applicationList)) {
+              applications = friendApplicationList.data.applicationList;
+            }
+          } else if (friendApplicationList.friendApplicationList && Array.isArray(friendApplicationList.friendApplicationList)) {
+            applications = friendApplicationList.friendApplicationList;
+          }
+        }
+      } catch (appError) {
+        console.error('❌ 获取好友申请列表失败:', appError);
+      }
+
+      // 3. 整合数据，统一格式
+      let pendingContactList = [];
+      
+      // 处理好友列表
+      friendList.forEach(friend => {
+        if (friend.userID && friend.userID != 'AI分身') {
+          let time = this.formatTime(friend.addTime);
+          pendingContactList.push({
+            id: friend.userID,
+            name: friend.profile?.nick || friend.userID,
+            avatar: this.processAvatarUrl(friend.profile?.avatar),
+            originalAvatar: friend.profile?.avatar,
+            sort_time: friend.addTime, // 使用添加时间
+            time: time, // 格式化后的时间
+            status: 'friend'
+          });
+        }
+      });
+      
+      // 处理好友请求列表（包括我发送的和收到的）
+      let applyCount = 0;
+      applications.forEach(app => {
+        if (app.userID) {
+          let status = 'pending';
+          let message = '等待对方接受好友请求';
+          // console.log('申请类型:', app.type, wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME, wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_BY_ME);
+          if (app.type === wx.TencentCloudChat.TYPES.SNS_APPLICATION_SENT_TO_ME) {
+            applyCount++;
+            status = 'applying';
+            message = app.wording;
+          }
+          let time = this.formatTime(app.time);
+          pendingContactList.push({
+            id: app.userID,
+            name: app.nick || app.nickname || app.userID,
+            avatar: this.processAvatarUrl(app.avatar),
+            originalAvatar: app.avatar,
+            sort_time: app.time, // 使用申请时间
+            time: time, // 格式化后的时间
+            status: status,
+            message: message
+          });
+        }
+      });
+
+      // 4. 按时间倒序排序
+      pendingContactList.sort((a, b) => {
+        return b.sort_time - a.sort_time;
+      });
+
+      console.log('📋 整合后的待联系列表:', JSON.stringify(pendingContactList, null, 2));
+      console.log('✅ 待联系列表总数:', pendingContactList.length);
+
+      // 5. 设置到页面数据
+      this.setData({
+        pendingContactList: pendingContactList,
+        applyCount: applyCount
+      }, () => {
+        console.log('✅ pendingContactList已设置到页面，当前长度:', this.data.pendingContactList.length);
+        
+        // 批量获取头像URL
+        this.batchGetAvatarUrls(pendingContactList, 2);
+      });
     } catch (error) {
-      console.error('❌ 加载好友申请列表失败:', error);
+      console.error('❌ 加载待联系列表失败:', error);
     }
   },
   
@@ -1259,8 +1203,8 @@ Page({
             console.log('=== 📬 好友申请列表更新事件 ===');
             console.log('事件数据:', JSON.stringify(event, null, 2));
             
-            // 重新加载好友申请列表
-            this.loadFriendRequests();
+            // 重新加载好友申请列表和待联系列表
+            this.loadPendingContactList();
           });
           console.log('✅ 好友申请列表更新监听设置成功');
         } catch (error) {
@@ -1277,8 +1221,8 @@ Page({
             console.log('=== 🔄 好友申请处理事件 ===');
             console.log('事件数据:', JSON.stringify(event, null, 2));
             
-            // 重新加载好友申请列表
-            this.loadFriendRequests();
+            // 重新加载好友申请列表和待联系列表
+            this.loadPendingContactList();
           });
           console.log('✅ 好友申请处理监听设置成功');
         } catch (error) {
@@ -1292,11 +1236,12 @@ Page({
       if (EVENT.FRIEND_LIST_UPDATED) {
         try {
           wx.$TUIKit.on(EVENT.FRIEND_LIST_UPDATED, (event) => {
-            // console.log('=== 👥 好友列表更新事件 ===');
-            // console.log('事件数据:', JSON.stringify(event, null, 2));
+            console.log('=== 👥 好友列表更新事件 ===');
+            console.log('事件数据:', JSON.stringify(event, null, 2));
             
-            // 刷新会话列表
+            // 刷新会话列表和待联系列表
             this.loadConversationList();
+            this.loadPendingContactList();
           });
           console.log('✅ 好友列表更新监听设置成功');
         } catch (error) {
@@ -1312,67 +1257,10 @@ Page({
     
     console.log('✅ 好友申请监听设置完成');
   },
-
-  // 查看自己发送的好友请求状态
-  loadSentFriendRequests: function() {
-    console.log('查看自己发送的好友请求...');
-    
-    const app = getApp();
-    const currentUserId = app.globalData.userInfo?.userId || app.globalData.userInfo?.id;
-    console.log('当前用户ID:', currentUserId, '查看发送的好友请求');
-    
-    wx.showLoading({
-      title: '加载中...',
-    });
-    
-    // 调用后端API获取发送的好友请求
-    app.request({
-      url: `/api/friendships/sent`,
-      method: 'GET',
-      success: (res) => {
-        console.log('获取发送的好友请求响应:', JSON.stringify(res, null, 2));
-        
-        if (res.code === 200 && res.data && res.data.sent_requests) {
-          console.log('发送的好友请求数量:', res.data.sent_requests.length);
-          
-          res.data.sent_requests.forEach((request, index) => {
-            console.log(`发送的好友请求${index + 1}:`, {
-              request_id: request.request_id,
-              receiver_id: request.receiver_id,
-              receiver_nickname: request.receiver_nickname,
-              message: request.message,
-              request_time: request.request_time,
-              status: request.status
-            });
-          });
-          
-          wx.showModal({
-            title: '发送的好友请求',
-            content: `您发送了${res.data.sent_requests.length}个好友请求，详情请查看控制台`,
-            showCancel: false
-          });
-        } else {
-          console.log('没有找到发送的好友请求或接口返回异常');
-          wx.showToast({
-            title: '暂无发送的请求',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (err) => {
-        console.error('获取发送的好友请求失败:', err);
-        wx.showToast({
-          title: '暂不支持查看',
-          icon: 'none'
-        });
-      },
-      complete: () => {
-        wx.hideLoading();
-      }
-    });
-  },
   
-  // 处理头像URL，确保在小程序中可以正常显示（优化版本）
+  /**
+   * 处理头像URL，确保在小程序中可以正常显示（优化版本）
+   */
   processAvatarUrl: function(avatarUrl) {
     if (!avatarUrl) {
       return '/images/ai.png';
@@ -1436,7 +1324,7 @@ Page({
       cachedRequests.forEach(request => {
         const updatePath = type === 1 
           ? `contactsList[${request.index}].avatar`
-          : `pendingList[${request.index}].avatar`;
+          : `pendingContactList[${request.index}].avatar`;
         
         this.setData({
           [updatePath]: request.url
@@ -1485,7 +1373,7 @@ Page({
               if (urlInfo.url && originalRequest) {
                 const updatePath = type === 1 
                   ? `contactsList[${originalRequest.index}].avatar`
-                  : `pendingList[${originalRequest.index}].avatar`;
+                  : `pendingContactList[${originalRequest.index}].avatar`;
                 
                 this.setData({
                   [updatePath]: urlInfo.url
@@ -1550,7 +1438,7 @@ Page({
         });
       } else {
         // 更新待联系列表中指定用户的头像URL
-        const updatePath = `pendingList[${index}].avatar`;
+        const updatePath = `pendingContactList[${index}].avatar`;
         this.setData({
           [updatePath]: cachedItem.url
         });
@@ -1588,7 +1476,7 @@ Page({
             });
           } else {
             // 更新待联系列表中指定用户的头像URL
-            const updatePath = `pendingList[${index}].avatar`;
+            const updatePath = `pendingContactList[${index}].avatar`;
             this.setData({
               [updatePath]: res.url
             });
@@ -1603,7 +1491,9 @@ Page({
     });
   },
 
-  // 格式化时间
+  /**
+   * 格式化时间
+   */
   formatTime: function(timestamp) {
     // 检查时间戳格式，如果是秒级时间戳（10位数），转换为毫秒级
     const timestampMs = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
@@ -1643,8 +1533,6 @@ Page({
              date.getDate().toString().padStart(2, '0');
     }
   },
-  
-
 
   /**
    * 生命周期函数--监听页面初次渲染完成
@@ -1702,7 +1590,7 @@ Page({
         // 只有在需要时才加载完整数据
         console.log('⏱️  超过刷新间隔，重新加载数据');
         this.loadConversationList();
-        this.loadFriendRequests();
+        this.loadPendingContactList();
         this.setData({
           lastRefreshTime: now
         });
@@ -1736,11 +1624,16 @@ Page({
       currentItemIndex: null
     });
   },
+  
+  /**
+   * 页面滚动时关闭滑动按钮
+   */
   onPageScroll() {
     this.setData({
       currentItemIndex: null
     })
   },
+
   /**
    * 生命周期函数--监听页面卸载
    */
@@ -1902,7 +1795,7 @@ Page({
     // 重新加载数据以恢复原始列表
     if (this.data.isImInitialized) {
       this.loadConversationList();
-      this.loadFriendRequests();
+      this.loadPendingContactList();
     }
   },
 
@@ -1915,7 +1808,7 @@ Page({
 
   // 执行搜索
   performSearch: function() {
-    const { searchText, contactsList, pendingList } = this.data;
+    const { searchText, contactsList, pendingContactList } = this.data;
     if (!searchText.trim()) {
       this.setData({
         showSearchResults: false,
@@ -1934,7 +1827,7 @@ Page({
       this.searchCloudMessages(searchText)
         .then(messageResults => {
           // 同时搜索联系人姓名
-          const contactResults = this.searchContacts(searchText, contactsList, pendingList);
+          const contactResults = this.searchContacts(searchText, contactsList, pendingContactList);
           
           // 合并搜索结果
           const allResults = this.mergeSearchResults(contactResults, messageResults);
@@ -1946,15 +1839,15 @@ Page({
         })
         .catch(error => {
           console.error('云端消息搜索失败:', error);
-          // 降级到本地搜索
-          this.performLocalSearch(searchText, contactsList, pendingList);
+          // 降级到本地搜索联系人和待联系
+          this.performLocalSearch(searchText, contactsList, pendingContactList);
         })
         .finally(() => {
           wx.hideLoading();
         });
     } else {
-      // IM未初始化，使用本地搜索
-      this.performLocalSearch(searchText, contactsList, pendingList);
+      // IM未初始化，使用本地搜索联系人和待联系
+      this.performLocalSearch(searchText, contactsList, pendingContactList);
       wx.hideLoading();
     }
   },
@@ -2052,8 +1945,8 @@ Page({
   },
 
   // 搜索联系人
-  searchContacts: function(searchText, contactsList, pendingList) {
-    const allUsers = [...contactsList, ...pendingList.map(item => ({
+  searchContacts: function(searchText, contactsList, pendingContactList) {
+    const allUsers = [...contactsList, ...pendingContactList.map(item => ({
       ...item,
       lastMessage: item.message,
       unread: 0
@@ -2107,8 +2000,8 @@ Page({
   },
 
   // 本地搜索（降级方案）
-  performLocalSearch: function(searchText, contactsList, pendingList) {
-    const allUsers = [...contactsList, ...pendingList.map(item => ({
+  performLocalSearch: function(searchText, contactsList, pendingContactList) {
+    const allUsers = [...contactsList, ...pendingContactList.map(item => ({
       ...item,
       lastMessage: item.message,
       unread: 0
@@ -2225,9 +2118,9 @@ Page({
           // 同意好友申请后立即刷新联系人列表，确保新好友能够立即显示
           this.loadConversationList();
           // 移除已处理的请求
-          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          const updatedPendingContactList = this.data.pendingContactList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList,
+            pendingContactList: updatedPendingContactList,
             activeSection: "contacts" // 切换到联系人列表
           });
           
@@ -2269,9 +2162,9 @@ Page({
           });
 
           // 更新待联系列表（移除已同意的用户）
-          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          const updatedPendingContactList = this.data.pendingContactList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList,
+            pendingContactList: updatedPendingContactList,
             activeSection: "contacts" // 切换到联系人列表
           });
         }, 1000);
@@ -2614,9 +2507,9 @@ Page({
           console.log('IM拒绝好友申请成功:', imResponse);
           
           // 移除已处理的请求
-          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          const updatedPendingContactList = this.data.pendingContactList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList
+            pendingContactList: updatedPendingContactList
           });
           
           wx.showToast({
@@ -2657,9 +2550,9 @@ Page({
           });
 
           // 更新待联系列表（移除已拒绝的用户）
-          const updatedPendingList = this.data.pendingList.filter(item => item.id !== requestId);
+          const updatedPendingContactList = this.data.pendingContactList.filter(item => item.id !== requestId);
           this.setData({
-            pendingList: updatedPendingList
+            pendingContactList: updatedPendingContactList
           });
         }, 1000);
       }
@@ -2717,109 +2610,6 @@ Page({
       .catch((error) => {
         console.error('获取用户资料失败:', error);
       });
-  },
-
-  // 测试隐私设置功能
-  testPrivacySettings: function() {
-    console.log('=== 测试隐私设置功能 ===');
-    
-    if (!this.data.isImInitialized || !wx.$TUIKit) {
-      wx.showToast({
-        title: 'IM未初始化',
-        icon: 'none'
-      });
-      return;
-    }
-
-    // 检查当前隐私设置
-    wx.$TUIKit.getMyProfile()
-      .then((profileResponse) => {
-        console.log('📋 当前用户资料:', profileResponse);
-        
-        if (profileResponse.code === 0 && profileResponse.data) {
-          const profile = profileResponse.data;
-          const currentAllowType = profile.allowType;
-          
-          console.log('🔒 当前隐私设置:', currentAllowType);
-          
-          // 显示当前设置给用户
-          let allowTypeText = '未知';
-          switch (currentAllowType) {
-            case 'AllowType_Type_NeedConfirm':
-              allowTypeText = '需要验证';
-              break;
-            case 'AllowType_Type_AllowAny':
-              allowTypeText = '允许任何人';
-              break;
-            case 'AllowType_Type_DenyAny':
-              allowTypeText = '禁止任何人';
-              break;
-          }
-          
-          wx.showModal({
-            title: '当前隐私设置',
-            content: `添加好友方式: ${allowTypeText}`,
-            showCancel: true,
-            cancelText: '取消',
-            confirmText: currentAllowType === 'AllowType_Type_AllowAny' ? '设置为需要验证' : '好的',
-            success: (res) => {
-              if (res.confirm && currentAllowType === 'AllowType_Type_AllowAny') {
-                // 更新为需要验证
-                this.updatePrivacySettings('AllowType_Type_NeedConfirm');
-              }
-            }
-          });
-        }
-      })
-      .catch((error) => {
-        console.error('❌ 获取用户资料失败:', error);
-        wx.showToast({
-          title: '获取资料失败',
-          icon: 'none'
-        });
-      });
-  },
-
-  // 更新隐私设置
-  updatePrivacySettings: function(newAllowType) {
-    wx.showLoading({
-      title: '更新设置中...',
-    });
-
-    wx.$TUIKit.updateMyProfile({
-      allowType: newAllowType
-    })
-    .then((updateResponse) => {
-      console.log('✅ 隐私设置更新成功:', updateResponse);
-      wx.hideLoading();
-      
-      let allowTypeText = '';
-      switch (newAllowType) {
-        case 'AllowType_Type_NeedConfirm':
-          allowTypeText = '需要验证';
-          break;
-        case 'AllowType_Type_AllowAny':
-          allowTypeText = '允许任何人';
-          break;
-        case 'AllowType_Type_DenyAny':
-          allowTypeText = '禁止任何人';
-          break;
-      }
-      
-      wx.showToast({
-        title: `已设置为${allowTypeText}`,
-        icon: 'success',
-        duration: 2000
-      });
-    })
-    .catch((error) => {
-      console.error('❌ 隐私设置更新失败:', error);
-      wx.hideLoading();
-      wx.showToast({
-        title: '更新失败',
-        icon: 'none'
-      });
-    });
   },
 
   // 页面状态标志
@@ -2970,7 +2760,8 @@ Page({
       // 注意：不在这里清除_isHandlingKickout标志，因为页面跳转后这个值不再重要
     }
   },
-    /**
+  
+  /**
    * 导航到预览页面
    */
   navigateToPreview(e) {
@@ -2981,6 +2772,10 @@ Page({
       url: `/subpages/preview/preview?isFromProfile=true&type=avatar&userId=${userId}`
     })
   },
+
+  /**
+   * 滑动按钮点击事件处理
+   */
   slideButtonTap(e) {
     const { user } = e.currentTarget.dataset
     const id = user.id
@@ -3001,7 +2796,10 @@ Page({
       currentItemIndex: null
     })
   },
-  //置顶会话
+
+  /**
+   * 置顶会话
+   */
   pinConversation(id) {
     let promise = wx.$TUIKit.pinConversation(
       { conversationID: id, isPinned: true }
@@ -3019,7 +2817,9 @@ Page({
     });
   },
   
-  // 更新会话置顶状态
+  /**
+   * 更新会话置顶状态
+   */
   updateConversationPinStatus(conversationID, isPinned) {
     // 更新contactsList中的会话状态
     const updatedContactsList = this.data.contactsList.map(contact => {
@@ -3036,7 +2836,10 @@ Page({
       contactsList: updatedContactsList
     });
   },
-  //取消置顶
+
+  /**
+   * 取消置顶会话
+   */
   unpinConversation(id) {
     let promise = wx.$TUIKit.pinConversation({ conversationID: id, isPinned: false });
     promise.then(imResponse => {
@@ -3049,12 +2852,20 @@ Page({
       console.warn('unpinConversation error:', imError); // 取消置顶会话失败的相关信息
     });
   },
+  
+  /**
+   * 显示滑动按钮
+   */
   handleShow(e) {
     const { index } = e.currentTarget.dataset
     this.setData({
       currentItemIndex: index
     })
   },
+  
+  /**
+   * 关闭滑动按钮
+   */
   closeSlideview() {
     this.setData({
       currentItemIndex: null

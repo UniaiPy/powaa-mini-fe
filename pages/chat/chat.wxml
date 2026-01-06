@@ -31,9 +31,7 @@
           </view>
           <view class="flex-1 chat-section-title border-l border-gray-200 {{activeSection === 'pending' ? 'active' : ''}}" bindtap="toggleSection" data-section="pending">
             <text>待联系</text>
-            <view wx:if="{{pendingList.length > 0}}" class="pending-badge">
-              {{pendingList.length}}
-            </view>
+            <view wx:if="{{applyCount > 0}}" class="pending-badge">{{applyCount}}</view>
           </view>
         </view>
         <!-- 联系人内容 -->
@@ -90,8 +88,8 @@
         <!-- 待联系内容 -->
         <view class="bg-white rounded-lg shadow-sm" wx:if="{{activeSection === 'pending'}}">
           <!-- 待联系列表 -->
-          <block wx:if="{{pendingList.length > 0}}">
-            <block wx:for="{{pendingList}}" wx:key="id">
+          <block wx:if="{{pendingContactList.length > 0}}">
+            <block wx:for="{{pendingContactList}}" wx:key="id">
               <view class="chat-card">
                 <view class="flex items-center">
                   <view class="w-24 h-24 rounded-full overflow-hidden mr-6" bindtap="navigateToPreview" data-user="{{item}}">
@@ -100,17 +98,20 @@
                   <view class="flex-1">
                     <view class="flex items-center justify-between mb-2">
                       <text class="text-base font-semibold text-gray-900">{{item.name}}</text>
-                      <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
                     </view>
                     <text class="last-message multi-line">{{item.message}}</text>
                   </view>
                   <view class="ml-4">
                     <view class="action-buttons">
-                      <button class="accept-btn" bindtap="acceptMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
+                      <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
+                      <button wx:if="{{item.status === 'applying'}}" class="accept-btn" bindtap="acceptMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
                         同意
                       </button>
-                      <button class="reject-btn" bindtap="rejectMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
+                      <button wx:if="{{item.status === 'applying'}}" class="reject-btn" bindtap="rejectMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
                         拒绝
+                      </button>
+                      <button wx:if="{{item.status !== 'applying'}}" class="{{item.status === 'pending' ? 'pending-btn' : 'agree-btn'}}" size="mini">
+                        {{item.status === 'pending' ? '待验证' : '已同意'}}
                       </button>
                     </view>
                   </view>
