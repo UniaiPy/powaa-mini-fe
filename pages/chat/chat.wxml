@@ -104,10 +104,10 @@
                   <view class="ml-4">
                     <view class="action-buttons">
                       <text class="text-xs text-gray-400 whitespace-nowrap">{{item.time}}</text>
-                      <button wx:if="{{item.status === 'applying'}}" class="accept-btn" bindtap="acceptMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
+                      <button wx:if="{{item.status === 'applying'}}" class="accept-btn" bindtap="acceptMatch" data-id="{{item.userId}}" data-name="{{item.name}}" size="mini">
                         同意
                       </button>
-                      <button wx:if="{{item.status === 'applying'}}" class="reject-btn" bindtap="rejectMatch" data-id="{{item.id}}" data-name="{{item.name}}" size="mini">
+                      <button wx:if="{{item.status === 'applying'}}" class="reject-btn" bindtap="rejectMatch" data-id="{{item.userId}}" data-name="{{item.name}}" size="mini">
                         拒绝
                       </button>
                       <button wx:if="{{item.status !== 'applying'}}" class="{{item.status === 'pending' ? 'pending-btn' : 'agree-btn'}}" size="mini">
