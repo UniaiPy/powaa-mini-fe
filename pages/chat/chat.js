@@ -1115,7 +1115,8 @@ Page({
         if (friend.userID && friend.userID != 'AI分身') {
           let time = this.formatTime(friend.addTime);
           pendingContactList.push({
-            id: friend.userID,
+            id: "C2C" + friend.userID,
+            userId: friend.userID,
             name: friend.profile?.nick || friend.userID,
             avatar: this.processAvatarUrl(friend.profile?.avatar),
             originalAvatar: friend.profile?.avatar,
@@ -1140,7 +1141,8 @@ Page({
           }
           let time = this.formatTime(app.time);
           pendingContactList.push({
-            id: app.userID,
+            id: "C2C" + app.userID,
+            userId: app.userID,
             name: app.nick || app.nickname || app.userID,
             avatar: this.processAvatarUrl(app.avatar),
             originalAvatar: app.avatar,
@@ -2020,8 +2022,8 @@ Page({
     });
   },
 
-  // 导航到聊天会话页
-  navigateToConversation: function(e) {
+  // 导航到聊天会话页（联系人列表）
+  navigateContactToConversation: function(e) {
     let user = e.currentTarget.dataset.user;
     console.log('原始用户数据:', e);
     // 如果是搜索结果，需要使用originalUser数据
@@ -2050,6 +2052,31 @@ Page({
           this.updateContactUnreadCount(conversationID, 0);
         });
     }
+    
+    // 构建跳转URL，包含用户信息和会话ID
+    let url = `/subpages/conversation/conversation`;
+    if (conversationID) {
+      url += `?conversationID=${conversationID}`;
+    }
+    
+    wx.navigateTo({
+      url: url
+    });
+  },
+
+  // 导航到聊天会话页（待联系列表）
+  navigatePendingToConversation: function(e) {
+    let user = e.currentTarget.dataset.user;
+    console.log('原始用户数据:', e);
+    // 如果是搜索结果，需要使用originalUser数据
+    if (user.originalUser) {
+      user = user.originalUser;
+    }
+    // 创建会话ID（C2C类型）
+    const conversationID = user.id || '';
+    
+    console.log('跳转到会话页面，用户信息:', user);
+    console.log('生成的会话ID:', conversationID);
     
     // 构建跳转URL，包含用户信息和会话ID
     let url = `/subpages/conversation/conversation`;
