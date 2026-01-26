@@ -944,7 +944,7 @@ Page({
       const lastMessage = this.getMessageDetails(conversation.lastMessage);
       
       // 格式化时间
-      const time = this.formatTime(lastMessage.lastTime || Date.now());
+      const time = this.formatTime(lastMessage.lastTime);
       
       const contact = {
         id: conversation.conversationID,
@@ -1497,6 +1497,10 @@ Page({
    * 格式化时间
    */
   formatTime: function(timestamp) {
+    // 处理时间戳为空的情况
+    if (!timestamp || isNaN(timestamp)) {
+      return ''; // 或返回 '未知时间' 等占位符
+    }
     // 检查时间戳格式，如果是秒级时间戳（10位数），转换为毫秒级
     const timestampMs = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
     
@@ -2329,7 +2333,9 @@ Page({
         break;
         
       default:
-        messageInfo.content = '[未知消息类型]';
+        if (message.payload?.text) {
+          messageInfo.content = '[未知消息类型]';
+        }
         messageInfo.messageType = 'text';
     }
 
